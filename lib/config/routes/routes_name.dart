@@ -1,0 +1,36 @@
+// ignore_for_file: constant_identifier_names
+class RoutesName {
+  static const String SPLASH_SCREEN = "splash_screen";
+  static const String RESET_PASSWORD_SCREEN = "reset_password_screen";
+  static const String VERIFICATION_CODE_SCREEN = "verification_code_screen";
+  static const String LOGIN_SCREEN = "login_screen";
+  static const String SOCIAL_LOGIN_SCREEN = "social_login_screen";
+  static const String SIGN_UP_SCREEN = "sign_up_screen";
+  static const String QUESTION_SCREEN = "question_screen";
+  static const String CARD_SCREEN = "card_screen";
+  static const String ANALYSIS_SCREEN = "analysis_screen";
+  static const String ANALYSIS_COMPLETE_SCREEN = "analysis_complete_screen";
+  static const String ONBOARDING_SCREEN = "onboarding_screen";
+  static const String CREDIBILITY_SCREEN = "credibility_screen";
+  static const String CHOOSE_YOUR_GOALS_SCREEN = "choose_your_goals_screen";
+  static const String RATING_SCREEN = "rating_screen";
+  static const String WELCOME_CARD_SCREEN = "welcome_card_screen";
+  static const String POST_PAYWALL_SCREEN = "post_paywall_screen";
+  static const String PAYWALL_SCREEN = "paywall_screen";
+  static const String LIST_OF_MODULE = "list_of_module";
+  static const String ANSWER_SCREEN = "answer_screen";
+  static const String LEGACY_WRAPPED_SCREEN = "legacy_wrapped_screen";
+  static const String VOICE_GROWING_SCREEN = "voice_growing_screen";
+  static const String SETTINGS_SCREEN = "settings_screen";
+  static const String SETTING_MORE_OPTIONS_SCREEN = "settings_more_options_screen";
+  static const String SUPPORT_SCREEN = "support_screen";
+  static const String NOTIFICATIONS_SCREEN = "notifications_screen";
+  static const String PROFILE_SCREEN = "profile_screen";
+  static const String EDIT_PROFILE_SCREEN = "edit_profile_screen";
+  static const String HOME_SCREEN = "home_screen";
+  static const String FAVORITE_MEMORIES_SCREEN = "favorite_memories_screen";
+  static const String LEARN_PAGE = "learn_page_screen";
+  static const String FRIENDS_PROFILE_PAGE = "friends_profile_page";
+  static const String FAQ_SCREEN = "faq_screen";
+  static const String email_verification_screen = "email_verification_screen";
+}

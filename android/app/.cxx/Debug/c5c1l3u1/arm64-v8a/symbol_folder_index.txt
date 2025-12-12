@@ -1,0 +1,1 @@
+/Users/inurum5/Projects/Flutter Projects/legacy sync/legacy_sync/build/app/intermediates/cxx/Debug/c5c1l3u1/obj/arm64-v8a

@@ -1,0 +1,62 @@
+{
+  "project_info": {
+    "project_number": "230795071611",
+    "project_id": "legacysync-42f28",
+    "storage_bucket": "legacysync-42f28.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:230795071611:android:6ef5dcbc01563cb0b712de",
+        "android_client_info": {
+          "package_name": "com.legacy.sync"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "230795071611-erkdtkgai3b6tcultgn0gov265h3jaev.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.legacy.sync",
+            "certificate_hash": "8da20f0596488836fe81f8c92fa784e7b0914012"
+          }
+        },
+        {
+          "client_id": "230795071611-mbcqflm8g09rfp2pcnboon3vn48t6if0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.legacy.sync",
+            "certificate_hash": "7dd572a9a7098c4f6941a10ceed0da0d56fb958c"
+          }
+        },
+        {
+          "client_id": "230795071611-2rmck74kqil2jd6591odgdh5tgg29r5s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXngxqRa9R4WNuepQawu5-2AejqSX75UM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "230795071611-2rmck74kqil2jd6591odgdh5tgg29r5s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "230795071611-ts6bj51k9nme9cvjnidcqjvmhk5uuaes.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "io.LegacySync.LegacySync"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

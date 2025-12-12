@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/inurum5/development/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/inurum5/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/inurum5/Projects/Flutter Projects/legacy sync/legacy_sync/android/app/.cxx/RelWithDebInfo/1v105m1f/armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/inurum5/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/inurum5/Projects/Flutter Projects/legacy sync/legacy_sync/android/app/.cxx/RelWithDebInfo/1v105m1f/armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

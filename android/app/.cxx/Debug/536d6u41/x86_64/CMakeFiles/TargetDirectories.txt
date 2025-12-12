@@ -1,0 +1,2 @@
+/Users/inurum5/Projects/Flutter Projects/legacy sync/legacy_sync/android/app/.cxx/Debug/536d6u41/x86_64/CMakeFiles/edit_cache.dir
+/Users/inurum5/Projects/Flutter Projects/legacy sync/legacy_sync/android/app/.cxx/Debug/536d6u41/x86_64/CMakeFiles/rebuild_cache.dir

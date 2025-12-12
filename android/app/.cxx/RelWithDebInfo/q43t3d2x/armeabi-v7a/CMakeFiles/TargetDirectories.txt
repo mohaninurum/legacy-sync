@@ -1,0 +1,2 @@
+/Users/inurum5/Projects/Flutter Projects/legacy sync/legacy_sync/android/app/.cxx/RelWithDebInfo/q43t3d2x/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/inurum5/Projects/Flutter Projects/legacy sync/legacy_sync/android/app/.cxx/RelWithDebInfo/q43t3d2x/armeabi-v7a/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "230795071611",
+    "project_id": "legacysync-42f28",
+    "storage_bucket": "legacysync-42f28.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:230795071611:android:cf0eeee69f66e01eb712de",
+        "android_client_info": {
+          "package_name": "com.example.legacy_sync"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXngxqRa9R4WNuepQawu5-2AejqSX75UM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:230795071611:android:6ef5dcbc01563cb0b712de",
+        "android_client_info": {
+          "package_name": "com.legacy.sync"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXngxqRa9R4WNuepQawu5-2AejqSX75UM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
