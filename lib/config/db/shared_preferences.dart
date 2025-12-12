@@ -48,6 +48,7 @@ class AppPreference {
   static String KEY_ENABLE_NOTIFICATIONS = "KEY_ENABLE_NOTIFICATIONS";
   static String KEY_NEW_FEATURED_POSTS = "KEY_NEW_FEATURED_POSTS";
   static String KEY_ALL_NEW_POSTS = "KEY_ALL_NEW_POSTS";
+  static String congratulation = "congratulation";
 
   // Cache keys for question data
   static String KEY_CACHED_QUESTION_DATA = "KEY_CACHED_QUESTION_DATA_";

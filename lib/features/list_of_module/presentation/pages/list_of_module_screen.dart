@@ -96,7 +96,18 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
 
   Widget _buildBody(int moduleIndex) {
     print("moduleIndex: $moduleIndex");
-    return Padding(
+    return MultiBlocListener(
+  listeners: [
+    // BlocListener<AnswerCubit, AnswerState>(
+    //   listenWhen: (prev, curr) => prev.transcribedText != curr.transcribedText,
+    //   listener: (context, state) {
+    //     // Append recognized text into the answer text field
+    //     _answerController.text = state.transcribedText;
+    //     _answerController.selection = TextSelection.fromPosition(TextPosition(offset: _answerController.text.length));
+    //   },
+    // ),
+  ],
+  child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
@@ -115,7 +126,8 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
           ],
         ),
       ),
-    );
+    ),
+);
   }
 
   Widget _buildBottomButton(moduleIndex) {
@@ -154,7 +166,9 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
                   child: CustomButton(
                     isMoudel: true,
                     onPressed: () async {
-                      final result = await Navigator.pushNamed(context, RoutesName.ANSWER_SCREEN, arguments: {"qId": state.currentQuestionItems.questionidpK, "mIndex": questionsNumber - 1});
+                      print("moduleIndex${moduleIndex}");
+                      print(state.currentQuestionItems.questionidpK);
+                      final result = await Navigator.pushNamed(context, RoutesName.ANSWER_SCREEN, arguments: {"qId": state.currentQuestionItems.questionidpK, "mIndex": questionsNumber - 1,"moduleIndex":moduleIndex});
                       if (result == true) {
                        context.read<ListOfModuleCubit>().isQuestionContinue(true);
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Insight added successfully")));

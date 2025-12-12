@@ -13,6 +13,7 @@ class HomeState {
   final bool isJourneyAnimating;
   final String? errorMessage;
   final String referalCode;
+  final int? nextModuleToOpenIndex;
 
   const HomeState({
     this.isLoading = false,
@@ -24,6 +25,7 @@ class HomeState {
     this.errorMessage,
     this.friendsList,
     this.referalCode = "",
+    this.nextModuleToOpenIndex
   });
 
   factory HomeState.initial() {
@@ -31,7 +33,8 @@ class HomeState {
       journeyCards: JourneyCardModel.getDefaultCards(),
       pipeAnimations: PipeAnimationModel.getDefaultPipes(),
       referalCode: "",
-      isFirstVisit: false
+      isFirstVisit: false,
+        nextModuleToOpenIndex:null
     );
   }
 
@@ -45,6 +48,7 @@ class HomeState {
     bool? isJourneyAnimating,
     String? errorMessage,
     String? referalCode,
+    int? nextModuleToOpenIndex
   }) {
     return HomeState(
       isLoading: isLoading ?? this.isLoading,
@@ -56,6 +60,7 @@ class HomeState {
       isJourneyAnimating: isJourneyAnimating ?? this.isJourneyAnimating,
       errorMessage: errorMessage ?? this.errorMessage,
       isFirstVisit: isFirstVisit ?? this.isFirstVisit,
+      nextModuleToOpenIndex: nextModuleToOpenIndex ?? this.nextModuleToOpenIndex,
     );
   }
 

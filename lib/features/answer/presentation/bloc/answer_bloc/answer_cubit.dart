@@ -25,7 +25,6 @@ class AnswerCubit extends Cubit<AnswerState> {
 
   AnswerCubit() : super(AnswerState.initial());
   List<CameraDescription> _cameras = [];
-  String showCongratsDialog='';
   AnswerUseCase answerUseCase = AnswerUseCase();
   final FlutterTts flutterTts = FlutterTts();
 
@@ -506,8 +505,8 @@ class AnswerCubit extends Cubit<AnswerState> {
   }
 
   submitFinalAnswer(int qId, String answerText, BuildContext context, int mIndex) async {
+
     try {
-      showCongratsDialog='';
       TipDialogHelper.loading("Submitting..");
       File? file;
       int answerType;
@@ -572,18 +571,18 @@ class AnswerCubit extends Cubit<AnswerState> {
           TipDialogHelper.dismiss();
           retakeRecording();
           AppPreference().set(key: "SUBMITTED", value: "true");
-          Navigator.pop(context, true);
+
           if(r.data?.showCongratulation==true){
           String? userName=  await AppPreference().get (key: AppPreference.KEY_USER_FIRST_NAME);
          bool? isSuccess =    await showCongratulationsDialog(context: context,userName: userName,content: r.data?.congratulationText,moduleName: r.data?.nextModuleTitle);
-          print("isSuccess:-$isSuccess");
-           if(isSuccess==true){
-             showCongratsDialog="true";
-             print("isSuccess:-$isSuccess");
-           }else{
-             showCongratsDialog="false";
-             print("isSuccess:-$isSuccess");
-           }
+        if(isSuccess==true){
+          AppPreference().set(key: "congratulation", value: "true");
+        }else{
+          AppPreference().set(key: "congratulation", value: "false");
+        }
+         emit(state.copyWith(showCongratsDialog: isSuccess));
+          }else{
+            Navigator.pop(context, true);
           }
 
         },

@@ -26,7 +26,7 @@ class AnswerState  {
   final bool isRecordingPaused;
   final bool isAudioExist;
   final bool isVideoExist;
-  final bool showCongratsDialog;
+  final bool? showCongratsDialog;
 
 
   // UI states
@@ -117,7 +117,7 @@ class AnswerState  {
     hasStartedRecording: false,
     isFrontCamera: false,
     isVideoProcess: false,
-    showCongratsDialog: false,
+   showCongratsDialog:null,
   );
 
   AnswerState copyWith({
@@ -153,7 +153,7 @@ class AnswerState  {
     bool? hasStartedRecording,
     bool? isFrontCamera,
     bool? isVideoProcess,
-    bool? showCongratsDialog,
+     bool? showCongratsDialog
   }) {
     return AnswerState(
       isLoading: isLoading ?? this.isLoading,
@@ -246,41 +246,6 @@ class AnswerState  {
   }
 
 
-  @override
-  List<Object?> get props => [
-    isLoading,
-    isSpeaking,
-    answers,
-    isAudioExist,
-    isVideoExist,
-    errorMessage,
-    currentQuestionId,
-    hasSelectedAnswers,
-    recordingType,
-    recordingState,
-    leavePageDialogState,
-    transcribedText,
-    audioFilePath,
-    videoFilePath,
-    recordingDuration,
-    isRecordingPaused,
-    showContinueButton,
-    showRetakeButton,
-    waveform,
-    cameraInitialized,
-    permissionsGranted,
-    startTime,
-    endTime,
-    videoPath,
-    isAudioPlaying,
-    isVideoPlaying,
-    isFlashOn,
-    playbackSpeed,
-    wordCount,
-    hasStartedRecording,
-    isFrontCamera,
-    isVideoProcess,
-    showCongratsDialog,   // 🔥 MOST IMPORTANT
-  ];
+
 
 }

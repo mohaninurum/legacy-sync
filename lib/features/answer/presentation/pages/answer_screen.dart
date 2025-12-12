@@ -20,15 +20,21 @@ import 'package:camera/camera.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../../../config/db/shared_preferences.dart';
 import '../../../../config/routes/routes_name.dart';
+import '../../../../core/components/comman_components/locked_question_dialog.dart';
+import '../../../home/domain/usecases/navigate_to_module_usecase.dart';
+import '../../../home/presentation/bloc/home_bloc/home_cubit.dart';
+import '../../../list_of_module/presentation/bloc/list_of_module_bloc/list_of_module_cubit.dart';
 import '../widget/leave_page_dialog.dart';
 
 class AnswerScreen extends StatefulWidget {
   final int qId;
   final int mIndex;
   final String questionText;
+  final int moduleIndex;
 
-  const AnswerScreen({super.key, required this.qId, required this.mIndex, this.questionText = ""});
+  const AnswerScreen({super.key, required this.qId, required this.mIndex, this.questionText = "",required this.moduleIndex});
 
   @override
   State<AnswerScreen> createState() => _AnswerScreenState();
@@ -57,6 +63,38 @@ class _AnswerScreenState extends State<AnswerScreen> {
     _videoPreviewController?.dispose();
     super.dispose();
   }
+
+
+  void _onCardTapped(int index) async {
+    print("mudule index...$index");
+    final cubit = context.read<HomeCubit>();
+    print(cubit.state.journeyCards[index].title);
+    print(cubit.state.journeyCards[index].id);
+    final state = cubit.state;
+    final card = state.journeyCards[index];
+    print(index);
+    print(card.id);
+    print(card.title);
+    final navigationArgs = NavigateToModuleUsecase.execute(card);
+    final result = await Navigator.pushReplacementNamed(context, RoutesName.LIST_OF_MODULE, arguments: navigationArgs);
+    if (result == true) {
+      await context.read<HomeCubit>().startJourneyAnimation(index);
+    }
+    // if (state.journeyCards[index].isEnabled) {
+    //   final card = state.journeyCards[index];
+    //   print(card);
+    //   final navigationArgs = NavigateToModuleUsecase.execute(card);
+    //   final result = await Navigator.pushNamed(context, RoutesName.LIST_OF_MODULE, arguments: navigationArgs);
+    //   if (result == true) {
+    //     await context.read<HomeCubit>().startJourneyAnimation(index);
+    //   }
+    // } else {
+    //   LockedQuestionDialog.show(context, title: "module");
+    // }
+  }
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +155,29 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       }
                     },
                   ),
+                  BlocListener<AnswerCubit, AnswerState>(
+                    listenWhen: (prev, curr) =>
+                    prev.showCongratsDialog != curr.showCongratsDialog,
+                    listener: (context, state) {
+                      print("🎉 Congrats Listener fired = ${state.showCongratsDialog}");
+
+                      if (state.showCongratsDialog == true) {
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          RoutesName.HOME_SCREEN,
+                              (route) => false,
+                        );
+
+
+                      }
+                      else if (state.showCongratsDialog == false) {
+                        Navigator.pop(context);
+                        // int index=widget.moduleIndex;
+                        // _onCardTapped(index);
+                      }
+                    },
+                  ),
+
                 ],
                 child: _buildBody(),
               ),
@@ -184,7 +245,19 @@ class _AnswerScreenState extends State<AnswerScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        child: Column(children: [ _buildQuestionCard(), const SizedBox(height: 30), _buildAnswareOptions(), const SizedBox(height: 30), _buildActionButtons()]),
+        child: Column(children: [
+
+        //   ElevatedButton(onPressed: () {
+        // print(widget.mIndex);
+        // print(widget.qId);
+        // print(widget.questionText);
+        // print(widget.moduleIndex);
+        // int index=widget.moduleIndex;
+        // _onCardTapped(index);
+        //   }, child:Text("module check..")),
+
+
+          _buildQuestionCard(), const SizedBox(height: 30), _buildAnswareOptions(), const SizedBox(height: 30), _buildActionButtons()]),
       ),
     );
   }
@@ -572,16 +645,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
   Widget _buildInitialActionButtons() {
     return BlocConsumer<AnswerCubit, AnswerState>(
       listener: (context, state) {
-         print("Congratulation Dialog listener called ${context.read<AnswerCubit>().showCongratsDialog}");
-         if (context.read<AnswerCubit>().showCongratsDialog == "true") {
-           print("TRUE → Next Module");
-           Navigator.pop(context);
-         }else if(context.read<AnswerCubit>().showCongratsDialog == "false"){
-           Navigator.pushReplacementNamed(
-             context,
-             RoutesName.HOME_SCREEN,
-           );
-         }
+
 
       },
       builder: (context, state) {

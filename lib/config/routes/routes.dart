@@ -125,7 +125,8 @@ class Routes {
         final qId = data!["qId"];
         final mIndex = data!["mIndex"];
         final questionText = data!["questionText"];
-        return _animatedRouteDownToUp(AnswerScreen(qId: qId ?? 0, mIndex: mIndex ?? 0,questionText:questionText??""));
+        final moduleIndex = data!["moduleIndex"];
+        return _animatedRouteDownToUp(AnswerScreen(qId: qId ?? 0, mIndex: mIndex ?? 0,questionText:questionText??"",moduleIndex: moduleIndex??1,));
       case RoutesName.LEGACY_WRAPPED_SCREEN:
         return _animatedRouteDownToUp(const LegacyWrappedScreen());
       case RoutesName.VOICE_GROWING_SCREEN:

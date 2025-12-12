@@ -141,11 +141,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         // Listen for animation state changes and trigger Flutter animations
         for (int i = 0; i < state.pipeAnimations.length; i++) {
           final pipe = state.pipeAnimations[i];
+          print("index pipe ${pipe.index}");
           if (pipe.isAnimating && !_pipeControllers[i].isAnimating) {
+            print("stop animation...f$i");
             _pipeControllers[i].forward();
           } else if (!pipe.isAnimating && _pipeControllers[i].isAnimating) {
+            print("stop animation...s$i");
+            print("index pipe stop ${pipe.animationProgress}");
             _pipeControllers[i].stop();
           }
+        }
+        if (state.nextModuleToOpenIndex != null) {
+          final index = state.nextModuleToOpenIndex!;
+          final card = state.journeyCards[index];
+
+          final args = NavigateToModuleUsecase.execute(card);
+
+          Navigator.pushNamed(
+            context,
+            RoutesName.LIST_OF_MODULE,
+            arguments: args,
+          );
         }
       },
       builder: (context, state) {
