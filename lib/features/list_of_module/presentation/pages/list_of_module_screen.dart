@@ -28,6 +28,8 @@ import 'package:pull_down_button/pull_down_button.dart';
 import '../../../../config/db/shared_preferences.dart';
 import '../../../../core/components/comman_components/congratulations_module_dialog.dart';
 import '../../../../core/components/comman_components/locked_question_dialog.dart';
+import '../../../answer/presentation/bloc/answer_bloc/answer_cubit.dart';
+import '../../../answer/presentation/bloc/answer_state/answer_state.dart';
 import '../../../answer/presentation/widget/leave_page_dialog.dart';
 import '../../data/repositories/list_of_module_repository_impl.dart';
 
@@ -52,13 +54,22 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
     context.read<ListOfModuleCubit>().isQuestionContinue(false);
     super.initState();
     _initializeData();
-
+     print("moduleIndex: ${widget.moduleId}");
+    AppPreference().set(key: "ModuleIndex", value: "${widget.moduleId}");
 
   }
 
   Future<void> _initializeData() async {
      isSubmitted=  await AppPreference().get(key: "SUBMITTED");
+     print("isSubmitted: $isSubmitted");
     context.read<ListOfModuleCubit>().loadQuestion(context: context, moduleId: widget.moduleId, friendId: widget.friendId, fromFriends: widget.fromFriends, preExpanded: widget.preExpanded);
+  }
+  Future<void> initializeData() async {
+     isSubmitted=  await AppPreference().get(key: "SUBMITTED");
+     print("isSubmitted: $isSubmitted");
+    context.read<ListOfModuleCubit>().loadQuestion(context: context, moduleId: widget.moduleId, friendId: widget.friendId, fromFriends: widget.fromFriends, preExpanded: widget.preExpanded);
+
+     Navigator.pop(context, true);
   }
 
   @override
@@ -95,17 +106,25 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
   }
 
   Widget _buildBody(int moduleIndex) {
-    print("moduleIndex: $moduleIndex");
     return MultiBlocListener(
+
   listeners: [
-    // BlocListener<AnswerCubit, AnswerState>(
-    //   listenWhen: (prev, curr) => prev.transcribedText != curr.transcribedText,
-    //   listener: (context, state) {
-    //     // Append recognized text into the answer text field
-    //     _answerController.text = state.transcribedText;
-    //     _answerController.selection = TextSelection.fromPosition(TextPosition(offset: _answerController.text.length));
-    //   },
-    // ),
+    BlocListener<AnswerCubit, AnswerState>(
+      listener: (context, state) {
+        if (state.showCongratsDialog == true) {
+          initializeData();
+
+        }
+      },
+    ),
+    BlocListener<ListOfModuleCubit, ListOfModuleState>(
+      listener: (context, state) {
+        if (state.isDataSave == true) {
+        }
+      },
+    ),
+
+
   ],
   child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -166,8 +185,6 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
                   child: CustomButton(
                     isMoudel: true,
                     onPressed: () async {
-                      print("moduleIndex${moduleIndex}");
-                      print(state.currentQuestionItems.questionidpK);
                       final result = await Navigator.pushNamed(context, RoutesName.ANSWER_SCREEN, arguments: {"qId": state.currentQuestionItems.questionidpK, "mIndex": questionsNumber - 1,"moduleIndex":moduleIndex});
                       if (result == true) {
                        context.read<ListOfModuleCubit>().isQuestionContinue(true);

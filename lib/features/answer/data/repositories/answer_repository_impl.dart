@@ -240,14 +240,14 @@ class AnswerRepositoryImpl implements AnswerRepository {
 
 
   @override
-  Future<bool> uploadMuxVideoAssets(Map<String, dynamic> body) async{
+  ResultFuture<SubmitAnswerResponse> uploadMuxVideoAssets(Map<String, dynamic> body) async{
     try {
       final res = await _apiServices.getPostApiResponse('${ApiURL.baseURL}/legacy-modules/answers/submit-using-mux',body);
-      return res.fold((error) =>  false, (data) =>  true);
+      return   res.fold((error) => Left(AppException(error.message)), (data) => Right(SubmitAnswerResponse.fromJson(data)));
     } on AppException catch (e) {
-      return false;
+      return Left(AppException(e.message));
     } catch (e) {
-      return false;
+      return Left(AppException(e.toString()));
     }
   }
 

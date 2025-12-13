@@ -21,7 +21,7 @@ class AnswerUseCase {
     return await repository.uploadToMux(uploadUrl, filePath);
   }
 
-  Future<bool> uploadMuxVideoAssets(Map<String,dynamic> body) async {
+  ResultFuture<SubmitAnswerResponse> uploadMuxVideoAssets(Map<String,dynamic> body) async {
     return await repository.uploadMuxVideoAssets(body);
   }
 }

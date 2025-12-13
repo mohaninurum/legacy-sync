@@ -17,6 +17,7 @@ import 'package:legacy_sync/features/home/presentation/widgets/coming_soon_widge
 import 'package:legacy_sync/features/home/presentation/pages/journey_content_widget.dart';
 import 'package:legacy_sync/features/profile/presentation/bloc/profile_bloc/profile_cubit.dart';
 import 'package:legacy_sync/features/profile/presentation/pages/profile_page.dart';
+import '../../../../config/db/shared_preferences.dart';
 import '../../../../config/routes/routes_name.dart';
 import '../../../../core/images/images.dart';
 
@@ -31,6 +32,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late AnimationController _mainController;
   late Animation<double> _mainAnimation;
+  String? _selectedModule;
+  String? congratulationValue;
 
   // Animation controllers for pipe flow
   late List<AnimationController> _pipeControllers;
@@ -44,6 +47,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     context.read<HomeCubit>().getFriendsList();
     context.read<ProfileCubit>().loadProfile(context);
     context.read<ProfileCubit>().getLegacySteps();
+    getModule();
+  }
+
+
+  getModule() async {
+    _selectedModule=  await AppPreference().get(key: "ModuleIndex");
+    congratulationValue=  await AppPreference().get(key: "congratulation");
+    print("_selectedModule $_selectedModule congratulationValue $congratulationValue");
 
   }
 
@@ -81,10 +92,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (state.journeyCards[index].isEnabled) {
       final card = state.journeyCards[index];
       final navigationArgs = NavigateToModuleUsecase.execute(card);
-      final result = await Navigator.pushNamed(context, RoutesName.LIST_OF_MODULE, arguments: navigationArgs);
-      if (result == true) {
-        await context.read<HomeCubit>().startJourneyAnimation(index);
-      }
+      await Navigator.pushNamed(context, RoutesName.LIST_OF_MODULE, arguments: navigationArgs).then((value) async {
+        if (value == true) {
+          // print("Back home screen...");
+          getModule();
+          await context.read<HomeCubit>().startJourneyAnimation(index);
+          // if (_selectedModule=="${state.nextModuleToOpenIndex}" && congratulationValue=="true" ) {
+          //   AppPreference().set(key: "congratulation", value: "");
+          //   final index = int.parse(_selectedModule!);
+          //   final card = state.journeyCards[index];
+          //   final args = NavigateToModuleUsecase.execute(card);
+          //   Navigator.pushNamed(
+          //     context,
+          //     RoutesName.LIST_OF_MODULE,
+          //     arguments: args,
+          //   );
+          // }
+        }
+      },);
+
     } else {
       LockedQuestionDialog.show(context, title: "module");
     }
@@ -138,31 +164,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return BlocConsumer<HomeCubit, HomeState>(
       listener: (context, state) {
+
         // Listen for animation state changes and trigger Flutter animations
         for (int i = 0; i < state.pipeAnimations.length; i++) {
           final pipe = state.pipeAnimations[i];
-          print("index pipe ${pipe.index}");
           if (pipe.isAnimating && !_pipeControllers[i].isAnimating) {
-            print("stop animation...f$i");
             _pipeControllers[i].forward();
           } else if (!pipe.isAnimating && _pipeControllers[i].isAnimating) {
-            print("stop animation...s$i");
-            print("index pipe stop ${pipe.animationProgress}");
             _pipeControllers[i].stop();
           }
         }
-        if (state.nextModuleToOpenIndex != null) {
-          final index = state.nextModuleToOpenIndex!;
+
+
+        print("Navigation...${_selectedModule}>>>>${state.nextModuleToOpenIndex}:-$congratulationValue");
+
+        // 2️⃣ Navigation (OUTSIDE loop)
+        if (_selectedModule=="${state.nextModuleToOpenIndex}" && congratulationValue=="true" ) {
+          AppPreference().set(key: "congratulation", value: "");
+          final index = int.parse(_selectedModule!);
           final card = state.journeyCards[index];
-
           final args = NavigateToModuleUsecase.execute(card);
-
           Navigator.pushNamed(
             context,
             RoutesName.LIST_OF_MODULE,
             arguments: args,
           );
         }
+
       },
       builder: (context, state) {
         return AppWillPopScope(
@@ -191,6 +219,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   selectedTab: state.selectedTab,
                   onTabChanged: (index) {
                     context.read<HomeCubit>().onNavigationTabChanged(index);
+
                   },
                 ),
               ),

@@ -26,6 +26,7 @@ import '../../../../core/components/comman_components/locked_question_dialog.dar
 import '../../../home/domain/usecases/navigate_to_module_usecase.dart';
 import '../../../home/presentation/bloc/home_bloc/home_cubit.dart';
 import '../../../list_of_module/presentation/bloc/list_of_module_bloc/list_of_module_cubit.dart';
+import '../widget/full_screen_video_player.dart';
 import '../widget/leave_page_dialog.dart';
 
 class AnswerScreen extends StatefulWidget {
@@ -44,6 +45,8 @@ class _AnswerScreenState extends State<AnswerScreen> {
   TextEditingController _answerController = TextEditingController();
   VideoPlayerController? _videoPreviewController;
   bool isPopping = false;
+  VoidCallback? _videoListener;
+  bool _isDragging = false;
   @override
   void initState() {
     super.initState();
@@ -56,12 +59,35 @@ class _AnswerScreenState extends State<AnswerScreen> {
     });
     context.read<AnswerCubit>().initialState();
   }
+  void _addVideoListener() {
+    _videoListener ??= () {
+      if (!mounted || _isDragging) return;
+      setState(() {});
+    };
 
+    _videoPreviewController?.removeListener(_videoListener!);
+    _videoPreviewController?.addListener(_videoListener!);
+  }
+
+  double get _sliderValue {
+    final c = _videoPreviewController!;
+    return c.value.position.inMilliseconds
+        .clamp(0, c.value.duration.inMilliseconds)
+        .toDouble();
+  }
   @override
   void dispose() {
-    _answerController.dispose();
+    if (_videoListener != null) {
+      _videoPreviewController?.removeListener(_videoListener!);
+    }
     _videoPreviewController?.dispose();
     super.dispose();
+  }
+
+  String _formatDuration(Duration d) {
+    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
   }
 
 
@@ -91,6 +117,22 @@ class _AnswerScreenState extends State<AnswerScreen> {
     // } else {
     //   LockedQuestionDialog.show(context, title: "module");
     // }
+  }
+
+  void _openFullScreen(BuildContext context) async {
+    if (_videoPreviewController == null) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FullScreenVideoPreview(
+          controller: _videoPreviewController!,
+        ),
+      ),
+    );
+
+    // Full screen se wapas aane ke baad UI refresh
+    if (mounted) setState(() {});
   }
 
 
@@ -143,6 +185,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                           _videoPreviewController = VideoPlayerController.file(File(state.videoPath!));
                           await _videoPreviewController!.initialize();
                           await _videoPreviewController!.setLooping(true);
+                          _addVideoListener();
                           setState(() {});
                         } catch (e) {
                           print("Video preview initialization error: $e");
@@ -162,11 +205,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       print("🎉 Congrats Listener fired = ${state.showCongratsDialog}");
 
                       if (state.showCongratsDialog == true) {
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          RoutesName.HOME_SCREEN,
-                              (route) => false,
-                        );
+                        // Navigator.pushNamedAndRemoveUntil(
+                        //   context,
+                        //   RoutesName.HOME_SCREEN,
+                        //       (route) => false,
+                        // );
 
 
                       }
@@ -502,7 +545,87 @@ class _AnswerScreenState extends State<AnswerScreen> {
                   ),
                 ),
 
+              // full screen
+              if (state.isCompleted)
+              Positioned(
+                right: 12,
+                bottom: 55,
+                child: GestureDetector(
+                  onTap: () {
+                     _openFullScreen(context);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(
+                      Icons.fullscreen,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ),
+
+
               // Play/pause controls for completed video preview
+              if (_videoPreviewController != null &&
+                  _videoPreviewController!.value.isInitialized) ...[
+                Positioned(
+                  bottom: 10,
+                  left: 20,
+                  right:20,
+                  child: Column(
+                    children: [
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 3,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                        ),
+                        child: Slider(
+                          activeColor: AppColors.etbg,
+                          min: 0,
+                          max: _videoPreviewController!.value.duration.inMilliseconds.toDouble(),
+                          value: _sliderValue,
+                          onChangeStart: (_) {
+                            _isDragging = true;
+                            _videoPreviewController?.pause();
+                          },
+                          onChanged: (value) {
+                            _videoPreviewController?.seekTo(
+                              Duration(milliseconds: value.toInt()),
+                            );
+                          },
+                          onChangeEnd: (_) {
+                            _isDragging = false;
+                            _videoPreviewController?.play();
+                          },
+                        )
+
+                      ),
+
+                      // 🔹 Time Row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _formatDuration(_videoPreviewController!.value.position),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            _formatDuration(_videoPreviewController!.value.duration),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               if (state.isCompleted)
                 Center(
                   child: GestureDetector(
@@ -515,6 +638,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                           _videoPreviewController!.play();
                           context.read<AnswerCubit>().playVideoPreview();
                         }
+
                         setState(() {});
                       }
                     },
@@ -558,6 +682,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                     ),
                   ),
                 ),
+
             ],
           ),
         ),

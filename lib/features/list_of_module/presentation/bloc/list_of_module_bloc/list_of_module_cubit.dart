@@ -50,7 +50,7 @@ class ListOfModuleCubit extends Cubit<ListOfModuleState> {
 
       moduleData.fold(
         (failure) {
-          emit(state.copyWith(isLoading: false, errorMessage: failure.message.toString()));
+          emit(state.copyWith(isLoading: false, errorMessage: failure.message.toString(),isDataSave: true));
         },
         (data) async {
           if (data.data != null) {
@@ -59,12 +59,12 @@ class ListOfModuleCubit extends Cubit<ListOfModuleState> {
             // Process the data
             _processQuestionData(data.data!, preExpanded, context);
           } else {
-            emit(state.copyWith(isLoading: false, errorMessage: "No data received"));
+            emit(state.copyWith(isLoading: false, errorMessage: "No data received",isDataSave: true));
           }
         },
       );
     } catch (e) {
-      emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
+      emit(state.copyWith(isLoading: false, errorMessage: e.toString(),isDataSave: true));
     }
   }
 
@@ -100,7 +100,6 @@ class ListOfModuleCubit extends Cubit<ListOfModuleState> {
         if (lastEnabledIndex != -1 && items != null) {
           expandCard(index: lastEnabledIndex);
           getExpandedCardData(questionId: items.questionidpK!, index: lastEnabledIndex);
-          print("Hemant Kumawat");
           final result = await Navigator.pushNamed(context, RoutesName.ANSWER_SCREEN, arguments: {"qId": items.questionidpK, "mIndex": lastEnabledIndex, "questionText": items.questiondescription});
           if (result == true) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Insight added successfully")));

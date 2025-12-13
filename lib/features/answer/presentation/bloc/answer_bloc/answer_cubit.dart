@@ -419,7 +419,7 @@ class AnswerCubit extends Cubit<AnswerState> {
         String? finalSegmentPath;
         if(state.isFrontCamera){
           emit(state.copyWith(isVideoProcess:true));
-          finalSegmentPath = await removeMirror(videoFile.path);
+          finalSegmentPath = await removeMirrorInBackground(videoFile.path);
         }
         // Stop the timer
 
@@ -576,6 +576,7 @@ class AnswerCubit extends Cubit<AnswerState> {
           String? userName=  await AppPreference().get (key: AppPreference.KEY_USER_FIRST_NAME);
          bool? isSuccess =    await showCongratulationsDialog(context: context,userName: userName,content: r.data?.congratulationText,moduleName: r.data?.nextModuleTitle);
         if(isSuccess==true){
+          Navigator.pop(context, true);
           AppPreference().set(key: "congratulation", value: "true");
         }else{
           AppPreference().set(key: "congratulation", value: "false");
@@ -603,20 +604,40 @@ class AnswerCubit extends Cubit<AnswerState> {
 
       final body = {"question_id": qId, "user_id": userId, "upload_id": uploadID, "answer_type": 3};
       final result = await answerUseCase.uploadMuxVideoAssets(body);
-      if (result) {
-        context.read<ListOfModuleCubit>().getExpandedCardData(questionId: qId, index: mIndex);
-        TipDialogHelper.success("Submitted");
-        await Future.delayed(const Duration(milliseconds: 1200));
-        TipDialogHelper.dismiss();
-        retakeRecording();
-        Navigator.pop(context, true);
-      } else {
-        TipDialogHelper.success("Submitted");
-        await Future.delayed(const Duration(milliseconds: 1200));
-        TipDialogHelper.dismiss();
-        retakeRecording();
-        Navigator.pop(context, true);
-      }
+      print("Upload result: $result");
+      result.fold(
+            (l) async {
+          TipDialogHelper.dismiss();
+          Utils.showInfoDialog(context: context, title: "Submission Failed", content: l.message ?? "Failed to submit answer. Please try again.");
+          TipDialogHelper.success("Submitted");
+          await Future.delayed(const Duration(milliseconds: 1200));
+          TipDialogHelper.dismiss();
+          retakeRecording();
+          Navigator.pop(context, true);
+        },
+            (r) async {
+              context.read<ListOfModuleCubit>().getExpandedCardData(questionId: qId, index: mIndex);
+              TipDialogHelper.success("Submitted");
+              await Future.delayed(const Duration(milliseconds: 1200));
+              TipDialogHelper.dismiss();
+              retakeRecording();
+              AppPreference().set(key: "SUBMITTED", value: "true");
+              if(r.data?.showCongratulation==true){
+                String? userName=  await AppPreference().get (key: AppPreference.KEY_USER_FIRST_NAME);
+                bool? isSuccess =    await showCongratulationsDialog(context: context,userName: userName,content: r.data?.congratulationText,moduleName: r.data?.nextModuleTitle);
+                if(isSuccess==true){
+                  Navigator.pop(context, true);
+                  AppPreference().set(key: "congratulation", value: "true");
+                }else{
+                  AppPreference().set(key: "congratulation", value: "false");
+                }
+                emit(state.copyWith(showCongratsDialog: isSuccess));
+              }else{
+                Navigator.pop(context, true);
+              }
+        },
+      );
+
     } else {
       TipDialogHelper.success("Submitted");
       await Future.delayed(const Duration(milliseconds: 1200));
@@ -625,6 +646,7 @@ class AnswerCubit extends Cubit<AnswerState> {
       Navigator.pop(context, true);
     }
     AppPreference().set(key: "SUBMITTED", value: "true");
+
   }
 
   void toggleFlash() {
@@ -852,9 +874,43 @@ class AnswerCubit extends Cubit<AnswerState> {
     }
   }
 
+  // Future<String> removeMirrorInBackground(String inputPath) async {
+  //   final dir = await getTemporaryDirectory();
+  //   final outPath =
+  //       '${dir.path}/fixed_${DateTime.now().millisecondsSinceEpoch}.mp4';
+  //
+  //   final cmd =
+  //       "-i \"$inputPath\" -vf hflip -c:v libx264 -preset veryfast -crf 23 -c:a copy \"$outPath\"";
+  //
+  //   await FFmpegKit.executeAsync(
+  //     cmd,
+  //         (session) async {
+  //       final returnCode = await session.getReturnCode();
+  //
+  //       if (returnCode != null && returnCode.isValueSuccess()) {
+  //         print("✔ Video saved in background: $outPath");
+  //       } else {
+  //         print("❌ FFmpeg failed in background");
+  //       }
+  //     },
+  //         (log) {
+  //       // Optional: logs
+  //       print(log.getMessage());
+  //     },
+  //         (statistics) {
+  //       // Optional: progress
+  //       print(
+  //         "⏳ Processing: ${statistics.getTime()} ms",
+  //       );
+  //     },
+  //   );
+  //
+  //   // Immediately return output path (processing continues)
+  //   return outPath;
+  // }
 
 
-  Future<String> removeMirror(String inputPath) async {
+  Future<String> removeMirrorInBackground(String inputPath) async {
     final dir = await getTemporaryDirectory();
     final outPath =
         '${dir.path}/fixed_${DateTime.now().millisecondsSinceEpoch}.mp4';

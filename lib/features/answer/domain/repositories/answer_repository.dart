@@ -12,5 +12,5 @@ abstract class AnswerRepository {
   ResultFuture<SubmitAnswerResponse> submitAnswer({required int qId,required int userId,required int answerType,required String answerText, File? file});
   Future<void> updateAnswerSelection(int answerId, bool isSelected);
   Future<bool> uploadToMux(String uploadUrl, String filePath);
-  Future<bool> uploadMuxVideoAssets(Map<String,dynamic> body);
+  ResultFuture<SubmitAnswerResponse> uploadMuxVideoAssets(Map<String,dynamic> body);
 }

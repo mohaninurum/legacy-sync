@@ -14,6 +14,7 @@ class HomeState {
   final String? errorMessage;
   final String referalCode;
   final int? nextModuleToOpenIndex;
+  final bool isUserTriggeredJourney;
 
   const HomeState({
     this.isLoading = false,
@@ -25,7 +26,8 @@ class HomeState {
     this.errorMessage,
     this.friendsList,
     this.referalCode = "",
-    this.nextModuleToOpenIndex
+    this.nextModuleToOpenIndex,
+    this.isUserTriggeredJourney = false,
   });
 
   factory HomeState.initial() {
@@ -34,7 +36,8 @@ class HomeState {
       pipeAnimations: PipeAnimationModel.getDefaultPipes(),
       referalCode: "",
       isFirstVisit: false,
-        nextModuleToOpenIndex:null
+        nextModuleToOpenIndex:null,
+        isUserTriggeredJourney: false
     );
   }
 
@@ -48,7 +51,8 @@ class HomeState {
     bool? isJourneyAnimating,
     String? errorMessage,
     String? referalCode,
-    int? nextModuleToOpenIndex
+    int? nextModuleToOpenIndex,
+    bool? isUserTriggeredJourney,
   }) {
     return HomeState(
       isLoading: isLoading ?? this.isLoading,
@@ -61,6 +65,8 @@ class HomeState {
       errorMessage: errorMessage ?? this.errorMessage,
       isFirstVisit: isFirstVisit ?? this.isFirstVisit,
       nextModuleToOpenIndex: nextModuleToOpenIndex ?? this.nextModuleToOpenIndex,
+      isUserTriggeredJourney: isUserTriggeredJourney ?? this.isUserTriggeredJourney,
+
     );
   }
 

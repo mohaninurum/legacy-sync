@@ -187,6 +187,7 @@ class HomeCubit extends Cubit<HomeState> {
   void onNavigationTabChanged(int tabIndex) {
     final selectedTab = NavigationTab.fromIndex(tabIndex);
     emit(state.copyWith(selectedTab: selectedTab));
+
   }
 
   Future<void> startJourneyAnimation(int cardIndex) async {
@@ -217,6 +218,7 @@ class HomeCubit extends Cubit<HomeState> {
       print("Cubit: Auto-completing animation for card $cardIndex");
       completeJourneyAnimation(cardIndex);
     } else {
+      print("Cubit: Auto-completing animation for card else wala $cardIndex");
       completeJourneyAnimation(cardIndex);
     }
   }
@@ -246,11 +248,48 @@ class HomeCubit extends Cubit<HomeState> {
       journeyCards: currentCards,
       pipeAnimations: currentPipes,
       isJourneyAnimating: false,
+        nextModuleToOpenIndex:cardIndex+1
     ));
 
     // Save updated state to cache whenever a module is enabled
     _saveCacheData(currentCards, currentPipes);
+
   }
+
+
+  Future<void> completeAndAutoStartNext(int cardIndex) async {
+    final updatedCards = List<JourneyCardModel>.from(state.journeyCards);
+    final updatedPipes = List<PipeAnimationModel>.from(state.pipeAnimations);
+
+    // Complete current module
+    updatedCards[cardIndex] = updatedCards[cardIndex]
+        .copyWith(isEnabled: true, isAnimating: false);
+
+    if (cardIndex < updatedPipes.length) {
+      updatedPipes[cardIndex] =
+          updatedPipes[cardIndex].copyWith(isAnimating: false, animationProgress: 1.0);
+    }
+
+    int nextIndex = cardIndex + 1;
+
+    // Enable next module
+    if (nextIndex < updatedCards.length) {
+      updatedCards[nextIndex] =
+          updatedCards[nextIndex].copyWith(isEnabled: true);
+    }
+
+    // Emit changes + instruction to navigate
+    emit(state.copyWith(
+      journeyCards: updatedCards,
+      pipeAnimations: updatedPipes,
+      nextModuleToOpenIndex: nextIndex,   // 👈 Navigation signal
+    ));
+
+    // Reset signal so that listener triggers only once
+    emit(state.copyWith(nextModuleToOpenIndex: null));
+  }
+
+
 
   void resetJourney() {
     final resetCards = state.journeyCards.asMap().entries.map((entry) {
