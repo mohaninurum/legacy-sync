@@ -16,7 +16,7 @@ import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:legacy_sync/features/answer/presentation/bloc/answer_state/answer_state.dart';
 import 'package:tip_dialog/tip_dialog.dart';
-
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../../../../../config/routes/routes_name.dart';
 import '../../../../../core/components/comman_components/congratulations_module_dialog.dart';
 
@@ -75,6 +75,13 @@ class AnswerCubit extends Cubit<AnswerState> {
       if (cameras.isNotEmpty) {
         _cameraController = CameraController(cameras.first, ResolutionPreset.high, enableAudio: true);
         await _cameraController!.initialize();
+        await cameraController?.setFocusMode(FocusMode.auto);
+        if(state.zoom==1.0){
+          loadZoomLimits();
+        }else{
+          setZoom( state.zoom);
+        }
+
       }
     } catch (e) {
       print("Camera initialization error: $e");
@@ -386,6 +393,7 @@ class AnswerCubit extends Cubit<AnswerState> {
   Future<void> pauseVideoRecording() async {
     try {
       if (_cameraController != null && _cameraController!.value.isRecordingVideo) {
+
         await _cameraController!.pauseVideoRecording();
         _recordingTimer?.cancel();
         emit(state.copyWith(recordingState: RecordingState.paused));
@@ -401,6 +409,7 @@ class AnswerCubit extends Cubit<AnswerState> {
     try {
 
       if (_cameraController != null && state.recordingState == RecordingState.paused) {
+        await cameraController?.setFocusMode(FocusMode.auto);
         await _cameraController!.resumeVideoRecording();
         _startRecordingTimer();
         emit(state.copyWith(recordingState: RecordingState.recording,isVideoExist: true));
@@ -598,6 +607,9 @@ class AnswerCubit extends Cubit<AnswerState> {
   }
 
   void uploadVideoAnswer(String url, String uploadID, String filePath, BuildContext context, int qId, int mIndex) async {
+    bool isUploading = true;
+    // final result = await answerUseCase.uploadToMux(url, filePath);
+    // uploadToMuxForeground(url, filePath);
     final result = await answerUseCase.uploadToMux(url, filePath);
     if (result) {
       final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
@@ -609,7 +621,7 @@ class AnswerCubit extends Cubit<AnswerState> {
             (l) async {
           TipDialogHelper.dismiss();
           Utils.showInfoDialog(context: context, title: "Submission Failed", content: l.message ?? "Failed to submit answer. Please try again.");
-          TipDialogHelper.success("Submitted");
+          TipDialogHelper.success("Submission Failed");
           await Future.delayed(const Duration(milliseconds: 1200));
           TipDialogHelper.dismiss();
           retakeRecording();
@@ -638,7 +650,8 @@ class AnswerCubit extends Cubit<AnswerState> {
         },
       );
 
-    } else {
+    }
+    else {
       TipDialogHelper.success("Submitted");
       await Future.delayed(const Duration(milliseconds: 1200));
       TipDialogHelper.dismiss();
@@ -648,6 +661,31 @@ class AnswerCubit extends Cubit<AnswerState> {
     AppPreference().set(key: "SUBMITTED", value: "true");
 
   }
+
+
+
+  Future<bool> uploadToMuxForeground(String url, String filePath) async {
+    bool uploadResult = false;
+
+    // await FlutterForegroundTask.startService(
+    //   notificationTitle: 'Uploading video',
+    //   notificationText: 'Upload in progress...',
+    //   callback: (){
+    //
+    //   },
+    // );
+
+    // Run the upload
+    final result = await answerUseCase.uploadToMux(url, filePath);
+        if (result) {
+    }
+
+    // Stop foreground service after upload
+    // await FlutterForegroundTask.stopService();
+
+    return uploadResult;
+  }
+
 
   void toggleFlash() {
     try {
@@ -841,6 +879,12 @@ class AnswerCubit extends Cubit<AnswerState> {
       print("🔧 Initializing new camera...");
       _cameraController = CameraController(newCamera, ResolutionPreset.high, enableAudio: true);
       await _cameraController!.initialize();
+      await cameraController?.setFocusMode(FocusMode.auto);
+      if(state.zoom==1.0){
+        loadZoomLimits();
+      }else{
+        setZoom( state.zoom);
+      }
        emit(state.copyWith(cameraInitialized: false));
       // Flash restore
       if (state.isFlashOn) {
@@ -1152,4 +1196,52 @@ class AnswerCubit extends Cubit<AnswerState> {
   }
 
 
+
+  //camera zoom
+  Future<void> loadZoomLimits() async {
+    final min = await cameraController?.getMinZoomLevel();
+    final max = await cameraController?.getMaxZoomLevel();
+
+    emit(state.copyWith(
+      minZoom: min,
+      maxZoom: max,
+      zoom: min,
+    ));
+  }
+
+  Future<void> setZoom(double value) async {
+    if (!cameraController!.value.isInitialized) return;
+
+    final zoom = value.clamp(state.minZoom, state.maxZoom);
+    await cameraController?.setZoomLevel(zoom);
+    await cameraController?.setFocusMode(FocusMode.auto);
+    emit(state.copyWith(zoom: zoom));
+  }
+
+  // auto fucus
+  Future<void> autoFocus({
+    required Offset tapPosition,
+    required Size previewSize,
+  }) async {
+    if (!cameraController!.value.isInitialized) return;
+
+    if (cameraController?.description.lensDirection ==
+        CameraLensDirection.front) {
+      await cameraController?.setFocusMode(FocusMode.auto);
+      return;
+    }
+
+    final dx = (tapPosition.dx / previewSize.width).clamp(0.0, 1.0);
+    final dy = (tapPosition.dy / previewSize.height).clamp(0.0, 1.0);
+
+    await cameraController?.setFocusMode(FocusMode.auto);
+    await cameraController?.setFocusPoint(Offset(dx, dy));
+    await cameraController?.setExposurePoint(Offset(dx, dy));
+  }
+
+
+
 }
+
+
+

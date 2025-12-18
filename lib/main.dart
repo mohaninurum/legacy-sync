@@ -42,19 +42,9 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  String authToken =  await AppPreference().get(key: AppPreference.KEY_USER_TOKEN);
-  final result =  await AppPreference().getBool(key: AppPreference.KEY_SURVEY_SUBMITTED);
-  final dir = await getApplicationDocumentsDirectory();
-  await migrateCachedVideoDataToSharedPreferences();
-
-  AppService.cachePath = "${dir.path}/dio_cache";
-  if(authToken.isNotEmpty){
-    ApiURL.authToken = authToken;
-    AppService.initializeUserData();
-  }
-
-  print("isLoggedIn: $authToken");
+  final fetchResult = await setup();
+  final authToken = fetchResult["authToken"];
+  final result = fetchResult["result"];
 
   runApp(
     MultiBlocProvider(
@@ -89,10 +79,29 @@ void main() async {
   );
 }
 
+Future<Map<String, dynamic>> setup() async {
+  await AppPreference().init();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  String authToken =  await AppPreference().get(key: AppPreference.KEY_USER_TOKEN);
+  final result =  await AppPreference().getBool(key: AppPreference.KEY_SURVEY_SUBMITTED);
+  final dir = await getApplicationDocumentsDirectory();
+  await migrateCachedVideoDataToSharedPreferences();
+
+  AppService.cachePath = "${dir.path}/dio_cache";
+  if(authToken.isNotEmpty){
+    ApiURL.authToken = authToken;
+    AppService.initializeUserData();
+  }
+
+  print("isLoggedIn: $authToken");
+
+  return {"authToken":authToken,"result":result};
+}
+
 class MyApp extends StatelessWidget {
   String authToken;
   bool result;
-   MyApp({super.key,required this.authToken,required this.result});
+  MyApp({super.key,required this.authToken,required this.result});
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +134,7 @@ class MyApp extends StatelessWidget {
       ApiURL.authToken = authToken;
       AppService.initializeUserData();
       if(result){
-       return RoutesName.HOME_SCREEN;
+        return RoutesName.HOME_SCREEN;
       }else{
         return RoutesName.QUESTION_SCREEN;
       }
@@ -134,4 +143,3 @@ class MyApp extends StatelessWidget {
     }
   }
 }
-

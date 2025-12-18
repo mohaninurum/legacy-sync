@@ -10,6 +10,7 @@ import 'package:legacy_sync/features/answer/data/model/answer.dart';
 import 'package:legacy_sync/features/answer/data/model/mux_response.dart';
 import 'package:legacy_sync/features/answer/domain/repositories/answer_repository.dart';
 import 'dart:typed_data';
+import '../../../../services/notification_initialization/notification_initialization.dart';
 import '../model/submit_answer_response.dart';
 
 class AnswerRepositoryImpl implements AnswerRepository {
@@ -113,6 +114,9 @@ class AnswerRepositoryImpl implements AnswerRepository {
   //     return Left(AppException(e.toString()));
   //   }
   // }
+
+
+
   @override
   ResultFuture<SubmitAnswerResponse> submitAnswer({required int qId, required int userId, required int answerType, required String answerText, File? file}) async {
     try {
@@ -212,8 +216,14 @@ class AnswerRepositoryImpl implements AnswerRepository {
         onSendProgress: (sent, total) {
           final percent = (sent / total * 100).toStringAsFixed(2);
           print("Uploaded: $percent%");
+          if (total > 0) {
+            final progress = ((sent / total) * 100).toInt();
+            // showUploadProgress(progress); // 🔔 notification
+          }
           if (percent == "100.00" && !completer.isCompleted) {
-            completer.complete(true);   // return true immediately
+            completer.complete(true);
+            // showUploadProgressComplete();
+            // return true immediately
           }
         },
       ).then((response) {

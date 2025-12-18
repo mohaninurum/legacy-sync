@@ -26,6 +26,7 @@ import '../../../../core/components/comman_components/locked_question_dialog.dar
 import '../../../home/domain/usecases/navigate_to_module_usecase.dart';
 import '../../../home/presentation/bloc/home_bloc/home_cubit.dart';
 import '../../../list_of_module/presentation/bloc/list_of_module_bloc/list_of_module_cubit.dart';
+import '../widget/focus_ring_widget.dart';
 import '../widget/full_screen_video_player.dart';
 import '../widget/leave_page_dialog.dart';
 
@@ -47,6 +48,15 @@ class _AnswerScreenState extends State<AnswerScreen> {
   bool isPopping = false;
   VoidCallback? _videoListener;
   bool _isDragging = false;
+
+  //zoom
+  final cameraZoomMax = 8; // cameraController.getMaxZoomLevel()
+  final cameraZoomMin = 0.5; // cameraController.getMinZoomLevel()
+  var zoomScaleFactor = 0.1;
+
+  double previousZoomValue = 1;
+  double currentZoomValue = 1;
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +68,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
       context.read<AnswerCubit>().updateWordCount(_answerController.text);
     });
     context.read<AnswerCubit>().initialState();
+
   }
   void _addVideoListener() {
     _videoListener ??= () {
@@ -70,11 +81,21 @@ class _AnswerScreenState extends State<AnswerScreen> {
   }
 
   double get _sliderValue {
-    final c = _videoPreviewController!;
-    return c.value.position.inMilliseconds
-        .clamp(0, c.value.duration.inMilliseconds)
-        .toDouble();
+    final c = _videoPreviewController;
+
+    if (c == null || !c.value.isInitialized) {
+      return 1.0;
+    }
+
+    final position = c.value.position.inMilliseconds;
+    final duration = c.value.duration.inMilliseconds;
+
+    if (duration <= 0) return 0.0;
+
+    return position.clamp(0, duration).toDouble();
   }
+
+
   @override
   void dispose() {
     if (_videoListener != null) {
@@ -409,281 +430,389 @@ class _AnswerScreenState extends State<AnswerScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 20),
-          width: double.infinity,
-          height: 40.height,
-          decoration: BoxDecoration(color: AppColors.primaryColorDull, borderRadius: BorderRadius.circular(30)),
-          child: Stack(
-            children: [
-              // Video preview (live camera or recorded video)
-              BlocBuilder<AnswerCubit, AnswerState>(
-                builder: (context, s) {
-                 if (s.cameraInitialized==true) {
-                   return Container(color: Colors.black,);
-                 }
-                  // Show recorded video preview when completed
-                  if (s.recordingState == RecordingState.completed && _videoPreviewController != null && _videoPreviewController!.value.isInitialized) {
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 40.height,
-                        child: FittedBox(
-                          fit: BoxFit.cover,
-                          child: SizedBox(width: _videoPreviewController!.value.size.width, height: _videoPreviewController!.value.size.height, child: VideoPlayer(_videoPreviewController!)),
-                        ),
-                      ),
-                    );
-                  }
-
-                  // Show live camera preview when recording or not completed
-                  final controller = context.read<AnswerCubit>().cameraController;
-                  if (controller != null && controller.value.isInitialized) {
-                     bool isFront =state.isFrontCamera;
-                     //   if(state.recordingState == RecordingState.completed){
-                     //     isFront=true;
-                     //   }
-                     //   print("isFront: $isFront");
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 40.height,
-                        child: OverflowBox(
-                          alignment: Alignment.center,
+        GestureDetector(
+          onScaleStart: (_) {
+            previousZoomValue = currentZoomValue;
+          },
+          onScaleUpdate: (details) {
+            final controller = context.read<AnswerCubit>().cameraController;
+            if (details.scale == 1.0) return;
+            final scale = details.scale;
+            final result = previousZoomValue * scale - zoomScaleFactor;
+            if (result >= cameraZoomMin && result <= cameraZoomMax) {
+              currentZoomValue = result;
+              controller?.setZoomLevel(result);
+            }
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 20),
+            width: double.infinity,
+            height: 40.height,
+            decoration: BoxDecoration(color: AppColors.primaryColorDull, borderRadius: BorderRadius.circular(30)),
+            child: Stack(
+              children: [
+                // Video preview (live camera or recorded video)
+                BlocBuilder<AnswerCubit, AnswerState>(
+                  builder: (context, s) {
+                   if (s.cameraInitialized==true) {
+                     return Container(color: Colors.black,);
+                   }
+                    // Show recorded video preview when completed
+                    if (s.recordingState == RecordingState.completed && _videoPreviewController != null && _videoPreviewController!.value.isInitialized) {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(30),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 40.height,
                           child: FittedBox(
-                              fit: BoxFit.cover,
-                              child: SizedBox(
-                                  width: MediaQuery.of(context).size.width,
-                                  child:isFront  ?   Transform(
-                                alignment: Alignment.center,
-                                transform: Matrix4.rotationY(0),
-                                child:  CameraPreview(controller),
-                              ):CameraPreview(controller)
-
-                                 )),
+                            fit: BoxFit.cover,
+                            child: SizedBox(width: _videoPreviewController!.value.size.width, height: _videoPreviewController!.value.size.height, child: VideoPlayer(_videoPreviewController!)),
+                          ),
                         ),
-                      ),
-                    );
-                  }
+                      );
+                    }
 
-                  return Center(child: Icon(Icons.videocam, size: 64, color: AppColors.whiteColor.withValues(alpha: 0.5)));
-                },
-              ),
+                    // Show live camera preview when recording or not completed
+                    final controller = context.read<AnswerCubit>().cameraController;
+                    if (controller != null && controller.value.isInitialized) {
+                       bool isFront =state.isFrontCamera;
+                       //   if(state.recordingState == RecordingState.completed){
+                       //     isFront=true;
+                       //   }
+                       //   print("isFront: $isFront");
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(30),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 40.height,
+                          child: OverflowBox(
+                            alignment: Alignment.center,
+                            child: FittedBox(
+                                fit: BoxFit.cover,
+                                child: SizedBox(
+                                    width: MediaQuery.of(context).size.width,
+                                    child:isFront  ?   Transform(
+                                                alignment: Alignment.center,
+                                               transform: Matrix4.rotationY(0),
+                                               child:  GestureDetector(
+                                                 behavior: HitTestBehavior.opaque,
+                                                 onTapDown: (details) {
+                                                   print("tab focus...1");
+                                                   final box = context.findRenderObject() as RenderBox;
 
+                                                   context.read<AnswerCubit>().autoFocus(
+                                                     tapPosition: details.localPosition,
+                                                     previewSize: box.size,
+                                                   );
+                                                 },child: CameraPreview(controller)),
+                                               ):GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTapDown: (details) {
+                                          print("tab focus...");
+                                          final box = context.findRenderObject() as RenderBox;
 
+                                          context.read<AnswerCubit>().autoFocus(
+                                            tapPosition: details.localPosition,
+                                            previewSize: box.size,
+                                          );
+                                        },child: CameraPreview(controller))
 
-              if (state.recordingType== RecordingType.video && state.recordingState == RecordingState.idle)
-                Positioned(
-                  bottom: 20,
-                  left: AppSizes.screenWidth / 3,
-                  right: AppSizes.screenWidth / 3,
-                  child: CustomButtonRound(
-                    enable: false,
-                    onPressed: () {
-                      // Flip camera and start new recording
+                                   )),
+                          ),
+                        ),
+                      );
+                    }
 
-                      context.read<AnswerCubit>().flipCameraAndStartNew(isFront: false);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Image.asset(Images.ic_flip_camera, height: 16, width: 16, color: AppColors.whiteColor),
-                          const SizedBox(width: 10),
-                          Text("Flip", style: TextTheme.of(context).bodyMedium!.copyWith(color: AppColors.whiteColor, fontSize: 14, fontWeight: FontWeight.normal)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-              // Flash toggle button (top-left)
-              if (state.isRecording || state.isPaused)
-                // Positioned(
-                //   top: 16,
-                //   left: 16,
-                //   child: GestureDetector(
-                //     onTap: () => context.read<AnswerCubit>().toggleFlash(),
-                //     child: Container(
-                //       padding: const EdgeInsets.all(8),
-                //       decoration: const BoxDecoration(color: AppColors.primaryColorDull, shape: BoxShape.circle),
-                //       child: Icon(state.isFlashOn ? Icons.flash_on : Icons.flash_off, color: state.isFlashOn ? Colors.yellow : AppColors.whiteColor, size: 20),
-                //     ),
-                //   ),
-                // ),
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: CustomButtonRound(
-                    enable: false,
-                    onPressed: () {
-                      context.read<AnswerCubit>().toggleFlash();
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Icon(state.isFlashOn ? Icons.flash_on : Icons.flash_off, color: state.isFlashOn ? Colors.yellow : AppColors.whiteColor, size: 20),
-                    ),
-                  ),
-                ),
-
-              // Speed control button
-              if (state.isRecording || state.isPaused)
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: CustomButtonRound(
-                    enable: false,
-                    onPressed: () {
-                      context.read<AnswerCubit>().cyclePlaybackSpeed();
-                    },
-                    child: Padding(padding: const EdgeInsets.all(10), child: Text(state.speedLabel, style: const TextStyle(color: AppColors.whiteColor, fontSize: 14, fontWeight: FontWeight.bold))),
-                  ),
-                ),
-
-              // full screen
-              if (state.isCompleted)
-              Positioned(
-                right: 12,
-                bottom: 55,
-                child: GestureDetector(
-                  onTap: () {
-                     _openFullScreen(context);
+                    return Center(child: Icon(Icons.videocam, size: 64, color: AppColors.whiteColor.withValues(alpha: 0.5)));
                   },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(
-                      Icons.fullscreen,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
                 ),
-              ),
 
 
-              // Play/pause controls for completed video preview
-              if (_videoPreviewController != null &&
-                  _videoPreviewController!.value.isInitialized) ...[
-                Positioned(
-                  bottom: 10,
-                  left: 20,
-                  right:20,
-                  child: Column(
-                    children: [
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 3,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+
+                if (state.recordingType== RecordingType.video && state.recordingState == RecordingState.idle)
+                  Positioned(
+                    bottom: 20,
+                    left: AppSizes.screenWidth / 3,
+                    right: AppSizes.screenWidth / 3,
+                    child: CustomButtonRound(
+                      enable: false,
+                      onPressed: () {
+                        // Flip camera and start new recording
+
+                        context.read<AnswerCubit>().flipCameraAndStartNew(isFront: false);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Image.asset(Images.ic_flip_camera, height: 16, width: 16, color: AppColors.whiteColor),
+                            const SizedBox(width: 10),
+                            Text("Flip", style: TextTheme.of(context).bodyMedium!.copyWith(color: AppColors.whiteColor, fontSize: 14, fontWeight: FontWeight.normal)),
+                          ],
                         ),
-                        child: Slider(
-                          activeColor: AppColors.etbg,
-                          min: 0,
-                          max: _videoPreviewController!.value.duration.inMilliseconds.toDouble(),
-                          value: _sliderValue,
-                          onChangeStart: (_) {
-                            _isDragging = true;
-                            _videoPreviewController?.pause();
-                          },
-                          onChanged: (value) {
-                            _videoPreviewController?.seekTo(
-                              Duration(milliseconds: value.toInt()),
-                            );
-                          },
-                          onChangeEnd: (_) {
-                            _isDragging = false;
-                            _videoPreviewController?.play();
-                          },
-                        )
-
                       ),
-
-                      // 🔹 Time Row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _formatDuration(_videoPreviewController!.value.position),
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          Text(
-                            _formatDuration(_videoPreviewController!.value.duration),
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
 
-              if (state.isCompleted)
-                Center(
+                // Flash toggle button (top-left)
+                if (state.isRecording || state.isPaused)
+                  // Positioned(
+                  //   top: 16,
+                  //   left: 16,
+                  //   child: GestureDetector(
+                  //     onTap: () => context.read<AnswerCubit>().toggleFlash(),
+                  //     child: Container(
+                  //       padding: const EdgeInsets.all(8),
+                  //       decoration: const BoxDecoration(color: AppColors.primaryColorDull, shape: BoxShape.circle),
+                  //       child: Icon(state.isFlashOn ? Icons.flash_on : Icons.flash_off, color: state.isFlashOn ? Colors.yellow : AppColors.whiteColor, size: 20),
+                  //     ),
+                  //   ),
+                  // ),
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: CustomButtonRound(
+                      enable: false,
+                      onPressed: () {
+                        context.read<AnswerCubit>().toggleFlash();
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Icon(state.isFlashOn ? Icons.flash_on : Icons.flash_off, color: state.isFlashOn ? Colors.yellow : AppColors.whiteColor, size: 20),
+                      ),
+                    ),
+                  ),
+
+                // Speed control button
+                if (state.isRecording || state.isPaused)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: CustomButtonRound(
+                      enable: false,
+                      onPressed: () {
+                        context.read<AnswerCubit>().cyclePlaybackSpeed();
+                      },
+                      child: Padding(padding: const EdgeInsets.all(10), child: Text(state.speedLabel, style: const TextStyle(color: AppColors.whiteColor, fontSize: 14, fontWeight: FontWeight.bold))),
+                    ),
+                  ),
+
+                // full screen
+                // if (state.isCompleted)
+
+                if (state.isCompleted)
+                Positioned(
+                  right: 12,
+                  bottom: 55,
                   child: GestureDetector(
                     onTap: () {
-                      if (_videoPreviewController != null && _videoPreviewController!.value.isInitialized) {
-                        if (_videoPreviewController!.value.isPlaying) {
-                          _videoPreviewController!.pause();
-                          context.read<AnswerCubit>().pauseVideoPreview();
-                        } else {
-                          _videoPreviewController!.play();
-                          context.read<AnswerCubit>().playVideoPreview();
-                        }
-
-                        setState(() {});
-                      }
+                       _openFullScreen(context);
                     },
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        Icons.fullscreen,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+
+
+                BlocBuilder<AnswerCubit, AnswerState>(
+                  builder: (context, state) {
+                    if (state.isCompleted) return const SizedBox.shrink();
+
+                    return Positioned(
+                      bottom: 70,
+                      right:16,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          width: 44,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.35),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              /// Zoom Value
+                              Text(
+                                '${state.zoom.toStringAsFixed(1)}x',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+
+                              /// Slider
+                              RotatedBox(
+                                quarterTurns: 3,
+                                child: SliderTheme(
+                                  data: SliderTheme.of(context).copyWith(
+                                    trackHeight: 3,
+                                    activeTrackColor: AppColors.etbg,
+                                    inactiveTrackColor: Colors.white24,
+                                    thumbColor: Colors.white,
+                                    overlayShape: SliderComponentShape.noOverlay,
+                                    thumbShape: const RoundSliderThumbShape(
+                                      enabledThumbRadius: 7,
+                                    ),
+                                  ),
+                                  child: Slider(
+                                    min: state.minZoom,
+                                    max: state.maxZoom,
+                                    value: state.zoom,
+                                    onChanged: (value) {
+                                      context.read<AnswerCubit>().setZoom(value);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
+
+
+                // Play/pause controls for completed video preview
+                if (_videoPreviewController != null &&
+                    _videoPreviewController!.value.isInitialized) ...[
+                  Positioned(
+                    bottom: 10,
+                    left: 20,
+                    right:20,
+                    child: Column(
                       children: [
-                        AppButton(
-                          onPressed: () {
-                            // Skip backward 5 seconds
-                            if (_videoPreviewController != null && _videoPreviewController!.value.isInitialized) {
-                              final currentPosition = _videoPreviewController!.value.position;
-                              final newPosition = currentPosition - const Duration(seconds: 5);
-                              _videoPreviewController!.seekTo(newPosition >= Duration.zero ? newPosition : Duration.zero);
-                            }
-                          },
-                          child: SvgPicture.asset(Images.second_reverse_svg, height: 28, width: 28),
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            trackHeight: 3,
+                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                            overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                          ),
+                          child: Slider(
+                            activeColor: AppColors.etbg,
+                            min: 0,
+                            max: _videoPreviewController!.value.duration.inMilliseconds.toDouble(),
+                            value: _sliderValue,
+                            onChangeStart: (_) {
+                              _isDragging = true;
+                              _videoPreviewController?.pause();
+                            },
+                            onChanged: (value) {
+                              _videoPreviewController?.seekTo(
+                                Duration(milliseconds: value.toInt()),
+                              );
+                            },
+                            onChangeEnd: (_) {
+                              _isDragging = false;
+                              _videoPreviewController?.play();
+                            },
+                          )
+
                         ),
-                        const SizedBox(width: 40),
-                        Container(
-                          padding: const EdgeInsets.all(15),
-                          decoration: BoxDecoration(color: (_videoPreviewController?.value.isPlaying ?? false) ? Colors.transparent : const Color(0xFF6F6F70), shape: BoxShape.circle),
-                          child: SvgPicture.asset((_videoPreviewController?.value.isPlaying ?? false) ? Images.ic_pause_svg : Images.ic_play_svg, height: 25, width: 25),
-                          // child: Icon((_videoPreviewController?.value.isPlaying ?? false) ? Icons.pause : Icons.play_arrow, color: AppColors.whiteColor, size: 40),
-                        ),
-                        const SizedBox(width: 40),
-                        AppButton(
-                          onPressed: () {
-                            // Skip forward 5 seconds
-                            if (_videoPreviewController != null && _videoPreviewController!.value.isInitialized) {
-                              final currentPosition = _videoPreviewController!.value.position;
-                              final maxPosition = _videoPreviewController!.value.duration;
-                              final newPosition = currentPosition + const Duration(seconds: 5);
-                              _videoPreviewController!.seekTo(newPosition <= maxPosition ? newPosition : maxPosition);
-                            }
-                          },
-                          child: SvgPicture.asset(Images.second_forward_svg, height: 28, width: 28),
+
+                        // 🔹 Time Row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _formatDuration(_videoPreviewController!.value.position),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            Text(
+                              _formatDuration(_videoPreviewController!.value.duration),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                ),
+                ],
 
-            ],
+                if (state.isCompleted)
+                  Center(
+                    child: GestureDetector(
+                      onTap: () {
+                        if (_videoPreviewController != null && _videoPreviewController!.value.isInitialized) {
+                          if (_videoPreviewController!.value.isPlaying) {
+                            _videoPreviewController!.pause();
+                            context.read<AnswerCubit>().pauseVideoPreview();
+                          } else {
+                            _videoPreviewController!.play();
+                            context.read<AnswerCubit>().playVideoPreview();
+                          }
+
+                          setState(() {});
+                        }
+                      },
+
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AppButton(
+                            onPressed: () {
+                              // Skip backward 5 seconds
+                              if (_videoPreviewController != null && _videoPreviewController!.value.isInitialized) {
+                                final currentPosition = _videoPreviewController!.value.position;
+                                final newPosition = currentPosition - const Duration(seconds: 5);
+                                _videoPreviewController!.seekTo(newPosition >= Duration.zero ? newPosition : Duration.zero);
+                              }
+                            },
+                            child: SvgPicture.asset(Images.second_reverse_svg, height: 28, width: 28),
+                          ),
+                          const SizedBox(width: 40),
+                          Container(
+                            padding: const EdgeInsets.all(15),
+                            decoration: BoxDecoration(color: (_videoPreviewController?.value.isPlaying ?? false) ? Colors.transparent : const Color(0xFF6F6F70), shape: BoxShape.circle),
+                            child: SvgPicture.asset((_videoPreviewController?.value.isPlaying ?? false) ? Images.ic_pause_svg : Images.ic_play_svg, height: 25, width: 25),
+                            // child: Icon((_videoPreviewController?.value.isPlaying ?? false) ? Icons.pause : Icons.play_arrow, color: AppColors.whiteColor, size: 40),
+                          ),
+                          const SizedBox(width: 40),
+                          AppButton(
+                            onPressed: () {
+                              // Skip forward 5 seconds
+                              if (_videoPreviewController != null && _videoPreviewController!.value.isInitialized) {
+                                final currentPosition = _videoPreviewController!.value.position;
+                                final maxPosition = _videoPreviewController!.value.duration;
+                                final newPosition = currentPosition + const Duration(seconds: 5);
+                                _videoPreviewController!.seekTo(newPosition <= maxPosition ? newPosition : maxPosition);
+                              }
+                            },
+                            child: SvgPicture.asset(Images.second_forward_svg, height: 28, width: 28),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                BlocBuilder<AnswerCubit, AnswerState>(
+                  builder: (context, state) {
+                    if (state.focusPoint == null) return const SizedBox.shrink();
+                    return FocusRing(state.focusPoint!);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
         if (state.recordingType == RecordingType.video && state.recordingState == RecordingState.completed) _buildTextInputArea(state),

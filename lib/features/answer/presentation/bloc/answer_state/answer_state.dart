@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:legacy_sync/features/answer/data/model/answer.dart';
 
 enum RecordingType { none, voice, video }
@@ -50,6 +52,10 @@ class AnswerState  {
   final bool hasStartedRecording;
   final bool isFrontCamera;
   final bool isVideoProcess;
+  final double zoom;
+  final double minZoom;
+  final double maxZoom;
+  final Offset? focusPoint;
 
   const AnswerState({
     required this.isLoading,
@@ -85,6 +91,10 @@ class AnswerState  {
     required this.isFrontCamera,
     required this.isVideoProcess,
     required this.showCongratsDialog,
+    required this.zoom,
+    required this.minZoom,
+    required this.maxZoom,
+    this.focusPoint,
 
   });
 
@@ -118,6 +128,10 @@ class AnswerState  {
     isFrontCamera: false,
     isVideoProcess: false,
    showCongratsDialog:null,
+    zoom: 1.0,
+    minZoom: 1.0,
+    maxZoom: 1.0,
+
   );
 
   AnswerState copyWith({
@@ -153,7 +167,11 @@ class AnswerState  {
     bool? hasStartedRecording,
     bool? isFrontCamera,
     bool? isVideoProcess,
-     bool? showCongratsDialog
+     bool? showCongratsDialog,
+     double? zoom,
+    double? minZoom,
+    double? maxZoom,
+    Offset? focusPoint,
   }) {
     return AnswerState(
       isLoading: isLoading ?? this.isLoading,
@@ -189,6 +207,10 @@ class AnswerState  {
       isFrontCamera: isFrontCamera ?? this.isFrontCamera,
       isVideoProcess: isVideoProcess ?? this.isVideoProcess,
       showCongratsDialog: showCongratsDialog ?? this.showCongratsDialog,
+      zoom: zoom ?? this.zoom,
+      minZoom: minZoom ?? this.minZoom,
+      maxZoom: maxZoom ?? this.maxZoom,
+      focusPoint: focusPoint,
     );
   }
 

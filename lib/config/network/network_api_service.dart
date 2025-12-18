@@ -11,6 +11,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../services/notification_initialization/notification_initialization.dart';
+
 typedef ResultFuture<T> = Future<Either<AppException, T>>;
 typedef ResultVoid = ResultFuture<void>;
 typedef DataMap = Map<String, dynamic>;
@@ -108,6 +110,38 @@ class NetworkApiService implements BaseApiServices {
     final headers = _buildHeaders();
     return _safeRequest(() => http.post(Uri.parse(url), headers: headers, body: jsonEncode(dic)), method: 'POST', url: url, headers: headers, body: dic);
   }
+
+  // @override
+  // ResultFuture getPostApiProgress(
+  //     String url,
+  //     Map<String, dynamic> dic,
+  //     ) async {
+  //   try {
+  //     final headers = _buildHeaders();
+  //
+  //     final response = await _dio.post(
+  //       url,
+  //       data: dic,
+  //       options: dio.Options(
+  //         headers: headers,
+  //         contentType: dio.Headers.jsonContentType,
+  //       ),
+  //       onSendProgress: (sent, total) {
+  //         if (total > 0) {
+  //           final progress = ((sent / total) * 100).toInt();
+  //           showUploadProgress(progress); // 🔔 notification
+  //         }
+  //       },
+  //     );
+  //
+  //     notificationsPlugin.cancel(1001); // upload finished
+  //
+  //     return Right(response.data);
+  //   } catch (e) {
+  //     return Left(AppException(e.toString()));
+  //   }
+  // }
+
 
   @override
   ResultFuture getPutApiResponse(String url, Map<String, dynamic> dic) {

@@ -80,6 +80,7 @@ dependencies:
   flutter_email_sender: ^8.0.0
   json_annotation: ^4.9.0
   ffmpeg_kit_flutter_new: ^4.1.0
+  flutter_foreground_task: ^9.1.0
 #  dio_cache_interceptor: ^4.0.5
 
 dev_dependencies:
