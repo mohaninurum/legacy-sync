@@ -58,7 +58,9 @@ class _TripePageWidgetState extends State<TripePageWidget> {
                       children: [
                         Expanded(child: _buildImageContainer(imagePath: LottieFiles.articles, text: "Articles")),
                         const SizedBox(width: 20),
-                        Expanded(child: _buildImageContainer(imagePath: LottieFiles.pod_cast, text: "Podcast")),
+                        Expanded(child: _buildImageContainer(imagePath: LottieFiles.pod_cast, text: "Podcast",    onPressed: () {
+                          Navigator.pushNamed(context, RoutesName.PODCAST_SCREEN);
+                        },)),
                       ],
                     ),
                     const SizedBox(height: 20),

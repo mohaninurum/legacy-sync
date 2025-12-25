@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'dart:math';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -14,11 +15,13 @@ import 'package:tip_dialog/tip_dialog.dart';
 import '../../../data/model/module_answer_model.dart';
 
 class ListOfModuleCubit extends Cubit<ListOfModuleState> {
+
+
   ListOfModuleCubit() : super(ListOfModuleState.initial());
   final FlutterTts flutterTts = FlutterTts();
   final usecase = GetListOfModuleUsecase();
   final appPreference = AppPreference();
-
+   QuestionData? questionBackupData;
   @override
   Future<void> close() async {
     await flutterTts.stop();
@@ -33,13 +36,19 @@ class ListOfModuleCubit extends Cubit<ListOfModuleState> {
     try {
       // Check if cached data exists and is valid
       final cachedData = await appPreference.getCachedQuestionData(moduleId: moduleId, userId: effectiveUserId);
+      developer.log("get data from cache::$cachedData");
+
      var isSubmitted=  await AppPreference().get(key: "SUBMITTED");
       if (cachedData != null && isSubmitted=="false") {
         // Use cached data
         print("Loading question data from cache for module: $moduleId, user: $effectiveUserId");
         final questionData = QuestionData.fromJson(cachedData);
-
+        questionBackupData=questionData;
         print("questionData:: ${jsonEncode(questionData)}");
+        print("question url check:: ${questionData.questions?[0].questiontitle}");
+        print("question url check:: ${questionData.questions?[0].answers?[0].answerType}");
+        print("question url check:: ${questionData.questions?[0].answers?[0].answerMedia}");
+
         _processQuestionData(questionData, preExpanded, context);
         return;
       }
@@ -70,6 +79,46 @@ class ListOfModuleCubit extends Cubit<ListOfModuleState> {
 
   /// Process question data (common logic for both cached and API data)
   void _processQuestionData(QuestionData questionData, bool preExpanded, BuildContext context) async {
+    var total = 0;
+    QuestionItems currentQuestionItems = QuestionItems();
+    if (questionData.questions != null && questionData.questions!.isNotEmpty) {
+      for (int i = 0; i < questionData.questions!.length; i++) {
+        if (questionData.questions![i].islocked == false) {
+          currentQuestionItems = questionData.questions![i];
+          total++;
+        }
+      }
+      emit(state.copyWith(isLoading: false, data: questionData, errorMessage: null, totalAnswered: total, currentQuestionItems: currentQuestionItems));
+    }
+
+    if (preExpanded) {
+      if (questionData.questions != null) {
+        int lastEnabledIndex = -1;
+        QuestionItems? items;
+        print("lastEnabledIndex: 11 : $lastEnabledIndex");
+        // Find the last enabled card
+        for (int i = 0; i < questionData.questions!.length; i++) {
+          final mData = questionData.questions![i];
+          if (mData.islocked! == false) {
+            print("lastEnabledIndex: 22 : $lastEnabledIndex");
+            lastEnabledIndex = i;
+            items = mData;
+          }
+        }
+        // If we found at least one enabled card, use it for navigation
+        if (lastEnabledIndex != -1 && items != null) {
+          expandCard(index: lastEnabledIndex);
+          getExpandedCardData(questionId: items.questionidpK!, index: lastEnabledIndex);
+          final result = await Navigator.pushNamed(context, RoutesName.ANSWER_SCREEN, arguments: {"qId": items.questionidpK, "mIndex": lastEnabledIndex, "questionText": items.questiondescription});
+          if (result == true) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Insight added successfully")));
+          }
+        }
+        print("lastEnabledIndex: 33 : $lastEnabledIndex");
+      }
+    }
+  }
+  void processQuestionData(QuestionData questionData, bool preExpanded, BuildContext context) async {
     var total = 0;
     QuestionItems currentQuestionItems = QuestionItems();
     if (questionData.questions != null && questionData.questions!.isNotEmpty) {

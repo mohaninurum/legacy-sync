@@ -25,6 +25,7 @@ class BgImageStack extends StatelessWidget {
             fit: BoxFit.cover,
           ),
         ),
+
         SizedBox(height: double.infinity, width: double.infinity, child: child),
       ],
     );

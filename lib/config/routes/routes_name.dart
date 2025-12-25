@@ -33,4 +33,7 @@ class RoutesName {
   static const String FRIENDS_PROFILE_PAGE = "friends_profile_page";
   static const String FAQ_SCREEN = "faq_screen";
   static const String email_verification_screen = "email_verification_screen";
+  static const String PODCAST_SCREEN = "podcast_screen";
+  static const String PODCAST_CONNECTION = "Podcast_Connection";
+  static const String MY_PODCAST_SCREEN = "my_podcast_screen";
 }

@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'dart:async';
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
@@ -19,6 +20,8 @@ import 'package:tip_dialog/tip_dialog.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../../../../../config/routes/routes_name.dart';
 import '../../../../../core/components/comman_components/congratulations_module_dialog.dart';
+import '../../../../list_of_module/data/model/list_of_module_model.dart';
+import '../../../../list_of_module/data/model/module_answer_model.dart';
 
 
 class AnswerCubit extends Cubit<AnswerState> {
@@ -50,8 +53,8 @@ class AnswerCubit extends Cubit<AnswerState> {
 
   // Timer for recording duration
   Timer? _recordingTimer;
-
-
+/// cheche
+  final appPreference = AppPreference();
 
 
   @override
@@ -513,7 +516,7 @@ class AnswerCubit extends Cubit<AnswerState> {
     }
   }
 
-  submitFinalAnswer(int qId, String answerText, BuildContext context, int mIndex) async {
+  submitFinalAnswer(int qId, String answerText, BuildContext context, int mIndex,moduleIndex) async {
 
     try {
       TipDialogHelper.loading("Submitting..");
@@ -555,7 +558,8 @@ class AnswerCubit extends Cubit<AnswerState> {
             Utils.showInfoDialog(context: context, title: "Submission Failed", content: l.message ?? "Failed to submit answer. Please try again.");
           },
           (r) async {
-            uploadVideoAnswer(r.uploadUrl ?? "", r.uploadId ?? "", file!.path, context, qId, mIndex);
+
+            uploadVideoAnswer(r.uploadUrl ?? "", r.uploadId ?? "", file!.path, context, qId, mIndex,moduleIndex);
           },
         );
         return;
@@ -606,14 +610,44 @@ class AnswerCubit extends Cubit<AnswerState> {
     }
   }
 
-  void uploadVideoAnswer(String url, String uploadID, String filePath, BuildContext context, int qId, int mIndex) async {
+  void uploadVideoAnswer(String url, String uploadID, String filePath, BuildContext context, int qId, int mIndex, int moduleIndex) async {
     bool isUploading = true;
     // final result = await answerUseCase.uploadToMux(url, filePath);
     // uploadToMuxForeground(url, filePath);
-    final result = await answerUseCase.uploadToMux(url, filePath);
-    if (result) {
-      final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+    final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+    // final ModuleAnswerData newAnswer = ModuleAnswerData(
+    //   answerType: 3,
+    //   answerIdPK: 101,
+    //   questionIdFK: 1,
+    //   answerMedia: filePath,
+    //   createdAt: DateTime.now().toIso8601String(),
+    // );
+    // final cachedData = await appPreference.getCachedQuestionData(moduleId: moduleIndex, userId: userId);
+    // log('cacheddata$cachedData');
+    // final questionBackupData = QuestionData.fromJson(cachedData!);
+    // print("model create :${questionBackupData.questions?[moduleIndex].questiontitle}");
+    // print("index :$moduleIndex-$mIndex");
+    // print("all q json :: ${questionBackupData.questions?[moduleIndex].answers?[mIndex].answerType}");
+    //
+    // final updatedQuestionData = updateAnswerInQuestionData(
+    //   questionData: questionBackupData ?? QuestionData.empty(),
+    //   questionId: 1,
+    //   newAnswer: newAnswer,
+    // );
+    //
+    //
+    // print("Result::${updatedQuestionData.questions?[0].questiontitle}");
+    // print("Result::${updatedQuestionData.questions?[0].answers?[0].answerMedia}");
+    //
+    // if(questionBackupData.questions?.isNotEmpty==true){
+    //   print("questionBackupData::${questionBackupData}");
+    //   await appPreference.cacheQuestionData(moduleId: moduleIndex, userId: userId, questionData: updatedQuestionData.toJson());
+    //   BlocProvider.of<ListOfModuleCubit>(context).processQuestionData(updatedQuestionData, true, context);
+    // }
 
+    final result = await answerUseCase.uploadToMux(url, filePath);
+
+    if (result) {
       final body = {"question_id": qId, "user_id": userId, "upload_id": uploadID, "answer_type": 3};
       final result = await answerUseCase.uploadMuxVideoAssets(body);
       print("Upload result: $result");
@@ -661,6 +695,52 @@ class AnswerCubit extends Cubit<AnswerState> {
     AppPreference().set(key: "SUBMITTED", value: "true");
 
   }
+
+
+
+  QuestionData updateAnswerInQuestionData({
+    required QuestionData questionData,
+    required int questionId,
+    required ModuleAnswerData newAnswer,
+  }) {
+    final List<QuestionItems> updatedQuestions =
+    List<QuestionItems>.from(questionData.questions ?? []);
+
+    final qIndex = updatedQuestions.indexWhere(
+          (q) => q.questionidpK == questionId,
+    );
+
+    if (qIndex == -1) {
+      // question not found → return original
+      return questionData;
+    }
+
+    final QuestionItems question = updatedQuestions[qIndex];
+
+    final List<ModuleAnswerData> updatedAnswers =
+    List<ModuleAnswerData>.from(question.answers ?? []);
+   print("get anser to update and add $updatedAnswers");
+    final aIndex = updatedAnswers.indexWhere(
+          (a) => a.answerIdPK == newAnswer.answerIdPK,
+    );
+
+    if (aIndex != -1) {
+      // update existing answer
+      updatedAnswers[aIndex] = newAnswer;
+    } else {
+      // append new answer
+      updatedAnswers.add(newAnswer);
+    }
+
+    updatedQuestions[qIndex] = question.copyWith(
+      answers: updatedAnswers,
+    );
+
+    return questionData.copyWith(
+      questions: updatedQuestions,
+    );
+  }
+
 
 
 

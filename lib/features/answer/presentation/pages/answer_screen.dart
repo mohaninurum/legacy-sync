@@ -268,7 +268,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                             child: CustomButton(
                               onPressed: () {
                                 context.read<AnswerCubit>().stopSpeakingOnInteraction();
-                                context.read<AnswerCubit>().submitFinalAnswer(widget.qId, _answerController.text, context, widget.mIndex);
+                                context.read<AnswerCubit>().submitFinalAnswer(widget.qId, _answerController.text, context, widget.mIndex,widget.moduleIndex);
                               },
                               btnText: "Continue",
                               enable: true,
@@ -912,7 +912,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 child: CustomButton(
                   onPressed: () async {
                     context.read<AnswerCubit>().stopSpeakingOnInteraction();
-                    context.read<AnswerCubit>().submitFinalAnswer(widget.qId, _answerController.text, context, widget.mIndex);
+                    context.read<AnswerCubit>().submitFinalAnswer(widget.qId, _answerController.text, context, widget.mIndex,widget.moduleIndex);
                   },
                   btnText: "Submit Answer",
                   enable: true,
@@ -1036,7 +1036,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
       return CustomButton(
         onPressed: () {
           context.read<AnswerCubit>().stopSpeakingOnInteraction();
-          context.read<AnswerCubit>().submitFinalAnswer(widget.qId, _answerController.text, context, widget.mIndex);
+          context.read<AnswerCubit>().submitFinalAnswer(widget.qId, _answerController.text, context, widget.mIndex,widget.moduleIndex);
         },
         btnText: "Continue",
         enable: true,

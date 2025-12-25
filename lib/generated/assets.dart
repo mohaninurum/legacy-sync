@@ -352,7 +352,7 @@ class Assets {
   static const String lottieModuleHeader6 = 'assets/lottie/module_header6.json';
   static const String lottieModuleHeader7 = 'assets/lottie/module_header7.json';
   static const String lottieModuleHeader8 = 'assets/lottie/module_header8.json';
-  static const String lottiePodCast = 'assets/lottie/pod_cast.json';
+  static const String lottiePodCast = 'assets/lottie/podcast.json';
   static const String lottiePost1 = 'assets/lottie/post1.json';
   static const String lottiePost2 = 'assets/lottie/post2.json';
   static const String lottiePost3 = 'assets/lottie/post3.json';

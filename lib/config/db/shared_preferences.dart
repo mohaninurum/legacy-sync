@@ -489,4 +489,88 @@ class AppPreference {
       return null;
     }
   }
+
+
+  Future<void> addSingleCacheQuestionData({
+    required int moduleId,
+    required int userId,
+    required Map<String, dynamic> questionData,
+    Map<String, dynamic>? newQuestion, // 👈 optional single question
+  }) async {
+    try {
+      final cacheKey = "${KEY_CACHED_QUESTION_DATA}${moduleId}_$userId";
+      final timestampKey = "${KEY_CACHE_TIMESTAMP}${moduleId}_$userId";
+
+      Map<String, dynamic> finalData;
+
+      /// 🔹 CASE 1: FULL DATA SAVE (API / refresh)
+      if (newQuestion == null) {
+        finalData = {
+          ...questionData,
+          'cached_at': DateTime.now().millisecondsSinceEpoch,
+        };
+      }
+      /// 🔹 CASE 2: ADD / UPDATE SINGLE QUESTION
+      else {
+        final encryptedExisting = await get(key: cacheKey);
+
+        Map<String, dynamic> cachedData = {};
+
+        if (encryptedExisting != null) {
+          cachedData =
+          EncryptionService.decryptJson(encryptedExisting) as Map<String, dynamic>;
+        }
+
+        // navigate safely: data -> questions
+        final Map<String, dynamic> dataMap =
+        Map<String, dynamic>.from(cachedData['data'] ?? {});
+
+        final List questions =
+        List.from(dataMap['questions'] ?? []);
+
+        final int index = questions.indexWhere(
+              (q) => q['question_id_PK'] == newQuestion['question_id_PK'],
+        );
+
+        if (index != -1) {
+          // update existing question
+          questions[index] = {
+            ...questions[index],
+            ...newQuestion,
+            'sync_status': 'pending',
+            'cached_at': DateTime.now().millisecondsSinceEpoch,
+          };
+        } else {
+          // add new question
+          questions.add({
+            ...newQuestion,
+            'sync_status': 'pending',
+            'cached_at': DateTime.now().millisecondsSinceEpoch,
+          });
+        }
+
+        dataMap['questions'] = questions;
+        cachedData['data'] = dataMap;
+
+        finalData = cachedData;
+      }
+
+      /// 🔐 Encrypt & store
+      final encryptedData = EncryptionService.encryptJson(finalData);
+
+      await set(key: cacheKey, value: encryptedData);
+      await setInt(
+        key: timestampKey,
+        value: DateTime.now().millisecondsSinceEpoch,
+      );
+
+      print('Question data cached successfully');
+    } catch (e) {
+      print('Error caching question data: $e');
+    }
+  }
+
+
+
+
 }

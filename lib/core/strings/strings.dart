@@ -116,4 +116,10 @@ class AppStrings {
       "Now its time to invite in your self, and your future generations";
   static const String chineseProverb =
       '"The best time to plant a tree was 20 years ago. The second best time is now." ~ Chinese Proverb';
+  static const String podcastJourney =
+      "Start Your Podcast Journey";
+  static const String meaningfulStories =
+      "Share meaningful stories and reflections solo or with loved ones making it easy and meaningful to record moments that matter.";
+  static const String buildOwnPodcast  = "How to build your own podcast :";
+  static const String startMakingPodcast  = "Start Making podcast";
 }

@@ -28,6 +28,9 @@ import 'package:legacy_sync/features/answer/presentation/pages/answer_screen.dar
 import '../../features/auth/presentation/pages/email_verification_screen.dart';
 import '../../features/legacy_wrapped/presentation/pages/legacy_wrapped_screen.dart';
 import '../../features/legacy_wrapped/presentation/pages/voice_is_growing_screen.dart';
+import '../../features/livekit_connection/presentation/podcast_connection.dart';
+import '../../features/my_podcast/presentation/pages/my_podcast_screen.dart';
+import '../../features/podcast/presentation/pages/podcast_screen.dart';
 import '../../features/settings/presentation/pages/more_options_screen.dart';
 import '../../features/settings/presentation/pages/support_screen.dart';
 import '../../features/settings/presentation/pages/notifications_screen.dart';
@@ -137,6 +140,12 @@ class Routes {
         return _animatedRouteRightToLeft(const ProfilePage());
       case RoutesName.EDIT_PROFILE_SCREEN:
         return _animatedRouteRightToLeft(const EditProfilePage());
+        case RoutesName.PODCAST_SCREEN:
+        return _animatedRouteRightToLeft(const PodcastScreen());
+        case RoutesName.PODCAST_CONNECTION:
+        return _animatedRouteRightToLeft(const PodcastConnection());
+        case RoutesName.MY_PODCAST_SCREEN:
+        return _animatedRouteRightToLeft(const MyPodcastScreen());
       default:
         return MaterialPageRoute(builder: (context) => const LoginScreen());
     }

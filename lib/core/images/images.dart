@@ -119,6 +119,14 @@ class Images {
   static const String l5 = "assets/images/l5.png";
   static const String camera_image = "assets/images/camera_image.png";
   static const String gallery_image = "assets/images/gallery_image.png";
+  static const String pod_cast_img = "assets/images/podcast_img.png";
+
+
+  ///icon_podcast
+  static const String icon_1podcast = "assets/images/icon_1podcast.png";
+  static const String icon_2podcast = "assets/images/icon_2podcast.png";
+  static const String icon_3podcast = "assets/images/icon_3podcast.png";
+  static const String icon_4podcast = "assets/images/icon_4podcast.png";
 
   ///Icons
   static const String ic_google = "assets/icons/ic_google.png";
@@ -128,6 +136,7 @@ class Images {
   static const String ic_calender_svg = "assets/icons/ic_calender.svg";
   static const String ic_edit_svg = "assets/icons/ic_edit.svg";
   static const String ic_verify_svg = "assets/icons/ic_verify.svg";
+  static const String microphone = "assets/icons/microphone.svg";
 
   ///Q 1
   static const String ic_q1o1_svg = "assets/icons/q1o1.svg";

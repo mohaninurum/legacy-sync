@@ -117,13 +117,6 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
         }
       },
     ),
-    BlocListener<ListOfModuleCubit, ListOfModuleState>(
-      listener: (context, state) {
-        if (state.isDataSave == true) {
-        }
-      },
-    ),
-
 
   ],
   child: Padding(
@@ -335,6 +328,7 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
           itemBuilder: (context, index) {
             final data = state.data.questions![index];
             print("question data: ${data.islocked}");
+
             return Padding(
               padding: EdgeInsets.only(bottom: index == ((state.data.questions?.length ?? 0) - 1) ? 20 : 0),
               child: _QuestionCard(
@@ -371,6 +365,7 @@ class _QuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     final backgroundColor = (data.islocked ?? false) ? Utils.hexToColor(data.activecolorcode!) : Utils.hexToColor(data.deactivecolorcode!);
 
     return Container(
@@ -467,6 +462,7 @@ class _QuestionCard extends StatelessWidget {
   Widget _buildStaticListContent({required int moduleIndex, required int mIndex, required BuildContext mContext, required int qId, required bool fromFriends, required String questionText}) {
     return BlocBuilder<ListOfModuleCubit, ListOfModuleState>(
       builder: (context, state) {
+
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -475,7 +471,9 @@ class _QuestionCard extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemBuilder: (context, index) {
-
+                print("question data index: $mIndex-$index");
+              print("question data: ${state.data.questions![mIndex].answers![index].answerMedia}");
+              print("question data: ${state.data.questions![mIndex].answers![index].answerType}");
                 return _buildListItem(qId: qId, moduleIndex: moduleIndex, parentIndex: mIndex, index: index, data: data.answers![index], icon: Icons.star, context: context, fromFriends: fromFriends);
               },
             ),
