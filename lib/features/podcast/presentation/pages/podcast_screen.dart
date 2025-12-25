@@ -1,21 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:legacy_sync/config/routes/routes_name.dart';
-import 'package:legacy_sync/core/components/comman_components/bg_image_stack.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/core/images/images.dart';
 import 'package:legacy_sync/core/strings/strings.dart';
-import 'package:legacy_sync/features/podcast/presentation/pages/livekit_demo.dart';
-import 'package:lottie/lottie.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/colors/colors.dart';
 import '../../../../core/components/comman_components/app_button.dart';
 import '../../../../core/components/comman_components/curved_header_clipper.dart';
 import '../../../../core/components/comman_components/custom_button.dart';
-import '../../../../core/components/comman_components/legacy_app_bar.dart';
 import '../../../../core/components/comman_components/podcast_bg.dart';
-import '../../../../core/images/lottie.dart';
-import '../../../answer/presentation/widget/leave_page_dialog.dart';
 import '../bloc/podcast_cubit.dart';
 import '../bloc/podcast_state.dart';
 

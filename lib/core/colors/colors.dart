@@ -32,4 +32,8 @@ class AppColors {
   static const Color grilBlue = Color(0xFF273a54);
   static const Color bg_text_filed = Color(0xFF2e1c76);
   static const Color bg_container = Color(0xFF231853);
+  static const Color bg_container_second = Color(0xFF1c1444);
+  static const Color dart_grey = Color(0xFFC9C9C9);
+  static const Color gray_light = Color(0xFFDAF0F8);
+  static const Color Border_Color = Color(0xFF97AAFF);
 }

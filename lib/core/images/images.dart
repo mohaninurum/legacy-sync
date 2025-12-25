@@ -127,6 +127,9 @@ class Images {
   static const String icon_2podcast = "assets/images/icon_2podcast.png";
   static const String icon_3podcast = "assets/images/icon_3podcast.png";
   static const String icon_4podcast = "assets/images/icon_4podcast.png";
+  static const String continue_Listening1 = "assets/images/continue_listening1.png";
+  static const String phone_incoming = "assets/icons/phone-incoming.svg";
+  static const String user_plus = "assets/icons/user-plus.svg";
 
   ///Icons
   static const String ic_google = "assets/icons/ic_google.png";

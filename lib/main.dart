@@ -37,6 +37,7 @@ import 'features/legacy_wrapped/presentation/bloc/legacy_wrapped_bloc/legacy_wra
 import 'features/my_podcast/presentation/bloc/my_podcast_cubit.dart';
 import 'features/paywall/presentation/bloc/paywall_cubit.dart';
 import 'features/podcast/presentation/bloc/podcast_cubit.dart';
+import 'features/podcast_recording/presentation/bloc/podcast_recording_cubit.dart';
 import 'features/profile/presentation/bloc/profile_bloc/profile_cubit.dart';
 import 'features/settings/presentation/bloc/settings_bloc/settings_cubit.dart';
 import 'features/home/presentation/bloc/home_bloc/home_cubit.dart';
@@ -77,6 +78,7 @@ void main() async {
         BlocProvider<EmailVerificationCubit>(create: (context) => EmailVerificationCubit()),
         BlocProvider<PodcastCubit>(create: (context) => PodcastCubit()),
         BlocProvider<MyPodcastCubit>(create: (context) => MyPodcastCubit()),
+        BlocProvider<PodCastRecordingCubit>(create: (context) => PodCastRecordingCubit()),
       ],
       child:  MyApp(authToken:authToken,result:result),
     ),

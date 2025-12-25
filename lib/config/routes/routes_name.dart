@@ -36,4 +36,5 @@ class RoutesName {
   static const String PODCAST_SCREEN = "podcast_screen";
   static const String PODCAST_CONNECTION = "Podcast_Connection";
   static const String MY_PODCAST_SCREEN = "my_podcast_screen";
+  static const String PODCAST_RECORDING_SCREEN = "podcast_recording_screen";
 }

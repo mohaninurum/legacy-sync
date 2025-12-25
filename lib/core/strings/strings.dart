@@ -122,4 +122,8 @@ class AppStrings {
       "Share meaningful stories and reflections solo or with loved ones making it easy and meaningful to record moments that matter.";
   static const String buildOwnPodcast  = "How to build your own podcast :";
   static const String startMakingPodcast  = "Start Making podcast";
+  static const String myPodcast  = "My Podcast";
+  static const String seeAll  = "See All";
+  static const String continueListening  = "Continue Listening";
+  static const String recent  = "Recent";
 }

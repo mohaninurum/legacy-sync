@@ -13,7 +13,7 @@ class PodcastCubit extends Cubit<PodcastState> {
     BuildOwnPodcastModel(title: "Record Your Thoughts", subtitle: "Start recording solo or invite someone using a collaboration code.", image: Images.icon_1podcast),
     BuildOwnPodcastModel(title: "Use Question Cards", subtitle: "Pick a topic, we’ll give you conversation starters.", image: Images.icon_2podcast),
     BuildOwnPodcastModel(title: "Edit Your Podcast", subtitle: "Trim parts, adjust sound, and make it feel just right.", image: Images.icon_3podcast),
-    BuildOwnPodcastModel(title: "Post or Save for Later", subtitle: "Publish it for your collaborators or keep it as a draft.", image: Images.icon_4podcast),
+    BuildOwnPodcastModel(title: "Post or Save for Later",  subtitle: "Publish it for your collaborators or keep it as a draft.", image: Images.icon_4podcast),
   ];
 
 
