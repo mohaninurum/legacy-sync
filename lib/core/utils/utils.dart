@@ -569,6 +569,32 @@ class Utils {
     return "$m:$s";
   }
 
+  static String minAndSecDuration(String input) {
+    final parts = input.split(':');
+    if (parts.length != 2) return input;
+
+    final minutes = int.tryParse(parts[0]) ?? 0;
+    final seconds = int.tryParse(parts[1]) ?? 0;
+
+    return '$minutes min $seconds sec';
+  }
+
+
+  static String formatDurationFromString(String input) {
+    try {
+      final parts = input.split(':'); // [0,00,11.000000]
+
+      final minutes = int.parse(parts[1]);
+      final seconds = double.parse(parts[2]).floor();
+
+      if (minutes == 0) return '$seconds sec';
+      if (seconds == 0) return '$minutes min';
+
+      return '$minutes min $seconds sec';
+    } catch (_) {
+      return input;
+    }
+  }
 
 
 }

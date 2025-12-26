@@ -13,6 +13,13 @@ enum PodCastRecordingStatus {
 enum TopicCategory {
   family,
   relationship,
+  Shuffle
+}
+enum CallStatus {
+  idle,
+  calling,
+  connected,
+  disconnected,
 }
 
 class TopicModel {
@@ -34,10 +41,11 @@ class PodCastRecordingState {
   final Duration duration;
   final int currentTopicIndex;
   final List<PodcastTopicsModel> filteredTopics;
-  final bool shuffle;
   final TopicCategory? selectedCategory;
+  final CallStatus? callStatus;
+  double dbLevel;
 
-  const PodCastRecordingState({
+   PodCastRecordingState({
     required this.status,
     required this.participants,
     required this.inviteUserList,
@@ -45,12 +53,14 @@ class PodCastRecordingState {
     required this.duration,
     required this.currentTopicIndex,
     required this.filteredTopics,
-    required this.shuffle,
     required this.selectedCategory,
+    required this.callStatus,
+    required this.dbLevel,
+
   });
 
   factory PodCastRecordingState.initial() {
-    return const PodCastRecordingState(
+    return  PodCastRecordingState(
       status: PodCastRecordingStatus.idle,
       participants: [],
       inviteUserList: [],
@@ -59,7 +69,8 @@ class PodCastRecordingState {
       duration: Duration.zero,
       currentTopicIndex: 0,
       selectedCategory: null,
-      shuffle: false,
+      callStatus: null,
+      dbLevel : 0.0,
     );
   }
 
@@ -72,7 +83,9 @@ class PodCastRecordingState {
     Duration? duration,
     int? currentTopicIndex,
     TopicCategory? selectedCategory,
+    CallStatus? callStatus,
     bool? shuffle,
+    double? dbLevel,
   }) {
     return PodCastRecordingState(
       status: status ?? this.status,
@@ -83,9 +96,12 @@ class PodCastRecordingState {
       duration: duration ?? this.duration,
       currentTopicIndex:
       currentTopicIndex ?? this.currentTopicIndex,
-      shuffle: shuffle ?? this.shuffle,
       selectedCategory:
       selectedCategory ?? this.selectedCategory,
+      callStatus:
+      callStatus ?? this.callStatus,
+      dbLevel:
+      dbLevel ?? this.dbLevel,
     );
   }
 }

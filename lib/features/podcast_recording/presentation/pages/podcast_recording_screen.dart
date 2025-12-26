@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/core/utils/utils.dart';
+import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/audio_waves_desing.dart';
+import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/audio_waves_widget.dart';
+import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/record_button.dart';
 import '../../../../core/colors/colors.dart';
 import '../../../../core/components/comman_components/app_button.dart';
+import '../../../../core/components/comman_components/custom_button.dart';
 import '../../../../core/components/comman_components/podcast_bg.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/images/images.dart';
 import '../../data/user_list_model/user_list_model.dart';
 import '../bloc/podcast_recording_cubit.dart';
 import '../bloc/podcast_recording_state.dart';
-
+import 'package:permission_handler/permission_handler.dart';
 
 class PodcastRecordingScreen extends StatefulWidget {
   const PodcastRecordingScreen({super.key});
@@ -18,21 +22,21 @@ class PodcastRecordingScreen extends StatefulWidget {
   @override
   State<PodcastRecordingScreen> createState() => _PodcastRecordingScreenState();
 }
-class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
 
+class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
   @override
   void initState() {
     super.initState();
     context.read<PodCastRecordingCubit>().getInviteUse();
+    context.read<PodCastRecordingCubit>().initiazeRecording();
     context.read<PodCastRecordingCubit>().loadTopics();
     context.read<PodCastRecordingCubit>().addSelfParticipant();
-
   }
-
 
   @override
   Widget build(BuildContext context) {
     return PodcastBg(
+      isDark: true,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
@@ -42,12 +46,19 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                 children: [
                   _topHeader(state),
                   SizedBox(height: 1.height),
-                  _topicCard(context,state),
+                  _topicCard(context, state),
                   SizedBox(height: 0.5.height),
                   _participantsGrid(state, context),
-                  const Spacer(),
-                  _recordingSection(state, context),
                   SizedBox(height: 1.height),
+                  if (state.status == PodCastRecordingStatus.recording ||
+                      state.status == PodCastRecordingStatus.paused)
+                  const AudioWaveDesign(),
+                  if (state.status != PodCastRecordingStatus.completed)
+                    const Spacer(),
+                  _recordingSection(state, context),
+                  SizedBox(height: 4.height),
+                  if (state.status == PodCastRecordingStatus.completed)
+                    const Spacer(),
                   _bottomCallControls(),
                   SizedBox(height: 2.8.height),
                 ],
@@ -64,14 +75,14 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     Color color = Colors.white;
 
     if (state.status == PodCastRecordingStatus.recording) {
-      title = "🔴 Now Recording";
-      color = Colors.red;
+      title = "Now Recording";
+      color = AppColors.redColor;
     } else if (state.status == PodCastRecordingStatus.paused) {
-      title = "⏸ Recording Paused";
-      color = Colors.orange;
+      title = "Recording Paused";
+      color = AppColors.yellow;
     } else if (state.status == PodCastRecordingStatus.completed) {
-      title = "✅ Done Recording";
-      color = Colors.green;
+      title = "Done Recording";
+      color = AppColors.green_Color;
     }
 
     Widget _buildBackButton() {
@@ -80,10 +91,13 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
         onPressed: () {
           Navigator.pop(context);
         },
-        child: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+        child: const Icon(
+          Icons.keyboard_arrow_down_outlined,
+          color: Colors.white,
+          size: 25,
+        ),
       );
     }
-
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -93,39 +107,86 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
           _buildBackButton(),
           Column(
             children: [
-              Text(title,
-                  style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    height: 5,
+                    width: 5,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 4),
-              const Text("You, Mom", style: TextStyle(color: Colors.white70)),
+              Text(
+                "You, Mom",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
-          SvgPicture.asset(Images.user_plus,width: 24,height: 24,)
+          SvgPicture.asset(Images.user_plus, width: 24, height: 24),
         ],
       ),
     );
   }
 
   Widget _participantsGrid(PodCastRecordingState state, BuildContext context) {
+    /// max grid items
+    const int maxItems = 4;
+
+    /// participants count to show
+    final int participantCount = state.participants.length.clamp(0, 3);
+
+    /// should show invite card?
+    final bool showInvite =
+        state.callStatus != CallStatus.connected &&
+        state.participants.length < 4;
+
+    /// total items in grid
+    final int itemCount = participantCount + (showInvite ? 1 : 0);
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: GridView.builder(
         shrinkWrap: true,
-        itemCount: state.participants.length + 1,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: itemCount,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
+          crossAxisSpacing: 17,
+          mainAxisSpacing: 17,
         ),
         itemBuilder: (_, i) {
-          if (i == state.participants.length) {
+          /// participants first
+          if (i < participantCount) {
+            return _userCard(state.participants[i]);
+          }
+
+          /// invite card only when allowed
+          if (showInvite && i == participantCount) {
             return GestureDetector(
-              onTap: (){
-                // showInviteBottomSheet(context);
-              },
+              onTap: () => showInviteDialog(context),
               child: _inviteCard(),
             );
           }
-          return _userCard(state.participants[i]);
+
+          return const SizedBox.shrink();
         },
       ),
     );
@@ -138,116 +199,300 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
 
     if (state.status == PodCastRecordingStatus.recording ||
         state.status == PodCastRecordingStatus.paused) {
-      return Column(
-        children: [
-          _waveform(),
-          const SizedBox(height: 8),
-          Text(
-             Utils.formatDuration(state.duration),
-            style: const TextStyle(color: Colors.white),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _actionButton(
-                icon: state.status == PodCastRecordingStatus.paused
-                    ? Icons.play_arrow
-                    : Icons.pause,
-                label: state.status == PodCastRecordingStatus.paused
-                    ? "Resume Recording"
-                    : "Pause Recording",
-                onTap: () {
-                  state.status == PodCastRecordingStatus.paused
-                      ? context.read<PodCastRecordingCubit>().resumeRecording()
-                      : context.read<PodCastRecordingCubit>().pauseRecording();
-                },
-              ),
-              const SizedBox(width: 16),
-              _actionButton(
-                icon: Icons.stop,
-                label: "Stop Recording",
-                color: Colors.red,
-                onTap: () {
-                  context.read<PodCastRecordingCubit>().stopRecording();
-                },
-              ),
-            ],
-          ),
-        ],
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          children: [
+            // _waveform(),
+            // const AudioWaveDesign(),
+
+            const SizedBox(height: 8),
+
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                MicButton(
+                  isSVG: true,
+                  isRounded: true,
+                  isRedColor: false,
+                  icon:
+                      state.status == PodCastRecordingStatus.paused
+                          ? Images.microphone
+                          : Images.pause,
+                  label:
+                      state.status == PodCastRecordingStatus.paused
+                          ? "Resume Recording"
+                          : "Pause Recording",
+                  onPressed: () {
+                    state.status == PodCastRecordingStatus.paused
+                        ? context
+                            .read<PodCastRecordingCubit>()
+                            .resumeRecording()
+                        : context
+                            .read<PodCastRecordingCubit>()
+                            .pauseRecording();
+                  },
+                ),
+                Column(
+                  children: [
+                    Text(
+                      "Recording Time :",
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        fontStyle: FontStyle.italic,
+                        color: AppColors.dart_grey,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      Utils.formatDuration(state.duration),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                MicButton(
+                  isSVG: true,
+                  label: "Stop recording",
+                  icon: Images.stop,
+                  isRounded: true,
+                  isRedColor: true,
+
+                  onPressed: () {
+                    context.read<PodCastRecordingCubit>().stopRecording();
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       );
     }
 
     return Column(
       children: [
-        _recordButton(() {
-          context.read<PodCastRecordingCubit>().startRecording();
-        }),
-        const SizedBox(height: 8),
-        const Text("Record", style: TextStyle(color: Colors.white)),
+        MicButton(
+          label: "Record",
+          icon: Images.mic,
+          isRounded: false,
+          isRedColor: true,
+          onPressed: () {
+            context.read<PodCastRecordingCubit>().startRecording();
+          },
+        ),
       ],
     );
   }
 
   Widget _doneRecordingCard(PodCastRecordingState state) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          const Text(
-            "Congratulations!",
-            style: TextStyle(color: Colors.white, fontSize: 18),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Container(
+          width: MediaQuery.of(context).size.width,
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.primaryBlueDark.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(16),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            "You've completed your podcast recording.",
-            style: TextStyle(color: Colors.white70),
-            textAlign: TextAlign.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Congratulations!",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(height: 1.height),
+              Text(
+                "You’ve completed your podcast recording.",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 1.height),
+              Text(
+                "Duration: ${Utils.formatDurationFromString(state.duration.toString())}",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(height: 1.height),
+              Text(
+                "Topics: Growth, Friendship",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(height: 1.height),
+              SizedBox(
+                width: MediaQuery.of(context).size.width,
+                child: Text(
+                  textAlign: TextAlign.start,
+                  "You can preview and manage this session after you leave the room. Take a moment to relax, your thoughts are safely saved.",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            "Recording Time: ${Utils.formatDuration(state.duration)}",
-            style: const TextStyle(color: Colors.white),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  void showInviteBottomSheet(BuildContext context) {
-    showModalBottomSheet(
+  void showInviteDialog(BuildContext context) {
+    showDialog(
       context: context,
-      backgroundColor: const Color(0xFF1E1E2C),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      barrierDismissible: true,
       builder: (_) {
-        return BlocBuilder<PodCastRecordingCubit, PodCastRecordingState>(
-          builder: (context, state) {
-            return ListView.builder(
-              itemCount: state.inviteUserList.length,
-              itemBuilder: (_, i) {
-                final user = state.inviteUserList[i];
-                return ListTile(
-                  leading: CircleAvatar(child: Text(user.avatar??"Image")),
-                  title: Text(user.name,
-                      style: const TextStyle(color: Colors.white)),
-                  trailing: TextButton(
-                    onPressed: () {
-                      context.read<PodCastRecordingCubit>().addParticipant(user);
-                      Navigator.pop(context);
-                    },
-                    child: const Text("+ Invite"),
-                  ),
-                );
-              },
-            );
-          },
+        return Dialog(
+          backgroundColor: AppColors.dart_purple_Color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: BlocBuilder<PodCastRecordingCubit, PodCastRecordingState>(
+            builder: (context, state) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Text(
+                              "Invite friend to podcast",
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: state.inviteUserList.length,
+                        itemBuilder: (_, i) {
+                          final user = state.inviteUserList[i];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 6,
+                            ),
+                            child: Row(
+                              children: [
+
+                                user.avatar != null
+                                    ? ClipOval(
+                                      child: Image.asset(
+                                        user.avatar!,
+                                        width: 50,
+                                        height: 50,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                    : Text(
+                                      user.name[0],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+
+                                const SizedBox(width: 12),
+
+
+                                Expanded(
+                                  child: Text(
+                                    user.name,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+
+
+                                GestureDetector(
+                                  onTap: () {
+                                    context
+                                        .read<PodCastRecordingCubit>()
+                                        .addParticipant(user);
+                                    Navigator.pop(context);
+                                  },
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SvgPicture.asset(
+                                        Images.plus,
+                                        width: 16,
+                                        height: 16,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        "Invite",
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium?.copyWith(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color:
+                                              AppColors.light_pink_Text_Color,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         );
       },
     );
@@ -260,7 +505,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(
           24,
-              (i) => Container(
+          (i) => Container(
             margin: const EdgeInsets.symmetric(horizontal: 2),
             width: 3,
             height: (i % 2 == 0) ? 28 : 16,
@@ -274,58 +519,46 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     );
   }
 
-  Widget _recordButton(VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 64,
-        height: 64,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [Color(0xFFFF5A5F), Color(0xFFFF2D55)],
-          ),
-
-        ),
-        child: const Icon(Icons.mic, color: Colors.white, size: 30),
-      ),
-    );
-  }
-
   Widget _userCard(UserListModel user) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color:  AppColors.gray_light,
+        color: AppColors.gray_light,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.Border_Color, width: 4),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor:AppColors.blackColor,
-            backgroundImage:
-            user.avatar != null ? AssetImage(user.avatar!) : null,
-            child: user.avatar == null
-                ? Text(
-              user.initials,
-              style: const TextStyle(fontSize: 22),
-            )
-                : null,
-          ),
-          const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.green.shade100,
-              borderRadius: BorderRadius.circular(20),
+            alignment: Alignment.center,
+            height: 125,
+            child: Stack(
+              children: [
+                user.avatar != null
+                    ? Positioned(
+                      bottom: -20,
+                      left: 0,
+                      right: 0,
+                      child: Transform.scale(
+                        scale: 1.5,
+                        child: ClipOval(
+                          child: Image.asset(user.avatar!, height: 125),
+                        ),
+                      ),
+                    )
+                    : Text(
+                      user.avatar ?? 'M',
+                      style: const TextStyle(fontSize: 22),
+                    ),
+              ],
             ),
-            child: Text(
-              user.name,
-              style: const TextStyle(fontSize: 12),
-            ),
+          ),
+          const Spacer(),
+          Align(
+            alignment: AlignmentGeometry.bottomLeft,
+            child: YouAudioWave(useName: user.name),
           ),
         ],
       ),
@@ -338,26 +571,33 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
         color: AppColors.dart_grey,
         borderRadius: BorderRadius.circular(16),
       ),
-      child:  Column(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SvgPicture.asset(Images.user_plus,width: 32,height: 32,color:  AppColors.blackColor,),
-          const SizedBox(height: 8),
-          Text("Invite People",   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          SvgPicture.asset(
+            Images.user_plus,
+            width: 32,
+            height: 32,
             color: AppColors.blackColor,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Invite People",
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.blackColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _topicCard(BuildContext context, PodCastRecordingState state) {
-    if (state.allTopics .isEmpty) return const SizedBox();
+    if (state.filteredTopics.isEmpty) return const SizedBox();
 
-    final topic = state.allTopics[state.currentTopicIndex];
-
+    final topic = state.filteredTopics[state.currentTopicIndex];
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -366,10 +606,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryBlueDark,
-            AppColors.primaryBlueDark,
-          ],
+          colors: [AppColors.primaryBlueDark, AppColors.primaryBlueDark],
         ),
       ),
       child: Column(
@@ -378,52 +615,57 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
           /// 🔹 TOP CHIPS
           Row(
             children: [
-              const Text(
+              Text(
                 "Topics :",
-                style: TextStyle(color: Colors.white70, fontSize: 12),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(width: 8),
 
               /// SHUFFLE
               GestureDetector(
                 onTap: () {
-                  context.read<PodCastRecordingCubit>().shuffleTopics();
+                  context.read<PodCastRecordingCubit>().shuffleTopics(
+                    TopicCategory.Shuffle,
+                  );
                 },
                 child: _topicChip(
                   icon: Icons.shuffle,
                   label: "Shuffle",
-                  selected: state.shuffle,
+                  selected: state.selectedCategory == TopicCategory.Shuffle,
                 ),
               ),
 
               /// FAMILY
               GestureDetector(
                 onTap: () {
-                  context.read<PodCastRecordingCubit>()
-                      .filterByCategory(TopicCategory.family);
+                  context.read<PodCastRecordingCubit>().filterByCategory(
+                    TopicCategory.family,
+                  );
                 },
                 child: _topicChip(
                   label: "Family",
-                  selected:
-                  state.selectedCategory == TopicCategory.family,
+                  selected: state.selectedCategory == TopicCategory.family,
                 ),
               ),
 
               /// RELATIONSHIP
               GestureDetector(
                 onTap: () {
-                  context.read<PodCastRecordingCubit>()
-                      .filterByCategory(TopicCategory.relationship);
+                  context.read<PodCastRecordingCubit>().filterByCategory(
+                    TopicCategory.relationship,
+                  );
                 },
                 child: _topicChip(
                   label: "Relationship",
-                  selected: state.selectedCategory ==
-                      TopicCategory.relationship,
+                  selected:
+                      state.selectedCategory == TopicCategory.relationship,
                 ),
               ),
             ],
           ),
-
 
           const SizedBox(height: 16),
 
@@ -432,11 +674,9 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
             child: Text(
               topic.description,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14.5,
-                height: 1.4,
-                fontWeight: FontWeight.w600,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -447,38 +687,24 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
           Row(
             children: [
               Expanded(
-                child: _nextAndPreButton(
-                  label: "Previous",
-                  enabled: state.currentTopicIndex > 0,
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFB0B0B0),
-                      Color(0xFF8E8E8E),
-                    ],
-                  ),
-                  onTap: () {
-                    context
-                        .read<PodCastRecordingCubit>()
-                        .previousTopic();
+                child: CustomButton(
+                  enable: state.currentTopicIndex > 0,
+                  btnText: "Previous",
+                  height: 48,
+                  onPressed: () {
+                    context.read<PodCastRecordingCubit>().previousTopic();
                   },
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _nextAndPreButton(
-                  label: "Next",
-                  enabled: state.currentTopicIndex <
-                      state.allTopics.length - 1,
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF7B7DFF),
-                      Color(0xFFA59BFF),
-                    ],
-                  ),
-                  onTap: () {
-                    context
-                        .read<PodCastRecordingCubit>()
-                        .nextTopic();
+                child: CustomButton(
+                  enable:
+                      state.currentTopicIndex < state.filteredTopics.length - 1,
+                  btnText: "Next",
+                  height: 48,
+                  onPressed: () {
+                    context.read<PodCastRecordingCubit>().nextTopic();
                   },
                 ),
               ),
@@ -489,108 +715,79 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     );
   }
 
-
-
   Widget _bottomCallControls() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _circleBtn(Icons.volume_up),
-        _circleBtn(Icons.mic_off),
-        _circleBtn(Icons.call_end, color: AppColors.redColor),
+        _circleBtn(
+          Icons.volume_up,
+          color: AppColors.dart_grey,
+          isDisable: true,
+          Pressed: () {
+
+          },
+        ),
+        _circleBtn(
+          Icons.mic_off,
+          color: AppColors.dart_grey,
+          isDisable: false,
+          Pressed: () {
+
+        },),
+        _circleBtn(
+          Icons.call_end,
+          color: AppColors.redColor,
+          isDisable: true,
+          isRed: true,
+          Pressed: () {
+            context.read<PodCastRecordingCubit>().endCall();
+          },
+        ),
       ],
     );
   }
 
-  Widget _circleBtn(IconData icon, {Color? color}) {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color ?? Colors.grey.shade700,
-      ),
-      child: Icon(icon, color: Colors.white),
-    );
-  }
-
-  Widget _actionButton({
-    required IconData icon,
-    required String label,
-    Color color = Colors.deepPurple,
-    required VoidCallback onTap,
+  Widget _circleBtn(
+    IconData icon, {
+    Color? color,
+    bool isDisable = false,
+    bool isRed = false,
+    required VoidCallback Pressed,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color,
-            ),
-            child: Icon(icon, color: Colors.white),
-          ),
-          const SizedBox(height: 6),
-          Text(label, style: const TextStyle(color: Colors.white)),
-        ],
-      ),
-    );
-  }
-
-
-  Widget _nextAndPreButton({
-    required String label,
-    required LinearGradient gradient,
-    required VoidCallback onTap,
-    bool enabled = true,
-  }) {
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
+    return InkWell(
+      onTap: Pressed,
       child: Container(
-        height: 44,
-        alignment: Alignment.center,
+        width: 56,
+        height: 56,
         decoration: BoxDecoration(
-          gradient: enabled
-              ? gradient
-              : LinearGradient(
-            colors: [
-              Colors.white.withOpacity(0.3),
-              Colors.white.withOpacity(0.2),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(22),
+          shape: BoxShape.circle,
+          color: isDisable ? color : AppColors.dart_grey.withValues(alpha: 0.6),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: enabled
-                ? Colors.white
-                : Colors.white70,
-            fontWeight: FontWeight.w600,
-          ),
+        child: Icon(
+          icon,
+          color:
+              isDisable
+                  ? isRed
+                      ? Colors.white
+                      : Colors.black
+                  : Colors.white,
         ),
       ),
     );
   }
+
   Widget _topicChip({
     IconData? icon,
     required String label,
     bool selected = false,
   }) {
     return Container(
-      margin: const EdgeInsets.only(left: 6),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      margin: const EdgeInsets.only(left: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: selected
-            ? Colors.white.withOpacity(0.25)
-            : Colors.white.withOpacity(0.15),
+        color: selected ? AppColors.purple400 : Colors.transparent,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -601,13 +798,35 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
           ],
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontSize: 12,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
       ),
+    );
+  }
+
+
+  Widget audioWave(double level) {
+    final heights = List.generate(20, (i) {
+      return 6 + (level * 30 * (i.isEven ? 1 : 0.7));
+    });
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: heights.map((h) {
+        return Container(
+          width: 3,
+          height: h,
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: Colors.redAccent,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        );
+      }).toList(),
     );
   }
 

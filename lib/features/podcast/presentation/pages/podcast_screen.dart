@@ -32,6 +32,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
   Widget build(BuildContext context) {
     return
       PodcastBg(
+        isDark: false,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body:

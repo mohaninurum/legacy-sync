@@ -130,6 +130,11 @@ class Images {
   static const String continue_Listening1 = "assets/images/continue_listening1.png";
   static const String phone_incoming = "assets/icons/phone-incoming.svg";
   static const String user_plus = "assets/icons/user-plus.svg";
+  static const String microphone = "assets/icons/microphone.svg";
+  static const String mic = "assets/icons/mic.png";
+  static const String pause = "assets/icons/pause.svg";
+  static const String stop = "assets/icons/stop.svg";
+  static const String plus = "assets/icons/plus.svg";
 
   ///Icons
   static const String ic_google = "assets/icons/ic_google.png";
@@ -139,7 +144,7 @@ class Images {
   static const String ic_calender_svg = "assets/icons/ic_calender.svg";
   static const String ic_edit_svg = "assets/icons/ic_edit.svg";
   static const String ic_verify_svg = "assets/icons/ic_verify.svg";
-  static const String microphone = "assets/icons/microphone.svg";
+
 
   ///Q 1
   static const String ic_q1o1_svg = "assets/icons/q1o1.svg";

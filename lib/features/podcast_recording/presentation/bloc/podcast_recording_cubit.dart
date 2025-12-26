@@ -3,15 +3,16 @@ import 'package:legacy_sync/features/podcast_recording/presentation/bloc/podcast
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/podcast_topic/podcast_topics_model.dart';
 import '../../data/user_list_model/user_list_model.dart';
-
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
   Timer? _timer;
-  List<UserListModel> users = [
-    UserListModel.dummy(id: "1", name: "Dad",avatar: "assets/images/user_you.png"),
-    UserListModel.dummy(id: "2", name: "Mom",avatar: "assets/images/user_you.png"),
-    UserListModel.dummy(id: "3", name: "Sis",avatar: "assets/images/user_you.png"),
-    UserListModel.dummy(id: "4", name: "Bro",avatar: "assets/images/user_you.png"),
+  List<UserListModel> users = const [
+    UserListModel(id: "1", name: "Dad",avatar: "assets/images/user_you.png"),
+    UserListModel(id: "2", name: "Mom",avatar: "assets/images/user_you.png"),
+    UserListModel(id: "3", name: "Sis",avatar: "assets/images/user_you.png"),
+    UserListModel(id: "4", name: "Bro",avatar: "assets/images/user_you.png"),
   ];
   final topicsList = const [
     PodcastTopicsModel(
@@ -37,18 +38,37 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
     ),
   ];
 
+  FlutterSoundRecorder _recorder = FlutterSoundRecorder();
+  StreamSubscription? _recorderSub;
+
+
   PodCastRecordingCubit() : super(PodCastRecordingState.initial());
 
 
 
 
   void loadTopics() {
+    final familyTopics = topicsList
+        .where((t) => t.category == TopicCategory.family)
+        .toList();
+
     emit(state.copyWith(
       allTopics: topicsList,
-      filteredTopics: topicsList,
+      filteredTopics: familyTopics,
+      selectedCategory: TopicCategory.family, // ✅ default
       currentTopicIndex: 0,
     ));
   }
+
+  void initiazeRecording(){
+    emit(
+      state.copyWith(
+        status: PodCastRecordingStatus.idle,
+        callStatus: CallStatus.disconnected,
+      ),
+    );
+  }
+
 
   /// 🔹 FILTER BY CATEGORY
   void filterByCategory(TopicCategory category) {
@@ -65,26 +85,27 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
   }
 
   /// 🔹 SHUFFLE
-  void shuffleTopics() {
-    final shuffled = List<PodcastTopicsModel>.from(state.filteredTopics)
+  void shuffleTopics(TopicCategory category) {
+    final shuffled = List<PodcastTopicsModel>.from(state.allTopics)
       ..shuffle();
 
     emit(state.copyWith(
       filteredTopics: shuffled,
-      shuffle: true,
+      selectedCategory: category,
       currentTopicIndex: 0,
     ));
   }
 
+
   /// 🔹 NEXT
   void nextTopic() {
-    if (state.currentTopicIndex <
-        state.filteredTopics.length - 1) {
+    if (state.currentTopicIndex < state.filteredTopics.length - 1) {
       emit(state.copyWith(
         currentTopicIndex: state.currentTopicIndex + 1,
       ));
     }
   }
+
 
   /// 🔹 PREVIOUS
   void previousTopic() {
@@ -98,15 +119,21 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
   void addSelfParticipant() {
     emit(
       state.copyWith(
-        participants: [UserListModel.dummy(id: "1", name: "Me",  avatar: "assets/images/user_you.png")],
+        participants: [const UserListModel(id: "1", name: "You",  avatar: "assets/images/user_you.png")],
       ),
     );
   }
 
-  void startRecording() {
-    // emit(state.copyWith(status: PodCastRecordingStatus.recording));
-    // _startTimer();
+  Future<void> startRecording() async {
+    emit(state.copyWith(status: PodCastRecordingStatus.recording));
+    _startTimer();
+    await _recorder.startRecorder(
+      toFile: 'recording.aac',
+    );
+
   }
+
+
 
   void pauseRecording() {
     _timer?.cancel();
@@ -131,6 +158,7 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
   void addParticipant(UserListModel user) {
     emit(
       state.copyWith(
+        callStatus: CallStatus.connected,
         participants: [...state.participants, user],
       ),
     );
@@ -153,6 +181,53 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
     });
   }
 
+  void endCall() {
+    if (state.participants.length==1) {
+      return;
+    }
+    final List<UserListModel> updatedParticipants =
+    List<UserListModel>.from(state.participants);
+    
+    if (updatedParticipants.isNotEmpty) {
+      print("remove...");
+      print(updatedParticipants.length);
+      print(updatedParticipants.length - 2);
+      updatedParticipants.removeAt(updatedParticipants.length - 1);
+    }
+    print(updatedParticipants.length);
+    stopRecording();
+    emit(
+      state.copyWith(
+        status: PodCastRecordingStatus.completed,
+        callStatus: CallStatus.disconnected,
+        participants: updatedParticipants,
+      ),
+    );
+  }
+
+
+  //
+  Future<void> initRecorder() async {
+    await Permission.microphone.request();
+
+    await _recorder.openRecorder();
+
+    _recorder.setSubscriptionDuration(
+      const Duration(milliseconds: 100),
+    );
+
+    _recorderSub = _recorder.onProgress!.listen((event) {
+      if (event.decibels != null) {
+          state.copyWith(
+          dbLevel:  normalize(event.decibels!)
+          );
+      }
+    });
+  }
+
+  double normalize(double db) {
+    return ((db + 60) / 60).clamp(0.0, 1.0);
+  }
 
 
 

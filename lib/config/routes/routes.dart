@@ -148,7 +148,7 @@ class Routes {
         case RoutesName.MY_PODCAST_SCREEN:
         return _animatedRouteRightToLeft(const MyPodcastScreen());
         case RoutesName.PODCAST_RECORDING_SCREEN:
-        return _animatedRouteRightToLeft(const PodcastRecordingScreen());
+        return _animatedRouteDownToUp(const PodcastRecordingScreen());
       default:
         return MaterialPageRoute(builder: (context) => const LoginScreen());
     }

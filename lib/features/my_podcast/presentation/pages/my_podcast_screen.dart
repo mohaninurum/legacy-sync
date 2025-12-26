@@ -37,6 +37,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
   @override
   Widget build(BuildContext context) {
     return PodcastBg(
+      isDark: true,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SingleChildScrollView(
