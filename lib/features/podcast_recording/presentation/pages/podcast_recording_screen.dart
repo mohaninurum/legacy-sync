@@ -45,7 +45,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
               return Column(
                 children: [
                   _topHeader(state),
-                  SizedBox(height: 1.height),
+                  SizedBox(height: 1.3.height),
                   _topicCard(context, state),
                   SizedBox(height: 0.5.height),
                   _participantsGrid(state, context),
@@ -56,16 +56,13 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                   if (state.status != PodCastRecordingStatus.completed)
                     const Spacer(),
                   _recordingSection(state, context),
-                  SizedBox(height: 4.height),
-                  if (state.status == PodCastRecordingStatus.completed)
-                    const Spacer(),
-                  _bottomCallControls(),
                   SizedBox(height: 2.8.height),
                 ],
               );
             },
           ),
         ),
+        bottomNavigationBar:     _bottomCallControls(),
       ),
     );
   }
@@ -130,7 +127,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
                 "You, Mom",
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -200,7 +197,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     if (state.status == PodCastRecordingStatus.recording ||
         state.status == PodCastRecordingStatus.paused) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           children: [
             // _waveform(),
@@ -716,34 +713,37 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
   }
 
   Widget _bottomCallControls() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _circleBtn(
-          Icons.volume_up,
-          color: AppColors.dart_grey,
-          isDisable: true,
-          Pressed: () {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 17),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _circleBtn(
+            Icons.volume_up,
+            color: AppColors.dart_grey,
+            isDisable: true,
+            Pressed: () {
 
-          },
-        ),
-        _circleBtn(
-          Icons.mic_off,
-          color: AppColors.dart_grey,
-          isDisable: false,
-          Pressed: () {
+            },
+          ),
+          _circleBtn(
+            Icons.mic_off,
+            color: AppColors.dart_grey,
+            isDisable: false,
+            Pressed: () {
 
-        },),
-        _circleBtn(
-          Icons.call_end,
-          color: AppColors.redColor,
-          isDisable: true,
-          isRed: true,
-          Pressed: () {
-            context.read<PodCastRecordingCubit>().endCall();
-          },
-        ),
-      ],
+          },),
+          _circleBtn(
+            Icons.call_end,
+            color: AppColors.redColor,
+            isDisable: true,
+            isRed: true,
+            Pressed: () {
+              context.read<PodCastRecordingCubit>().endCall();
+            },
+          ),
+        ],
+      ),
     );
   }
 

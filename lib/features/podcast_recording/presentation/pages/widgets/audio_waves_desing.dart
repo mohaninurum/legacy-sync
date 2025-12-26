@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:legacy_sync/core/colors/colors.dart';
 
 class AudioWaveDesign extends StatelessWidget {
   const AudioWaveDesign({super.key});
@@ -27,7 +28,7 @@ class AudioWaveDesign extends StatelessWidget {
             height: h.toDouble(),
             margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
-              color: Colors.redAccent,
+              color: AppColors.dart_red_Color,
               borderRadius: BorderRadius.circular(4),
             ),
           );

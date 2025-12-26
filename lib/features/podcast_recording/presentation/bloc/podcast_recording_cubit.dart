@@ -38,7 +38,7 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
     ),
   ];
 
-  FlutterSoundRecorder _recorder = FlutterSoundRecorder();
+  // final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
   StreamSubscription? _recorderSub;
 
 
@@ -127,9 +127,9 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
   Future<void> startRecording() async {
     emit(state.copyWith(status: PodCastRecordingStatus.recording));
     _startTimer();
-    await _recorder.startRecorder(
-      toFile: 'recording.aac',
-    );
+    // await _recorder.startRecorder(
+    //   toFile: 'recording.aac',
+    // );
 
   }
 
@@ -209,20 +209,20 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
   //
   Future<void> initRecorder() async {
     await Permission.microphone.request();
-
-    await _recorder.openRecorder();
-
-    _recorder.setSubscriptionDuration(
-      const Duration(milliseconds: 100),
-    );
-
-    _recorderSub = _recorder.onProgress!.listen((event) {
-      if (event.decibels != null) {
-          state.copyWith(
-          dbLevel:  normalize(event.decibels!)
-          );
-      }
-    });
+    //
+    // await _recorder.openRecorder();
+    //
+    // _recorder.setSubscriptionDuration(
+    //   const Duration(milliseconds: 100),
+    // );
+    //
+    // _recorderSub = _recorder.onProgress!.listen((event) {
+    //   if (event.decibels != null) {
+    //       state.copyWith(
+    //       dbLevel:  normalize(event.decibels!)
+    //       );
+    //   }
+    // });
   }
 
   double normalize(double db) {

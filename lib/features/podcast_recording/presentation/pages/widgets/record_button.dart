@@ -68,11 +68,15 @@ class MicButton extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Text(label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-        ),),
+        SizedBox(
+          width: 77,
+          child: Text(label,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),),
+        ),
       ],
     );
   }

@@ -39,5 +39,6 @@ class AppColors {
   static const Color green_Color = Color(0xFF00df59);
   static const Color light_pink_Text_Color = Color(0xFFE5CBFF);
   static const Color dart_purple_Color = Color(0xFF25232f);
+  static  Color  dart_red_Color = Colors.red.shade500;
 
 }
