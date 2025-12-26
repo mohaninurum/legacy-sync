@@ -48,24 +48,65 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                   SizedBox(height: 1.3.height),
                   _topicCard(context, state),
                   SizedBox(height: 0.5.height),
-                  _participantsGrid(state, context),
-                  SizedBox(height: 1.height),
-                  if (state.status == PodCastRecordingStatus.recording ||
-                      state.status == PodCastRecordingStatus.paused)
-                  const AudioWaveDesign(),
-                  if (state.status != PodCastRecordingStatus.completed)
-                    const Spacer(),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _participantsGrid(state, context),
+                        SizedBox(height: 1.height),
+
+                        if (state.status == PodCastRecordingStatus.recording ||
+                            state.status == PodCastRecordingStatus.paused)
+                          const AudioWaveDesign(),
+                      ],
+                    ),
+                  ),
+
                   _recordingSection(state, context),
-                  SizedBox(height: 2.8.height),
+
+                  SizedBox(height: 5.height),
                 ],
               );
             },
           ),
         ),
-        bottomNavigationBar:     _bottomCallControls(),
+        bottomNavigationBar: _bottomCallControls(),
       ),
     );
   }
+
+  // @override
+  // Widget build(BuildContext context) {
+  //   return PodcastBg(
+  //     isDark: true,
+  //     child: Scaffold(
+  //       backgroundColor: Colors.transparent,
+  //       body: SafeArea(
+  //         child: BlocBuilder<PodCastRecordingCubit, PodCastRecordingState>(
+  //           builder: (context, state) {
+  //             return Column(
+  //               children: [
+  //                 _topHeader(state),
+  //                 SizedBox(height: 1.3.height),
+  //                 _topicCard(context, state),
+  //                 SizedBox(height: 0.5.height),
+  //                 _participantsGrid(state, context),
+  //                 SizedBox(height: 1.height),
+  //                 if (state.status == PodCastRecordingStatus.recording ||
+  //                     state.status == PodCastRecordingStatus.paused)
+  //                 const AudioWaveDesign(),
+  //                 // if (state.status != PodCastRecordingStatus.completed)
+  //                 //   const Spacer(),
+  //                 Align(alignment: Alignment.bottomCenter, child: _recordingSection(state, context)),
+  //                 SizedBox(height: 2.8.height),
+  //               ],
+  //             );
+  //           },
+  //         ),
+  //       ),
+  //       bottomNavigationBar:     _bottomCallControls(),
+  //     ),
+  //   );
+  // }
 
   Widget _topHeader(PodCastRecordingState state) {
     String title = "Recording Not Started Yet";
@@ -144,18 +185,14 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
   }
 
   Widget _participantsGrid(PodCastRecordingState state, BuildContext context) {
-    /// max grid items
     const int maxItems = 4;
 
-    /// participants count to show
     final int participantCount = state.participants.length.clamp(0, 3);
 
-    /// should show invite card?
     final bool showInvite =
         state.callStatus != CallStatus.connected &&
         state.participants.length < 4;
 
-    /// total items in grid
     final int itemCount = participantCount + (showInvite ? 1 : 0);
 
     return Padding(
@@ -170,12 +207,10 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
           mainAxisSpacing: 17,
         ),
         itemBuilder: (_, i) {
-          /// participants first
           if (i < participantCount) {
             return _userCard(state.participants[i]);
           }
 
-          /// invite card only when allowed
           if (showInvite && i == participantCount) {
             return GestureDetector(
               onTap: () => showInviteDialog(context),
@@ -202,7 +237,6 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
           children: [
             // _waveform(),
             // const AudioWaveDesign(),
-
             const SizedBox(height: 8),
 
             const SizedBox(height: 12),
@@ -370,7 +404,6 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -416,7 +449,6 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                             ),
                             child: Row(
                               children: [
-
                                 user.avatar != null
                                     ? ClipOval(
                                       child: Image.asset(
@@ -435,7 +467,6 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
 
                                 const SizedBox(width: 12),
 
-
                                 Expanded(
                                   child: Text(
                                     user.name,
@@ -447,7 +478,6 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                                     ),
                                   ),
                                 ),
-
 
                                 GestureDetector(
                                   onTap: () {
@@ -722,17 +752,14 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
             Icons.volume_up,
             color: AppColors.dart_grey,
             isDisable: true,
-            Pressed: () {
-
-            },
+            Pressed: () {},
           ),
           _circleBtn(
             Icons.mic_off,
             color: AppColors.dart_grey,
             isDisable: false,
-            Pressed: () {
-
-          },),
+            Pressed: () {},
+          ),
           _circleBtn(
             Icons.call_end,
             color: AppColors.redColor,
@@ -808,7 +835,6 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     );
   }
 
-
   Widget audioWave(double level) {
     final heights = List.generate(20, (i) {
       return 6 + (level * 30 * (i.isEven ? 1 : 0.7));
@@ -816,19 +842,18 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: heights.map((h) {
-        return Container(
-          width: 3,
-          height: h,
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          decoration: BoxDecoration(
-            color: Colors.redAccent,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        );
-      }).toList(),
+      children:
+          heights.map((h) {
+            return Container(
+              width: 3,
+              height: h,
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              decoration: BoxDecoration(
+                color: Colors.redAccent,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            );
+          }).toList(),
     );
   }
-
-
 }
