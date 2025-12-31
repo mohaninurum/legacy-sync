@@ -25,11 +25,14 @@ import 'package:legacy_sync/features/post_paywall/presentation/pages/post_paywal
 import 'package:legacy_sync/features/paywall/presentation/pages/paywall_screen.dart';
 import 'package:legacy_sync/features/answer/presentation/pages/answer_screen.dart';
 
+import '../../features/audio_preview_edit/presentation/pages/audio_preview_edit_screen.dart';
 import '../../features/auth/presentation/pages/email_verification_screen.dart';
+import '../../features/incoming_call_full_screen/incoming_call_full_screen.dart';
 import '../../features/legacy_wrapped/presentation/pages/legacy_wrapped_screen.dart';
 import '../../features/legacy_wrapped/presentation/pages/voice_is_growing_screen.dart';
 import '../../features/livekit_connection/presentation/podcast_connection.dart';
 import '../../features/my_podcast/presentation/pages/my_podcast_screen.dart';
+import '../../features/play_podcast/presentation/pages/play_podcast.dart';
 import '../../features/podcast/presentation/pages/podcast_screen.dart';
 import '../../features/podcast_recording/presentation/pages/podcast_recording_screen.dart';
 import '../../features/settings/presentation/pages/more_options_screen.dart';
@@ -148,7 +151,22 @@ class Routes {
         case RoutesName.MY_PODCAST_SCREEN:
         return _animatedRouteRightToLeft(const MyPodcastScreen());
         case RoutesName.PODCAST_RECORDING_SCREEN:
-        return _animatedRouteDownToUp(const PodcastRecordingScreen());
+          final data = settings.arguments as Map?;
+          final incomingCall = data!["incoming_call"];
+          final userName = data["userName"];
+        return _animatedRouteDownToUp(PodcastRecordingScreen(isIncomingCall: incomingCall,userName: userName,));
+        case RoutesName.AUDIO_PREVIEW_EDIT_SCREEN:
+          final data = settings.arguments as Map?;
+          final audioPath = data!["audioPath"];
+          final isDraft = data["is_draft"];
+        return _animatedRouteDownToUp(AudioPreviewEditScreen(audioPath: audioPath,isdraft: isDraft,));
+      case RoutesName.INCOMING_CALL_FULL_SCREEN:
+        return _animatedRouteDownToUp(const IncomingCallFullScreen());
+        case RoutesName.PLAY_PODCAST:
+          final data = settings.arguments as Map?;
+          final podcast = data!["podcast"];
+          final audioPath = data["audioPath"];
+        return _animatedRouteDownToUp(PlayPodcast(podcast:podcast,audioPath:audioPath ,));
       default:
         return MaterialPageRoute(builder: (context) => const LoginScreen());
     }

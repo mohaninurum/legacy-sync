@@ -9,6 +9,7 @@ class CustomTextField extends StatefulWidget {
   final String hintText;
   final String? lableText;
   final int? maxLength;
+  final int? maxLines;
   final double radias;
   final double contentPaddingHorizontal;
   final TextEditingController controller;
@@ -34,6 +35,7 @@ class CustomTextField extends StatefulWidget {
     this.contentPaddingHorizontal = 12,
     this.isPassword = false,
     this.maxLength,
+    this.maxLines,
     this.readOnly = false,
     this.enabled = true,
     this.prefixIcon,
@@ -86,6 +88,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
               // ),
             ),
             child: TextFormField(
+              maxLines: widget.maxLines,
               autofocus: false,
               focusNode: widget.focusNode,
               maxLength: widget.maxLength,

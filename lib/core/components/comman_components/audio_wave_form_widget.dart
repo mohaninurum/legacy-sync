@@ -95,6 +95,7 @@ class AudioWaveformWidget extends StatefulWidget {
   final Color inactiveColor;
   final double height;
   final double width;
+  final double spacingValue;
 
   const AudioWaveformWidget({
     super.key,
@@ -103,6 +104,7 @@ class AudioWaveformWidget extends StatefulWidget {
     this.inactiveColor = Colors.black,
     this.height = 40.0,
     this.width = double.infinity,
+    this.spacingValue=2.0,
   });
 
   @override
@@ -159,6 +161,7 @@ class _AudioWaveformWidgetState extends State<AudioWaveformWidget>
               isPlaying: widget.isPlaying,
               activeColor: widget.activeColor,
               inactiveColor: widget.inactiveColor,
+              spacingValue: widget.spacingValue,
             ),
             size: Size(widget.width == double.infinity ? 300 : widget.width, widget.height),
           );
@@ -179,12 +182,14 @@ class WaveformPainter extends CustomPainter {
   final bool isPlaying;
   final Color activeColor;
   final Color inactiveColor;
+  final double spacingValue;
 
   WaveformPainter({
     required this.animationValue,
     required this.isPlaying,
     required this.activeColor,
     required this.inactiveColor,
+    required this.spacingValue,
   });
 
   @override
@@ -194,8 +199,8 @@ class WaveformPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final barWidth = 3.0;
-    final spacing = 2.0;
-    final totalBars = (size.width / (barWidth + spacing)).floor();
+
+    final totalBars = (size.width / (barWidth + spacingValue)).floor();
     final centerY = size.height / 2;
 
     // Predefined heights for waveform bars (you can customize these)
@@ -206,7 +211,7 @@ class WaveformPainter extends CustomPainter {
     ];
 
     for (int i = 0; i < totalBars; i++) {
-      final x = i * (barWidth + spacing) + barWidth / 2;
+      final x = i * (barWidth + spacingValue) + barWidth / 2;
 
       // Get base height from predefined array (cycle through if needed)
       final baseHeight = barHeights[i % barHeights.length];

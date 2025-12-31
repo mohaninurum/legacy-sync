@@ -135,6 +135,12 @@ class Images {
   static const String pause = "assets/icons/pause.svg";
   static const String stop = "assets/icons/stop.svg";
   static const String plus = "assets/icons/plus.svg";
+  static const String bookmark = "assets/icons/bookmark.png";
+  static const String bookmarked = "assets/icons/bookmarked.png";
+  static const String done = "assets/images/done.svg";
+  static const String rotate_ccw = "assets/images/rotate-ccw.png";
+  static const String rotate_cw = "assets/images/rotate-cw.png";
+  static const String user_you = "assets/images/user_you.png";
 
   ///Icons
   static const String ic_google = "assets/icons/ic_google.png";

@@ -30,12 +30,14 @@ import 'package:legacy_sync/services/app_service/app_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tip_dialog/tip_dialog.dart';
 import 'config/network/api_host.dart';
+import 'features/audio_preview_edit/presentation/bloc/audio_preview_edit_cubit.dart';
 import 'features/auth/presentation/bloc/auth_bloc/email_verification_cubit.dart';
 import 'features/auth/presentation/bloc/auth_bloc/social_login_cubit.dart';
 import 'features/friends_profile/presentation/bloc/profile_bloc/friends_profile_cubit.dart';
 import 'features/legacy_wrapped/presentation/bloc/legacy_wrapped_bloc/legacy_wrapped_cubit.dart';
 import 'features/my_podcast/presentation/bloc/my_podcast_cubit.dart';
 import 'features/paywall/presentation/bloc/paywall_cubit.dart';
+import 'features/play_podcast/presentation/bloc/play_podcast_cubit.dart';
 import 'features/podcast/presentation/bloc/podcast_cubit.dart';
 import 'features/podcast_recording/presentation/bloc/podcast_recording_cubit.dart';
 import 'features/profile/presentation/bloc/profile_bloc/profile_cubit.dart';
@@ -79,6 +81,8 @@ void main() async {
         BlocProvider<PodcastCubit>(create: (context) => PodcastCubit()),
         BlocProvider<MyPodcastCubit>(create: (context) => MyPodcastCubit()),
         BlocProvider<PodCastRecordingCubit>(create: (context) => PodCastRecordingCubit()),
+        BlocProvider<AudioPreviewEditCubit>(create: (context) => AudioPreviewEditCubit()),
+        BlocProvider<PlayPodcastCubit>(create: (context) => PlayPodcastCubit()),
       ],
       child:  MyApp(authToken:authToken,result:result),
     ),

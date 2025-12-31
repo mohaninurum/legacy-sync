@@ -21,6 +21,7 @@ class AppColors {
   static const Color purple500 = Color(0xFF7C3AED); // Purple-500;
   static const Color grey400 = Color(0xFF9CA3AF);
   static const Color grey500 = Color(0xFF6B7280);
+  static const Color DartGrey = Color(0xFF6f6f70);
   static const Color primaryColorDark = Color(0xFF4a27f7);
   static const Color etbg = Color(0xFF130d5d);
   static const Color primaryColorBlue = Color(0xFF3154f4);
@@ -39,6 +40,7 @@ class AppColors {
   static const Color green_Color = Color(0xFF00df59);
   static const Color light_pink_Text_Color = Color(0xFFE5CBFF);
   static const Color dart_purple_Color = Color(0xFF25232f);
+  static const Color teal_accent_Color = Color(0xFFdaf0f8);
   static  Color  dart_red_Color = Colors.red.shade500;
 
 }

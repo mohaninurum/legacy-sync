@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
@@ -17,6 +19,8 @@ import '../../data/podcast_model.dart';
 import '../../data/recent_user_list_model.dart';
 import '../bloc/my_podcast_cubit.dart';
 import '../bloc/my_podcast_state.dart';
+
+import 'package:file_picker/file_picker.dart';
 
 class MyPodcastScreen extends StatefulWidget {
   const MyPodcastScreen({super.key});
@@ -56,7 +60,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 5),
                 child: _tabs(),
               ),
-
+              SizedBox(height: 1.height),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 5),
                 child: _list(),
@@ -74,7 +78,11 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
           size: 56,
           icon: Icons.add,
           onTap: () {
-            Navigator.pushNamed(context, RoutesName.PODCAST_RECORDING_SCREEN);
+            Navigator.pushNamed(context, RoutesName.PODCAST_RECORDING_SCREEN,arguments: {
+              "incoming_call":false,
+              "userName":"you"
+
+            });
           },
         ),
       ),
@@ -267,6 +275,40 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         },
       );
 
+
+  Widget _draftlist() =>
+      BlocBuilder<MyPodcastCubit, MyPodcastState>(
+        builder: (context, state) {
+          if (state.loading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state.listPodcastsContinueListening.isEmpty) {
+            return const Center(
+              child: Text(
+                "No podcasts found",
+                style: TextStyle(color: Colors.white70),
+              ),
+            );
+          }
+
+          return SizedBox(
+            height: 120,
+            child: ListView.builder(
+              physics: const BouncingScrollPhysics(),
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+              itemCount: state.listPodcastsContinueListening.length,
+              itemBuilder: (_, i) {
+                final data = state.listPodcastsContinueListening[i];
+                return SizedBox(width: 318, child: continueListening(data));
+              },
+            ),
+          );
+        },
+      );
+
+
   Widget _list() => BlocBuilder<MyPodcastCubit, MyPodcastState>(
     builder: (context, state) {
       if (state.loading) {
@@ -282,7 +324,20 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         );
       }
 
-      return ListView.builder(
+      return  state.selectedTab == "Draft"
+          ?  SizedBox(
+        height: 180,
+        child: ListView.builder(
+          physics: const BouncingScrollPhysics(),
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+          itemCount: state.podcasts.length,
+          itemBuilder: (_, i) {
+            final data = state.podcasts[i];
+            return SizedBox(height: 177, child: myDraftListPodcast(data,false));
+          },
+        ),
+      ) : ListView.builder(
         physics: const BouncingScrollPhysics(),
         shrinkWrap: true,
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
@@ -415,130 +470,254 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          /// IMAGE
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              data.image,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
+    return InkWell(
+      onTap: () async {
+        // FilePickerResult? result = await FilePicker.platform.pickFiles();
+        //
+        // if (result != null) {
+        //   File file = File(result.files.single.path!);
+        // } else {
+        //   // User canceled the picker
+        // }
+        Navigator.pushNamed(
+            context,
+            RoutesName.PLAY_PODCAST ,
+            arguments:{
+            "podcast":data,
+             "audioPath" : "result?.files.single.path",
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// IMAGE
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                data.image,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
 
-          const SizedBox(width: 12),
+            const SizedBox(width: 12),
 
-          /// TEXT COLUMN (TOP aligned – as you want)
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 5),
-                  child: Text(
-                    data.title,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+            /// TEXT COLUMN (TOP aligned – as you want)
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Text(
+                      data.title,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  isContinueListening
+                      ? const SizedBox.shrink()
+                      : SizedBox(height: 1.height),
+                  isContinueListening
+                      ? const SizedBox.shrink()
+                      : Text(
+                        data.subtitle,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                  isContinueListening
+                      ? SizedBox(height: 1.height)
+                      : SizedBox(height: 1.height),
+                  Row(
+                    children: [
+                      Text(
+                        "Me  ",
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.dart_grey,
+                        ),
+                      ),
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.dart_grey,
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                      ),
+                      Text(
+                        "  ${Utils.capitalize(data.relationship)}",
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.dart_grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  isContinueListening
+                      ? SizedBox(height: 1.5.height)
+                      : SizedBox(height: 1.height),
+                  isContinueListening
+                      ? Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: LinearProgressIndicator(
+                              value: progress ?? 0,
+                              minHeight: 6,
+                              backgroundColor: Colors.grey.shade800,
+                              valueColor: const AlwaysStoppedAnimation(
+                                Color(0xFFB388FF),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            timeLeftText,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      )
+                      : SizedBox(height: 1.height),
+                ],
+              ),
+            ),
+            isContinueListening
+                ? const SizedBox.shrink()
+                : SizedBox(
+                  height: 80,
+                  child: Center(
+                    child: Text(
+                      data.duration,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
-                isContinueListening
-                    ? const SizedBox.shrink()
-                    : SizedBox(height: 1.height),
-                isContinueListening
-                    ? const SizedBox.shrink()
-                    : Text(
-                      data.subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                isContinueListening
-                    ? SizedBox(height: 1.height)
-                    : SizedBox(height: 1.height),
-                Row(
-                  children: [
-                    Text(
-                      "Me  ",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.dart_grey,
-                      ),
-                    ),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.dart_grey,
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                    ),
-                    Text(
-                      "  ${Utils.capitalize(data.relationship)}",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.dart_grey,
-                      ),
-                    ),
-                  ],
-                ),
-                isContinueListening
-                    ? SizedBox(height: 1.5.height)
-                    : SizedBox(height: 1.height),
-                isContinueListening
-                    ? Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: LinearProgressIndicator(
-                            value: progress ?? 0,
-                            minHeight: 6,
-                            backgroundColor: Colors.grey.shade800,
-                            valueColor: const AlwaysStoppedAnimation(
-                              Color(0xFFB388FF),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          timeLeftText,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    )
-                    : SizedBox(height: 1.height),
-              ],
-            ),
-          ),
-          isContinueListening
-              ? const SizedBox.shrink()
-              : SizedBox(
+          ],
+        ),
+      ),
+    );
+  }
+  Widget myDraftListPodcast(PodcastModel data, bool isContinueListening) {
+    double progress = 0.0;
+    String timeLeftText = "";
+    if (isContinueListening) {
+      progress = context.read<MyPodcastCubit>().listeningProgress(
+        data.listenedSec,
+        data.totalDurationSec,
+      );
+      timeLeftText = context.read<MyPodcastCubit>().timeLeftText(
+        data.listenedSec,
+        data.totalDurationSec,
+      );
+    }
+
+    return InkWell(
+      onTap: () async {
+        FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+        if (result != null) {
+          File file = File(result.files.single.path!);
+        } else {
+          // User canceled the picker
+        }
+        Navigator.pushNamed(context, RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,arguments: {
+          "audioPath": result?.files.single.path,
+          "is_draft":true
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric( horizontal: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+         mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            /// IMAGE
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                data.image,
+                width: 80,
                 height: 80,
-                child: Center(
-                  child: Text(
-                    data.duration,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Padding(
+              padding: const EdgeInsets.only(top: 5),
+              child: Container(
+                alignment: Alignment.center,
+                width: 90,
+                child: Text(
+                  overflow: TextOverflow.ellipsis,
+                  data.title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-        ],
+            ),
+                 const SizedBox(height: 5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Me  ",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.dart_grey,
+                  ),
+                ),
+                if(data.relationship.isNotEmpty)
+                Container(
+                  width: 4,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.dart_grey,
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                ),
+                if(data.relationship.isNotEmpty)
+                Text(
+                  "  ${Utils.capitalize(data.relationship)}",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.dart_grey,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              textAlign: TextAlign.start,
+              data.duration,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                fontSize: 10,
+                color: AppColors.dart_grey,
+              ),
+            ),
+
+          ],
+        ),
       ),
     );
   }

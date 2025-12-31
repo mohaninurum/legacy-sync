@@ -44,6 +44,11 @@ class PodCastRecordingState {
   final TopicCategory? selectedCategory;
   final CallStatus? callStatus;
   double dbLevel;
+  final bool? isSpeaker;
+  final bool? isMic;
+  final String? audioPath;
+
+
 
    PodCastRecordingState({
     required this.status,
@@ -56,6 +61,10 @@ class PodCastRecordingState {
     required this.selectedCategory,
     required this.callStatus,
     required this.dbLevel,
+    required this.isSpeaker,
+    required this.isMic,
+    required this.audioPath,
+
 
   });
 
@@ -71,6 +80,9 @@ class PodCastRecordingState {
       selectedCategory: null,
       callStatus: null,
       dbLevel : 0.0,
+      isSpeaker: false,
+      isMic: false,
+        audioPath:""
     );
   }
 
@@ -86,6 +98,9 @@ class PodCastRecordingState {
     CallStatus? callStatus,
     bool? shuffle,
     double? dbLevel,
+    bool? isSpeaker,
+    bool? isMic,
+    String? audioPath,
   }) {
     return PodCastRecordingState(
       status: status ?? this.status,
@@ -102,6 +117,13 @@ class PodCastRecordingState {
       callStatus ?? this.callStatus,
       dbLevel:
       dbLevel ?? this.dbLevel,
+      isSpeaker:
+      isSpeaker ?? this.isSpeaker,
+      isMic:
+      isMic ?? this.isMic,
+      audioPath:
+      audioPath ?? this.audioPath,
+
     );
   }
 }

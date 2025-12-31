@@ -116,12 +116,21 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
     }
   }
 
-  void addSelfParticipant() {
-    emit(
-      state.copyWith(
-        participants: [const UserListModel(id: "1", name: "You",  avatar: "assets/images/user_you.png")],
-      ),
-    );
+  void addSelfParticipant(bool incomingCall) {
+    if(incomingCall){
+      emit(
+        state.copyWith(
+          participants: [const UserListModel(id: "1", name: "Naila",  avatar: "assets/images/user_you.png"),const UserListModel(id: "1", name: "You",  avatar: "assets/images/user_you.png")],
+        ),
+      );
+
+  }else{
+      emit(
+        state.copyWith(
+          participants: [const UserListModel(id: "1", name: "You",  avatar: "assets/images/user_you.png")],
+        ),
+      );
+    }
   }
 
   Future<void> startRecording() async {
@@ -146,8 +155,12 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
   }
 
   void stopRecording() {
-    _timer?.cancel();
-    emit(state.copyWith(status: PodCastRecordingStatus.completed));
+try{
+  _timer?.cancel();
+  emit(state.copyWith(status: PodCastRecordingStatus.completed));
+}catch(e){
+  print(e);
+}
   }
 
   void resetRecording() {
@@ -228,6 +241,43 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
   double normalize(double db) {
     return ((db + 60) / 60).clamp(0.0, 1.0);
   }
+
+
+  void speakerONOff(){
+    if(state.isSpeaker == true){
+      emit(
+        state.copyWith(
+          isSpeaker: false
+        ),
+      );
+    }else{
+      emit(
+        state.copyWith(
+            isSpeaker:true
+        ),
+      );
+
+    }
+
+  }
+
+    void micONOff(){
+      if(state.isMic == true){
+        emit(
+          state.copyWith(
+              isMic: false
+          ),
+        );
+      }else{
+        emit(
+          state.copyWith(
+              isMic:true
+          ),
+        );
+      }
+  }
+
+
 
 
 

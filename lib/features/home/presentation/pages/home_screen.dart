@@ -20,6 +20,7 @@ import 'package:legacy_sync/features/profile/presentation/pages/profile_page.dar
 import '../../../../config/db/shared_preferences.dart';
 import '../../../../config/routes/routes_name.dart';
 import '../../../../core/images/images.dart';
+import '../../../podcast/presentation/pages/podcast_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -125,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             pipeControllers: _pipeControllers,
             pipeAnimations: _pipeAnimations);
       case NavigationTab.chat:
-        return _buildChatContent();
+        return const PodcastScreen(); //_buildChatContent();
       case NavigationTab.tribe:
         return const TripePageWidget();
       case NavigationTab.profile:

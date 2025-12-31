@@ -1,13 +1,19 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
+import 'package:legacy_sync/core/strings/strings.dart';
 import 'package:legacy_sync/core/utils/utils.dart';
 import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/audio_waves_desing.dart';
 import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/audio_waves_widget.dart';
 import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/record_button.dart';
+import '../../../../config/routes/routes_name.dart';
 import '../../../../core/colors/colors.dart';
 import '../../../../core/components/comman_components/app_button.dart';
 import '../../../../core/components/comman_components/custom_button.dart';
+import '../../../../core/components/comman_components/custom_button_common_mask_widgets.dart';
 import '../../../../core/components/comman_components/podcast_bg.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/images/images.dart';
@@ -16,22 +22,47 @@ import '../bloc/podcast_recording_cubit.dart';
 import '../bloc/podcast_recording_state.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:file_picker/file_picker.dart';
+
 class PodcastRecordingScreen extends StatefulWidget {
-  const PodcastRecordingScreen({super.key});
+  final bool isIncomingCall;
+  final String userName;
+  const PodcastRecordingScreen({super.key,required this.isIncomingCall,required this.userName});
 
   @override
   State<PodcastRecordingScreen> createState() => _PodcastRecordingScreenState();
 }
 
 class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
+
+
   @override
   void initState() {
     super.initState();
     context.read<PodCastRecordingCubit>().getInviteUse();
     context.read<PodCastRecordingCubit>().initiazeRecording();
     context.read<PodCastRecordingCubit>().loadTopics();
-    context.read<PodCastRecordingCubit>().addSelfParticipant();
+    context.read<PodCastRecordingCubit>().addSelfParticipant(widget.isIncomingCall);
+    if(widget.isIncomingCall){
+      Future.delayed(const Duration(seconds: 2),() {
+        showIncomingCallDialog(context);
+
+      },);
+
+    }
   }
+
+  @override
+  void dispose() {
+    context.read<PodCastRecordingCubit>().stopRecording();
+    super.dispose();
+  }
+
+
+  incomingCallStartRecording(){
+    context.read<PodCastRecordingCubit>().startRecording();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -48,21 +79,37 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                   SizedBox(height: 1.3.height),
                   _topicCard(context, state),
                   SizedBox(height: 0.5.height),
+                  if(widget.isIncomingCall==false)
                   Expanded(
                     child: Column(
                       children: [
                         _participantsGrid(state, context),
                         SizedBox(height: 1.height),
-
                         if (state.status == PodCastRecordingStatus.recording ||
                             state.status == PodCastRecordingStatus.paused)
                           const AudioWaveDesign(),
                       ],
                     ),
-                  ),
-
-                  _recordingSection(state, context),
-
+                  )else
+                    Column(
+                      children: [
+                        _participantsGrid(state, context),
+                        SizedBox(height: 1.height),
+                        if (state.status == PodCastRecordingStatus.recording ||
+                            state.status == PodCastRecordingStatus.paused)
+                          const AudioWaveDesign(),
+                      ],
+                    ),
+                 InkWell(onTap: () {
+                   Navigator.pushNamed(context, RoutesName.INCOMING_CALL_FULL_SCREEN);
+                 }, child: Text("Incoming call Screen test for click here")),
+                  SizedBox(height: 1.3.height),
+                 if(widget.isIncomingCall==false)
+                  _recordingSection(state, context)
+                  else if (state.status == PodCastRecordingStatus.recording ||
+                   state.status == PodCastRecordingStatus.paused)
+                    _incomingCallRecordingSection(state,context)
+                 else _IncomingRecordingCard(state),
                   SizedBox(height: 5.height),
                 ],
               );
@@ -73,40 +120,6 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
       ),
     );
   }
-
-  // @override
-  // Widget build(BuildContext context) {
-  //   return PodcastBg(
-  //     isDark: true,
-  //     child: Scaffold(
-  //       backgroundColor: Colors.transparent,
-  //       body: SafeArea(
-  //         child: BlocBuilder<PodCastRecordingCubit, PodCastRecordingState>(
-  //           builder: (context, state) {
-  //             return Column(
-  //               children: [
-  //                 _topHeader(state),
-  //                 SizedBox(height: 1.3.height),
-  //                 _topicCard(context, state),
-  //                 SizedBox(height: 0.5.height),
-  //                 _participantsGrid(state, context),
-  //                 SizedBox(height: 1.height),
-  //                 if (state.status == PodCastRecordingStatus.recording ||
-  //                     state.status == PodCastRecordingStatus.paused)
-  //                 const AudioWaveDesign(),
-  //                 // if (state.status != PodCastRecordingStatus.completed)
-  //                 //   const Spacer(),
-  //                 Align(alignment: Alignment.bottomCenter, child: _recordingSection(state, context)),
-  //                 SizedBox(height: 2.8.height),
-  //               ],
-  //             );
-  //           },
-  //         ),
-  //       ),
-  //       bottomNavigationBar:     _bottomCallControls(),
-  //     ),
-  //   );
-  // }
 
   Widget _topHeader(PodCastRecordingState state) {
     String title = "Recording Not Started Yet";
@@ -170,7 +183,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "You, Mom",
+                "${widget.userName},${widget.isIncomingCall?"you":"Mom"} ",
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -178,7 +191,9 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
               ),
             ],
           ),
-          SvgPicture.asset(Images.user_plus, width: 24, height: 24),
+          InkWell(onTap: () {
+            showInviteDialog(context);
+          }, child: SvgPicture.asset(Images.user_plus, width: 24, height: 24)),
         ],
       ),
     );
@@ -187,13 +202,15 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
   Widget _participantsGrid(PodCastRecordingState state, BuildContext context) {
     const int maxItems = 4;
 
-    final int participantCount = state.participants.length.clamp(0, 3);
+    final int participantCount = state.participants.length.clamp(0, 2);
 
     final bool showInvite =
         state.callStatus != CallStatus.connected &&
-        state.participants.length < 4;
+        state.participants.length < 2;
+    final plusUser= state.participants.length;
 
     final int itemCount = participantCount + (showInvite ? 1 : 0);
+
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -208,13 +225,16 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
         ),
         itemBuilder: (_, i) {
           if (i < participantCount) {
-            return _userCard(state.participants[i]);
+            return _userCard(state.participants[i],i,plusUser);
           }
 
           if (showInvite && i == participantCount) {
             return GestureDetector(
-              onTap: () => showInviteDialog(context),
-              child: _inviteCard(),
+              onTap: () {
+                showInviteDialog(context);
+
+                },
+              child: widget.isIncomingCall? const SizedBox.shrink(): _inviteCard(),
             );
           }
 
@@ -320,6 +340,155 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     );
   }
 
+
+  Widget _incomingCallRecordingSection(PodCastRecordingState state, BuildContext context) {
+    if (state.status == PodCastRecordingStatus.completed) {
+      return _doneRecordingCard(state);
+    }
+
+    if (state.status == PodCastRecordingStatus.recording ||
+        state.status == PodCastRecordingStatus.paused) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: [
+             SizedBox(height: 1.5.height),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  children: [
+                    Text(
+                      "Recording Time :",
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        fontStyle: FontStyle.italic,
+                        color: AppColors.dart_grey,
+                      ),
+                    ),
+                    SizedBox(height: 1.height),
+                    Text(
+                      Utils.formatDuration(state.duration),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                     SizedBox(height: 1.height),
+                   nowRecordingCard(state),
+
+
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        MicButton(
+          label: "Record",
+          icon: Images.mic,
+          isRounded: false,
+          isRedColor: true,
+          onPressed: () {
+            context.read<PodCastRecordingCubit>().startRecording();
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget nowRecordingCard(PodCastRecordingState state){
+    return  GestureDetector(
+      onTap:() {
+
+      },
+      child: Container(
+        height: 30,
+        width: 136,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(40),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors:
+                    [
+                    AppColors.whiteColor,
+                    AppColors.whiteColor,
+                    AppColors.whiteColor,
+                    AppColors.whiteColor,
+                    AppColors.whiteColor,
+                    AppColors.whiteColor
+
+
+                    ],
+                    begin: Alignment.bottomLeft,
+                    end: Alignment.bottomLeft,
+                  ),
+                ),
+              ),
+
+              /// 💡 Center light
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.bottomCenter,
+                    radius: 1.0,
+                    colors: [
+                      Colors.white.withOpacity(0.3),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+
+              /// 🎨 Grain texture
+              CustomPaint(
+                painter: GrainPainter(),
+              ),
+
+              /// 🔤 Content
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(height: 6,
+                    width: 6,
+                    decoration: BoxDecoration(color:state.status == PodCastRecordingStatus.paused?AppColors.yellow: AppColors.redColor,borderRadius: BorderRadius.circular(50)),
+                    ),
+                    const SizedBox(width: 12),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(
+                          state.status == PodCastRecordingStatus.paused?  "Recording paused": "Now Recording",
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.blackColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          )),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+
+  }
+
+
   Widget _doneRecordingCard(PodCastRecordingState state) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -384,6 +553,40 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
           ),
         ),
       ],
+    );
+  }
+  Widget _IncomingRecordingCard(PodCastRecordingState state) {
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryBlueDark.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Recording Not Started!",
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: 1.height),
+          Text(
+            "The host hasn’t started recording this podcast yet.\n You’ll be included automatically once recording begins.\n Please stay in the room.",
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+            textAlign: TextAlign.start,
+          ),
+
+        ],
+      ),
     );
   }
 
@@ -485,6 +688,8 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                                         .read<PodCastRecordingCubit>()
                                         .addParticipant(user);
                                     Navigator.pop(context);
+
+
                                   },
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -525,6 +730,91 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     );
   }
 
+  void showIncomingCallDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) {
+        return Dialog(
+          backgroundColor: AppColors.dart_purple_Color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: BlocBuilder<PodCastRecordingCubit, PodCastRecordingState>(
+            builder: (context, state) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Text(
+                              textAlign: TextAlign.center,
+                              AppStrings.invitedIncomingCallPodcast,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        textAlign: TextAlign.center,
+                        AppStrings.invitedIncomingCallDescription,
+                      style: Theme.of(
+                      context,
+                      ).textTheme.bodyMedium?.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),),
+                    ),
+                    const Divider(),
+                    Row(
+                      children: [
+                        Expanded(child:TextButton(onPressed: () {
+                          Navigator.pop(context);
+                        }, child: Text("Decline",   style:  GoogleFonts.poppins(
+                          color: AppColors.light_pink_Text_Color,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),)) ),
+                        Container(color: AppColors.whiteColor,
+                        height: 21,width: 2,),
+                        Expanded(child:TextButton(onPressed: () {
+                          Navigator.pop(context);
+                          incomingCallStartRecording();
+                        }, child: Text("Agree & Join",  style:  GoogleFonts.poppins(
+                          color: AppColors.light_pink_Text_Color,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),)) )
+                      ],
+                    )
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   Widget _waveform() {
     return SizedBox(
       height: 40,
@@ -546,7 +836,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     );
   }
 
-  Widget _userCard(UserListModel user) {
+  Widget _userCard(UserListModel user,int index,int plusUser) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -585,12 +875,41 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
           const Spacer(),
           Align(
             alignment: AlignmentGeometry.bottomLeft,
-            child: YouAudioWave(useName: user.name),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                YouAudioWave(useName: user.name),
+                if(index==1&&plusUser>=3)
+                plushUser(plusUser),
+              ],
+            ),
           ),
+
         ],
       ),
     );
   }
+
+  Widget plushUser(plusUser){
+    return  Container(
+      alignment: Alignment.center,
+      height: 30,
+      width: 30,
+      decoration: BoxDecoration(
+        color: const Color(0xFFB8C0C0),
+        borderRadius: BorderRadius.circular(50),
+      ),
+      child:  Text(
+        "$plusUser+",
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+
 
   Widget _inviteCard() {
     return Container(
@@ -743,6 +1062,8 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
   }
 
   Widget _bottomCallControls() {
+    return BlocBuilder<PodCastRecordingCubit, PodCastRecordingState>(
+  builder: (context, state) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 17),
       child: Row(
@@ -751,27 +1072,45 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
           _circleBtn(
             Icons.volume_up,
             color: AppColors.dart_grey,
-            isDisable: true,
-            Pressed: () {},
+            isDisable: state.isSpeaker??false,
+            Pressed: () {
+              context.read<PodCastRecordingCubit>().speakerONOff();
+            },
           ),
           _circleBtn(
             Icons.mic_off,
             color: AppColors.dart_grey,
-            isDisable: false,
-            Pressed: () {},
+            isDisable: state.isMic??false,
+            Pressed: () {
+              context.read<PodCastRecordingCubit>().micONOff();
+            },
           ),
           _circleBtn(
             Icons.call_end,
             color: AppColors.redColor,
             isDisable: true,
             isRed: true,
-            Pressed: () {
+            Pressed: () async {
               context.read<PodCastRecordingCubit>().endCall();
+              FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+              if (result != null) {
+                File file = File(result.files.single.path!);
+              } else {
+                // User canceled the picker
+              }
+              Navigator.pushNamed(context, RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,arguments: {
+                "audioPath": result?.files.single.path,
+                "is_draft":false
+              });
+
             },
           ),
         ],
       ),
     );
+  },
+);
   }
 
   Widget _circleBtn(
