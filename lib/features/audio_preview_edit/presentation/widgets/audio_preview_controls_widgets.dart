@@ -141,7 +141,7 @@ class AudioPreviewControls extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         /// ⏱️ Time Row
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),

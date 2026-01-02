@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/core/strings/strings.dart';
+import 'package:legacy_sync/features/audio_overlay_manager/widgets/audio_overlay_widget.dart';
 
 import '../../../../config/routes/routes_name.dart';
 import '../../../../core/colors/colors.dart';
@@ -15,6 +16,9 @@ import '../../../../core/images/images.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/utils.dart';
+import '../../../audio_overlay_manager/audio_overlay_manager.dart';
+import '../../../play_podcast/presentation/bloc/play_podcast_cubit.dart';
+import '../../../play_podcast/presentation/bloc/play_podcast_state.dart';
 import '../../data/podcast_model.dart';
 import '../../data/recent_user_list_model.dart';
 import '../bloc/my_podcast_cubit.dart';
@@ -36,6 +40,13 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
     context.read<MyPodcastCubit>().loadTab("Posted");
     context.read<MyPodcastCubit>().allPodcastsContinueListening();
     context.read<MyPodcastCubit>().fetchRecentUserList();
+  }
+
+
+  @override
+  void deactivate() {
+    AudioOverlayManager.hide();
+    super.deactivate();
   }
 
   @override
@@ -74,16 +85,57 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             ],
           ),
         ),
-        floatingActionButton: CommonAddFab(
-          size: 56,
-          icon: Icons.add,
-          onTap: () {
-            Navigator.pushNamed(context, RoutesName.PODCAST_RECORDING_SCREEN,arguments: {
-              "incoming_call":false,
-              "userName":"you"
+        floatingActionButton: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CommonAddFab(
+              size: 56,
+              icon: Icons.add,
+              onTap: () {
+                Navigator.pushNamed(context, RoutesName.PODCAST_RECORDING_SCREEN,arguments: {
+                  "incoming_call":false,
+                  "userName":"you"
 
-            });
-          },
+                });
+              },
+            ),
+       const SizedBox(height: 10,),
+            BlocBuilder<PlayPodcastCubit, PlayPodcastState>(builder: (context, state) {
+              final cubit = context.read<PlayPodcastCubit>();
+              return state.isOverlayManager ?
+             Center(
+               child: Padding(
+                 padding: const EdgeInsets.only(left: 30),
+                 child: InkWell(
+                   onTap: () {
+                     context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
+                     Navigator.pushNamed(
+                         context,
+                         RoutesName.PLAY_PODCAST ,
+                         arguments:{
+                           "podcast":state.podcast,
+                           "audioPath" : "assets/images/test_audio.mp3",
+                           "isOverlayManager" : state.isOverlayManager,
+                         });
+                   },
+                   child: AudioOverlayWidget(
+                     title: state.podcast?.title??'',
+                     subtitle: "Me • ${Utils.capitalize(state.podcast?.relationship)}",
+                     imagePath: Images.album_pic,
+                     isPlaying: state.isPlaying,
+                     onPlayPause: cubit.playPause,
+                     onNext: () {
+                     },
+                   ),
+                 ),
+               ),
+             )
+              :const SizedBox.shrink();
+            },)
+
+          ],
         ),
       ),
     );
@@ -479,12 +531,17 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         // } else {
         //   // User canceled the picker
         // }
+        // AudioOverlayManager.hide();
+
+        context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
+        context.read<MyPodcastCubit>().loadPodcast(data);
         Navigator.pushNamed(
             context,
             RoutesName.PLAY_PODCAST ,
             arguments:{
             "podcast":data,
-             "audioPath" : "result?.files.single.path",
+             "audioPath" : "assets/images/test_audio.mp3",
+              "isOverlayManager":false
         });
       },
       child: Container(

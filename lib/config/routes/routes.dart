@@ -33,6 +33,7 @@ import '../../features/legacy_wrapped/presentation/pages/voice_is_growing_screen
 import '../../features/livekit_connection/presentation/podcast_connection.dart';
 import '../../features/my_podcast/presentation/pages/my_podcast_screen.dart';
 import '../../features/play_podcast/presentation/pages/play_podcast.dart';
+import '../../features/play_podcast/presentation/pages/widget/transcript_description.dart';
 import '../../features/podcast/presentation/pages/podcast_screen.dart';
 import '../../features/podcast_recording/presentation/pages/podcast_recording_screen.dart';
 import '../../features/settings/presentation/pages/more_options_screen.dart';
@@ -166,7 +167,12 @@ class Routes {
           final data = settings.arguments as Map?;
           final podcast = data!["podcast"];
           final audioPath = data["audioPath"];
-        return _animatedRouteDownToUp(PlayPodcast(podcast:podcast,audioPath:audioPath ,));
+          final isOverlayManager = data["isOverlayManager"];
+        return _animatedRouteDownToUp(PlayPodcast(podcast:podcast,audioPath:audioPath ,isOverlayManager: isOverlayManager,));
+        case RoutesName.transcript_description:
+          final data = settings.arguments as Map?;
+          final podcast = data!["podcast"];
+        return _animatedRouteDownToUp(TranscriptDescription(podcast:podcast));
       default:
         return MaterialPageRoute(builder: (context) => const LoginScreen());
     }

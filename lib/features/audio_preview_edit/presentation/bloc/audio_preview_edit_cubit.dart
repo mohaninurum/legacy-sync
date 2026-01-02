@@ -65,6 +65,12 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
   }
 
   void playPause() {
+    // 1️⃣ If audio completed → reset
+    if (state.position >= state.duration) {
+      _player.seek(Duration.zero);
+      _playerController.seekTo(0);
+    }
+
     if (_player.playing) {
       _player.pause();
       _playerController.stopPlayer();
@@ -89,12 +95,22 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
   }
 
   void rewind15() {
-    seek(state.position - const Duration(seconds: 15));
+    final newPosition = state.position - const Duration(seconds: 15);
+
+    seek(
+      newPosition < Duration.zero ? Duration.zero : newPosition,
+    );
   }
 
   void forward15() {
-    seek(state.position + const Duration(seconds: 15));
+    final maxDuration = state.duration;
+    final newPosition = state.position + const Duration(seconds: 15);
+
+    seek(
+      newPosition > maxDuration ? maxDuration : newPosition,
+    );
   }
+
 
   void updateTrim(double start, double end) {
     emit(state.copyWith(trimStart: start, trimEnd: end));

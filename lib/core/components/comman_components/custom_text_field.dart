@@ -35,7 +35,7 @@ class CustomTextField extends StatefulWidget {
     this.contentPaddingHorizontal = 12,
     this.isPassword = false,
     this.maxLength,
-    this.maxLines,
+    this.maxLines=1,
     this.readOnly = false,
     this.enabled = true,
     this.prefixIcon,

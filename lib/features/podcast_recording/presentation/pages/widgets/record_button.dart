@@ -25,7 +25,6 @@ class MicButton extends StatelessWidget {
             height: isRounded?75:50,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(isRounded?50:40),
-              /// 🔴 RED GRADIENT
               gradient:  LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,

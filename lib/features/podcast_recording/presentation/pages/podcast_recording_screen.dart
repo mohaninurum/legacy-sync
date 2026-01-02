@@ -100,9 +100,11 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                           const AudioWaveDesign(),
                       ],
                     ),
+                  if (state.status == PodCastRecordingStatus.idle)
                  InkWell(onTap: () {
                    Navigator.pushNamed(context, RoutesName.INCOMING_CALL_FULL_SCREEN);
-                 }, child: Text("Incoming call Screen test for click here")),
+                 }, child: const Text("Incoming call Screen test for click here")),
+                  if (state.status == PodCastRecordingStatus.idle)
                   SizedBox(height: 1.3.height),
                  if(widget.isIncomingCall==false)
                   _recordingSection(state, context)

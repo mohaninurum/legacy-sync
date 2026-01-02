@@ -15,13 +15,14 @@ class MyPodcastState {
   final List<PodcastModel> listPodcastsContinueListening;
   final List<RecentUserListModel> recentUserList;
   final bool loading;
-
+  final PodcastModel? podcast;
   const MyPodcastState({
     required this.selectedTab,
     required this.podcasts,
     required this.listPodcastsContinueListening,
     required this.recentUserList,
     required this.loading,
+    required this.podcast,
   });
 
   factory MyPodcastState.initial() {
@@ -31,6 +32,7 @@ class MyPodcastState {
       listPodcastsContinueListening: [],
       recentUserList: [],
       loading: true,
+      podcast: null,
     );
   }
 
@@ -40,6 +42,7 @@ class MyPodcastState {
     List<PodcastModel>? listPodcastsContinueListening,
     List<RecentUserListModel>? recentUserList,
     bool? loading,
+    PodcastModel? podcast,
   }) {
     return MyPodcastState(
       selectedTab: selectedTab ?? this.selectedTab,
@@ -47,6 +50,7 @@ class MyPodcastState {
       listPodcastsContinueListening: listPodcastsContinueListening??this.listPodcastsContinueListening,
       recentUserList: recentUserList??this.recentUserList,
       loading: loading ?? this.loading,
+      podcast:podcast ?? this.podcast,
     );
   }
 }

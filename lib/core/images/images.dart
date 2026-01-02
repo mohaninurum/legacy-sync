@@ -133,6 +133,7 @@ class Images {
   static const String microphone = "assets/icons/microphone.svg";
   static const String mic = "assets/icons/mic.png";
   static const String pause = "assets/icons/pause.svg";
+  static const String play = "assets/images/play.svg";
   static const String stop = "assets/icons/stop.svg";
   static const String plus = "assets/icons/plus.svg";
   static const String bookmark = "assets/icons/bookmark.png";
@@ -141,6 +142,9 @@ class Images {
   static const String rotate_ccw = "assets/images/rotate-ccw.png";
   static const String rotate_cw = "assets/images/rotate-cw.png";
   static const String user_you = "assets/images/user_you.png";
+  static const String album_pic = "assets/images/album_pic.png";
+  static const String next_play = "assets/images/next_play.svg";
+  static const String sync = "assets/images/sync.svg";
 
   ///Icons
   static const String ic_google = "assets/icons/ic_google.png";

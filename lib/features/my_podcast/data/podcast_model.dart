@@ -8,6 +8,8 @@ class PodcastModel {
   final int totalDurationSec;   // e.g. 1800 (30 min)
   final int listenedSec;        // e.g. 900 (15 min)
   final String author;
+  final String description;
+  final String summary;
 
   PodcastModel({
     required this.title,
@@ -18,6 +20,8 @@ class PodcastModel {
     required this.type,
     required this.totalDurationSec,   // e.g. 1800 (30 min)
     required this.listenedSec,        // e.g. 900 (15 min)
-    required this.author
+    required this.author,
+    required this.description
+  ,required this.summary
   });
 }

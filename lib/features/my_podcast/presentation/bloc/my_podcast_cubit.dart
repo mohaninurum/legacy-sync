@@ -23,6 +23,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 900,
       totalDurationSec: 1800,
+      description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. ",
+      summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. ",
+
     ),
     PodcastModel(
       title: "Through His Eyes",
@@ -34,6 +37,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 200,
       totalDurationSec: 1800,
+        description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+       , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
     ),
     PodcastModel(
       title: "Growing Side By Side",
@@ -45,6 +51,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 300,
       totalDurationSec: 1800,
+        description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+       , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
     ),
     PodcastModel(
       title: "Untitled",
@@ -56,6 +65,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 900,
       totalDurationSec: 1800,
+        description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+      ,  summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
     ),
     PodcastModel(
       title: "Untitled",
@@ -67,6 +79,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 200,
       totalDurationSec: 1800,
+        description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+        ,summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
     ),
     PodcastModel(
       title: "Conversat Through His Eyes",
@@ -78,6 +93,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 200,
       totalDurationSec: 1800,
+        description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+       , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
     ),
     PodcastModel(
       title: "Untitled",
@@ -89,6 +107,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 200,
       totalDurationSec: 1800,
+        description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+      ,  summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
     ),
     PodcastModel(
       title: "The Heart That Raised Me",
@@ -100,6 +121,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 900,
       totalDurationSec: 1800,
+        description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+       , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
     ),
     PodcastModel(
       title: "Through His Eyes",
@@ -111,6 +135,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 200,
       totalDurationSec: 1800,
+        description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+        ,summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
     ),
     PodcastModel(
       title: "Growing Side By Side",
@@ -122,6 +149,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 300,
       totalDurationSec: 1800,
+        description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+       , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
     ),
   ];
 
@@ -136,6 +166,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 900,
       totalDurationSec: 1800,
+        description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+       , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
     ),
     PodcastModel(
       title: "Through His Eyes",
@@ -147,6 +180,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 200,
       totalDurationSec: 1800,
+        description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+       , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
     ),
     PodcastModel(
       title: "The Heart That Raised Me",
@@ -158,6 +194,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       author: "",
       listenedSec: 900,
       totalDurationSec: 1800,
+        description: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+     ,   summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
     ),
   ];
 
@@ -203,6 +242,10 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
         ),
       );
     }
+  }
+
+  void loadPodcast(PodcastModel podcast){
+    emit(state.copyWith(podcast: podcast));
   }
 
   void allPodcastsContinueListening() {

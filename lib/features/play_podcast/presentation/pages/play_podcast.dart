@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
+import 'package:legacy_sync/features/play_podcast/presentation/pages/widget/audio_play_controller.dart';
+import 'package:legacy_sync/features/play_podcast/presentation/pages/widget/bg_album_widget.dart';
+import '../../../../config/routes/routes_name.dart';
 import '../../../../core/colors/colors.dart';
 import '../../../../core/components/comman_components/app_button.dart';
 import '../../../../core/components/comman_components/podcast_bg.dart';
 import '../../../../core/images/images.dart';
+import '../../../../core/utils/utils.dart';
+import '../../../audio_overlay_manager/audio_overlay_manager.dart';
+import '../../../audio_overlay_manager/widgets/audio_overlay_widget.dart';
 import '../../../my_podcast/data/podcast_model.dart';
 import '../bloc/play_podcast_cubit.dart';
 import '../bloc/play_podcast_state.dart';
@@ -13,65 +19,129 @@ import '../bloc/play_podcast_state.dart';
 class PlayPodcast extends StatefulWidget {
   final PodcastModel? podcast;
   final String audioPath;
+  final bool isOverlayManager;
 
-  const PlayPodcast({Key? key,this.podcast,required this.audioPath}) : super(key: key);
+  const PlayPodcast({Key? key, this.podcast, required this.audioPath,required this.isOverlayManager})
+    : super(key: key);
 
   @override
   State<PlayPodcast> createState() => _PlayPodcastState();
 }
 
 class _PlayPodcastState extends State<PlayPodcast> {
-
+  ScrollController scrollController = ScrollController();
 
   @override
   void initState() {
-    context.read<PlayPodcastCubit>().loadAudio(widget.audioPath);
+    if(widget.isOverlayManager){
+
+    }else{
+      context.read<PlayPodcastCubit>().loadAudio(widget.audioPath,widget.podcast);
+    }
+
+
+    scrollController.addListener(() {
+      print(scrollController.position.pixels);
+      if (scrollController.position.pixels >= 50) {
+        print("isScrollController::80");
+        context.read<PlayPodcastCubit>().isScrollController(true);
+      } else {
+        print("isScrollController::else");
+        context.read<PlayPodcastCubit>().isScrollController(false);
+      }
+    });
+
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return PodcastBg(
-      isDark: true,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: BlocBuilder<PlayPodcastCubit, PlayPodcastState>(
-            builder: (context, state) {
-              final cubit = context.read<PlayPodcastCubit>();
-              return SingleChildScrollView(
+    return BlocBuilder<PlayPodcastCubit, PlayPodcastState>(
+      builder: (context, state) {
+        final cubit = context.read<PlayPodcastCubit>();
+        return BgAlbumWidget(
+          isImage: true,
+          url: Images.album_pic,
+          isDark: state.isScroll,
+          child: Scaffold(
+            backgroundColor:
+                state.isScroll
+                    ? AppColors.primaryColorDull
+                    : Colors.transparent,
+            body: SafeArea(
+              child: SingleChildScrollView(
+                controller: scrollController,
                 child: Column(
                   children: [
-                    _topHeader(state),
+                    _topHeader(state, cubit),
                     SizedBox(height: 2.height),
-                    // addCover(state),
+                    state.isScroll
+                        ? albumCover(Images.album_pic)
+                        : const SizedBox.shrink(),
+                    state.isScroll
+                        ? SizedBox(height: 3.height)
+                        : SizedBox(height: 38.height),
+                    albumMetaData(widget.podcast),
                     SizedBox(height: 1.height),
-                    // title("Preview"),
-                    // AudioPreviewControls(
-                    //   state: state,
-                    //   cubit: cubit,
-                    //   audioPath: widget.audioPath,
-                    // ),
-                    // AudioMetaWidget(state: state,)
+                    AudioPlayController(state: state, cubit: cubit),
+                    SizedBox(height: 3.5.height),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 7),
+                      child: _buildCardInfo(
+                        "Description",
+                        widget.podcast?.description ?? "",
+                      ),
+                    ),
+                    SizedBox(height: 3.height),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 7),
+                      child: _buildCardInfo("Summary", widget.podcast?.summary ?? ""),
+                    ),
+                    SizedBox(height: 3.height),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 7),
+                      child: autoGeneratedTranscript(widget.podcast?.summary ?? ""),
+                    ),
+                    SizedBox(height: 3.height),
                   ],
                 ),
-              );
-            },
+              ),
+            ),
+            // bottomNavigationBar: _bottomControls(),
           ),
-        ),
-        // bottomNavigationBar: _bottomControls(),
-      ),
+        );
+      },
     );
   }
 
-  Widget _topHeader(PlayPodcastState state) {
+  Widget _topHeader(PlayPodcastState state, PlayPodcastCubit cubit) {
     Widget buildBackButton() {
       return AppButton(
         padding: const EdgeInsets.all(0),
         onPressed: () {
           Navigator.pop(context);
+          if (state.isPlaying) {
+          cubit.loadOverlayAudioManager(true);
+            // AudioOverlayManager.show(
+            //   context: context,
+            //   title: widget.podcast?.title ?? '',
+            //   subtitle:
+            //   "Me • ${Utils.capitalize(widget.podcast?.relationship)}",
+            //   imagePath: Images.album_pic,
+            //   onPlayPause: () {
+            //     cubit.playPauseOvalayManger();
+            //   },
+            //   onNext: () {
+            //
+            //   },
+            // );
+          }
         },
-        child: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 40),
+        child: const Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Colors.white,
+          size: 40,
+        ),
       );
     }
 
@@ -81,7 +151,14 @@ class _PlayPodcastState extends State<PlayPodcast> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           buildBackButton(),
-          Text("Now Playing", style: GoogleFonts.dmSerifDisplay(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),),
+          Text(
+            "Now Playing",
+            style: GoogleFonts.dmSerifDisplay(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           InkWell(
             onTap: () {
               context.read<PlayPodcastCubit>().bookmark();
@@ -108,5 +185,184 @@ class _PlayPodcastState extends State<PlayPodcast> {
     );
   }
 
+  Widget albumCover(url) {
+    return Container(
+      width: 300,
+      height: 300,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Image.asset(url, fit: BoxFit.cover),
+      ),
+    );
+  }
 
+  Widget albumMetaData(PodcastModel? podcast) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 17),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Text(
+              podcast?.title ?? "how to deal with anxiety",
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          SizedBox(height: 1.height),
+          Row(
+            children: [
+              Text(
+                "Me  ",
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.dart_grey.withValues(alpha: 0.8),
+                ),
+              ),
+              Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.dart_grey,
+                  borderRadius: BorderRadius.circular(50),
+                ),
+              ),
+              Text(
+                "  ${Utils.capitalize(podcast?.relationship)}",
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.dart_grey.withValues(alpha: 0.8),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardInfo(String description, String content) {
+    return Container(
+      width: 363.width,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryBlueDark.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            description,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
+          SizedBox(height: 2.height),
+          Text(
+            content,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w400,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget autoGeneratedTranscript(String transcriptText) {
+    return Container(
+      width: 363.width,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryBlueDark.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Auto Generated Transcript",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+              InkWell(
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    RoutesName.transcript_description,
+                    arguments: {"podcast": widget.podcast},
+                  );
+                },
+                child: Icon(
+                  Icons.open_in_full,
+                  color: Colors.white70,
+                  size: 18,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                "04:96 ",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w400,
+                  fontSize: 10,
+                ),
+              ),
+              Text(
+                " • ",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                " Mom",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            transcriptText,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+              color: Colors.white54,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
