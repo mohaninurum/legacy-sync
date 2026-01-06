@@ -1,6 +1,6 @@
 enum NavigationTab {
   journey(0, 'Journey', 'assets/icons/journey.svg'),
-  chat(1, 'Chat', 'assets/icons/comment.svg'),
+  chat(1, 'Podcast', 'assets/icons/comment.svg'),
   tribe(2, 'Tribe', 'assets/icons/family-dress.svg'),
   profile(3, 'Profile', 'assets/icons/user.svg');
 

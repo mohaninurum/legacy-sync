@@ -19,6 +19,9 @@ class MicButton extends StatelessWidget {
     return Column(
       children: [
         InkWell(
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          splashColor: Colors.transparent,
           onTap: onPressed,
           child: Container(
             width:  isRounded?75:95,

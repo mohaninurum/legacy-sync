@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -15,11 +16,15 @@ import 'package:legacy_sync/features/home/presentation/pages/tripe_page_widget.d
 import 'package:legacy_sync/features/home/presentation/widgets/bottom_navigation_widget.dart';
 import 'package:legacy_sync/features/home/presentation/widgets/coming_soon_widget.dart';
 import 'package:legacy_sync/features/home/presentation/pages/journey_content_widget.dart';
+import 'package:legacy_sync/features/my_podcast/presentation/pages/my_podcast_screen.dart';
 import 'package:legacy_sync/features/profile/presentation/bloc/profile_bloc/profile_cubit.dart';
 import 'package:legacy_sync/features/profile/presentation/pages/profile_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../config/db/shared_preferences.dart';
 import '../../../../config/routes/routes_name.dart';
 import '../../../../core/images/images.dart';
+import '../../../../core/utils/utils.dart';
+import '../../../../main.dart';
 import '../../../podcast/presentation/pages/podcast_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -29,12 +34,13 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   late AnimationController _mainController;
   late Animation<double> _mainAnimation;
   String? _selectedModule;
   String? congratulationValue;
+  bool startMakingPodcast=false;
 
   // Animation controllers for pipe flow
   late List<AnimationController> _pipeControllers;
@@ -43,12 +49,63 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkPendingCall();
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   if (pendingCallArguments != null) {
+    //     Utils.navigatorKey.currentState?.pushNamed(
+    //       RoutesName.PODCAST_RECORDING_SCREEN,
+    //       arguments: pendingCallArguments,
+    //     );
+    //     pendingCallArguments = null;
+    //   }
+    // });
+    getstartmackingPodcast();
     _setupAnimations();
     context.read<HomeCubit>().initializeHome(context);
     context.read<HomeCubit>().getFriendsList();
     context.read<ProfileCubit>().loadProfile(context);
     context.read<ProfileCubit>().getLegacySteps();
     getModule();
+
+
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkPendingCall();
+    }
+  }
+
+
+  getstartmackingPodcast() async {
+    startMakingPodcast= await AppPreference().getBool(key: AppPreference.start_Making_Podcast);
+  }
+
+  Future<void> _checkPendingCall() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString('pending_call_accept');
+   print("notification Data:$data");
+    if (data != null) {
+      final args = jsonDecode(data);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Utils.navigatorKey.currentState?.pushNamed(
+          RoutesName.PODCAST_RECORDING_SCREEN,
+          arguments: args,
+        );
+      });
+    }else{
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if(pendingCallArguments!=null){
+          Utils.navigatorKey.currentState?.pushNamed(
+            RoutesName.PODCAST_RECORDING_SCREEN,
+            arguments: pendingCallArguments,
+          );
+        }
+
+      });
+    }
   }
 
 
@@ -84,6 +141,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     for (var controller in _pipeControllers) {
       controller.dispose();
     }
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -126,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             pipeControllers: _pipeControllers,
             pipeAnimations: _pipeAnimations);
       case NavigationTab.chat:
-        return const PodcastScreen(); //_buildChatContent();
+        return startMakingPodcast? const MyPodcastScreen(): const PodcastScreen();
       case NavigationTab.tribe:
         return const TripePageWidget();
       case NavigationTab.profile:

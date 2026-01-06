@@ -11,7 +11,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/foundation.dart';
 
-import '../../services/notification_initialization/notification_initialization.dart';
 
 typedef ResultFuture<T> = Future<Either<AppException, T>>;
 typedef ResultVoid = ResultFuture<void>;

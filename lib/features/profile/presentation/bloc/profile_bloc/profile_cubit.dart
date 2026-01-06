@@ -38,8 +38,6 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
 
     try {
-
-
       Utils.showLoader();
       emit(state.copyWith(isLoading: true));
       if (!loadForce) {

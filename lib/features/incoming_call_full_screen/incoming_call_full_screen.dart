@@ -17,8 +17,6 @@ class IncomingCallFullScreen extends StatefulWidget {
 
 class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
 
-
-
   @override
   Widget build(BuildContext context) {
     return  Scaffold(
@@ -62,6 +60,8 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           actionCallButton(),
+          SizedBox(height: 3.height,),
+
         ],
       ) ,
     );

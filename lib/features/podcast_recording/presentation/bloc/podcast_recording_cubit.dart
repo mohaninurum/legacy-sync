@@ -198,22 +198,22 @@ try{
     if (state.participants.length==1) {
       return;
     }
-    final List<UserListModel> updatedParticipants =
-    List<UserListModel>.from(state.participants);
-    
-    if (updatedParticipants.isNotEmpty) {
-      print("remove...");
-      print(updatedParticipants.length);
-      print(updatedParticipants.length - 2);
-      updatedParticipants.removeAt(updatedParticipants.length - 1);
-    }
-    print(updatedParticipants.length);
+    // final List<UserListModel> updatedParticipants =
+    // List<UserListModel>.from(state.participants);
+    //
+    // if (updatedParticipants.isNotEmpty) {
+    //   print("remove...");
+    //   print(updatedParticipants.length);
+    //   print(updatedParticipants.length - 2);
+    //   updatedParticipants.removeAt(updatedParticipants.length - 1);
+    // }
+    // print(updatedParticipants.length);
     stopRecording();
     emit(
       state.copyWith(
         status: PodCastRecordingStatus.completed,
         callStatus: CallStatus.disconnected,
-        participants: updatedParticipants,
+        // participants: updatedParticipants,
       ),
     );
   }

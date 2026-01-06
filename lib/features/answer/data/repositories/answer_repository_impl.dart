@@ -10,7 +10,6 @@ import 'package:legacy_sync/features/answer/data/model/answer.dart';
 import 'package:legacy_sync/features/answer/data/model/mux_response.dart';
 import 'package:legacy_sync/features/answer/domain/repositories/answer_repository.dart';
 import 'dart:typed_data';
-import '../../../../services/notification_initialization/notification_initialization.dart';
 import '../model/submit_answer_response.dart';
 
 class AnswerRepositoryImpl implements AnswerRepository {

@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:legacy_sync/config/routes/routes_name.dart';
@@ -10,6 +13,7 @@ import '../../../../core/components/comman_components/app_button.dart';
 import '../../../../core/components/comman_components/curved_header_clipper.dart';
 import '../../../../core/components/comman_components/custom_button.dart';
 import '../../../../core/components/comman_components/podcast_bg.dart';
+import '../../../../core/components/comman_components/will_pop_scope.dart';
 import '../bloc/podcast_cubit.dart';
 import '../bloc/podcast_state.dart';
 
@@ -31,25 +35,30 @@ class _PodcastScreenState extends State<PodcastScreen> {
   @override
   Widget build(BuildContext context) {
     return
-      PodcastBg(
-        isDark: false,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body:
-        SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              _buildBgStackImageAndOptions(),
-              _buildCardInfo(),
+      AppWillPopScope(
+        onExit: (v) {
+          exit(0);
+        },
+        child: PodcastBg(
+          isDark: false,
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body:
+          SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                _buildBgStackImageAndOptions(),
+                _buildCardInfo(),
 
 
-          ],
+            ],
+            ),
           ),
         ),
-      ),
-     );
+             ),
+      );
   }
 
 
@@ -71,10 +80,11 @@ class _PodcastScreenState extends State<PodcastScreen> {
   Widget _buildBackButton() {
     return  AppButton(
       padding: const EdgeInsets.all(0),
-      onPressed: () {
-
-       Navigator.pop(context);
-
+      onPressed: () async {
+        final shouldPop = await _showActionSheet(context);
+        if (shouldPop == true) {
+          exit(1);
+        }
       },
       child:  const Icon(Icons.arrow_back_ios_rounded, color:Colors.white),
     );
@@ -212,6 +222,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
     return CustomButton(
       height: 48,
       onPressed: () {
+        context.read<PodcastCubit>().startMakingPodcast();
         Navigator.pushNamed(context, RoutesName.MY_PODCAST_SCREEN);
       },
       // isLoadingState: state.isLoading,
@@ -220,7 +231,40 @@ class _PodcastScreenState extends State<PodcastScreen> {
     );
   }
 
+  Future<bool> _showActionSheet(BuildContext context) async {
+    final result = await showCupertinoModalPopup<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoActionSheet(
+          title: const Text(
+            AppStrings.areYouSureYouWantToExit,
+            style: TextStyle(color: AppColors.whiteColor),
+          ),
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.of(context).pop(true); // return true
+              },
+              child: const Text(
+                AppStrings.exit,
+                style: TextStyle(color: AppColors.primaryColorDark),
+              ),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            isDefaultAction: true,
+            isDestructiveAction: true,
+            onPressed: () {
+              Navigator.of(context).pop(false); // return false
+            },
+            child: const Text(AppStrings.cancel),
+          ),
+        );
+      },
+    );
 
+    return result ?? false;
+  }
 
 }
 

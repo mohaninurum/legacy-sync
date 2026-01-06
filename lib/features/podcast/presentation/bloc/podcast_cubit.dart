@@ -1,6 +1,7 @@
 
 import 'package:legacy_sync/features/podcast/presentation/bloc/podcast_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../config/db/shared_preferences.dart';
 import '../../../../core/images/images.dart';
 import '../../data/model/build_own_podcast_model.dart';
 import '../../domain/podcast_usecase/podcast_usecase.dart';
@@ -31,6 +32,9 @@ class PodcastCubit extends Cubit<PodcastState> {
     emit(state.copyWith(isLoading: false));
 
 
+  }
+  void startMakingPodcast() async {
+    AppPreference().setBool(key: AppPreference.start_Making_Podcast, value:  true);
   }
 
 

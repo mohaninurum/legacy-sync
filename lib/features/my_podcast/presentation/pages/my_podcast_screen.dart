@@ -1,17 +1,20 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/core/strings/strings.dart';
 import 'package:legacy_sync/features/audio_overlay_manager/widgets/audio_overlay_widget.dart';
 
+import '../../../../config/db/shared_preferences.dart';
 import '../../../../config/routes/routes_name.dart';
 import '../../../../core/colors/colors.dart';
 import '../../../../core/components/comman_components/app_button.dart';
 import '../../../../core/components/comman_components/common_add_fab.dart';
 import '../../../../core/components/comman_components/curved_header_clipper.dart';
 import '../../../../core/components/comman_components/podcast_bg.dart';
+import '../../../../core/components/comman_components/will_pop_scope.dart';
 import '../../../../core/images/images.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -26,7 +29,7 @@ import '../bloc/my_podcast_state.dart';
 
 import 'package:file_picker/file_picker.dart';
 
-class MyPodcastScreen extends StatefulWidget {
+class MyPodcastScreen extends StatefulWidget  {
   const MyPodcastScreen({super.key});
 
   @override
@@ -34,12 +37,21 @@ class MyPodcastScreen extends StatefulWidget {
 }
 
 class _MyPodcastScreenState extends State<MyPodcastScreen> {
+
+  bool startMakingPodcast = false;
+
+
   @override
   void initState() {
     super.initState();
+    getstartmackingPodcast();
     context.read<MyPodcastCubit>().loadTab("Posted");
     context.read<MyPodcastCubit>().allPodcastsContinueListening();
     context.read<MyPodcastCubit>().fetchRecentUserList();
+  }
+
+  getstartmackingPodcast() async {
+    startMakingPodcast= await AppPreference().getBool(key: AppPreference.start_Making_Podcast);
   }
 
 
@@ -51,91 +63,96 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PodcastBg(
-      isDark: true,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              _buildBgStackImageAndOptions(),
-              SizedBox(height: 0.5.height),
-              _header(AppStrings.continueListening, ''),
-              SizedBox(height: 0.2.height),
-              _listContinueListening(),
-              _header(AppStrings.myPodcast, AppStrings.seeAll),
-              SizedBox(height: 1.height),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 5),
-                child: _tabs(),
-              ),
-              SizedBox(height: 1.height),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 5),
-                child: _list(),
-              ),
-              _header(AppStrings.recent, ""),
-              SizedBox(height: 1.height),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 5),
-                child: recentList(),
-              ),
-            ],
-          ),
-        ),
-        floatingActionButton: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CommonAddFab(
-              size: 56,
-              icon: Icons.add,
-              onTap: () {
-                Navigator.pushNamed(context, RoutesName.PODCAST_RECORDING_SCREEN,arguments: {
-                  "incoming_call":false,
-                  "userName":"you"
-
-                });
-              },
+    return  AppWillPopScope(
+      onExit: (v) {
+        exit(0);
+      },
+      child: PodcastBg(
+        isDark: true,
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                _buildBgStackImageAndOptions(),
+                SizedBox(height: 0.5.height),
+                _header(AppStrings.continueListening, ''),
+                SizedBox(height: 0.2.height),
+                _listContinueListening(),
+                _header(AppStrings.myPodcast, AppStrings.seeAll),
+                SizedBox(height: 1.height),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: _tabs(),
+                ),
+                SizedBox(height: 1.height),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: _list(),
+                ),
+                _header(AppStrings.recent, ""),
+                SizedBox(height: 1.height),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: recentList(),
+                ),
+              ],
             ),
-       const SizedBox(height: 10,),
-            BlocBuilder<PlayPodcastCubit, PlayPodcastState>(builder: (context, state) {
-              final cubit = context.read<PlayPodcastCubit>();
-              return state.isOverlayManager ?
-             Center(
-               child: Padding(
-                 padding: const EdgeInsets.only(left: 30),
-                 child: InkWell(
-                   onTap: () {
-                     context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
-                     Navigator.pushNamed(
-                         context,
-                         RoutesName.PLAY_PODCAST ,
-                         arguments:{
-                           "podcast":state.podcast,
-                           "audioPath" : "assets/images/test_audio.mp3",
-                           "isOverlayManager" : state.isOverlayManager,
-                         });
-                   },
-                   child: AudioOverlayWidget(
-                     title: state.podcast?.title??'',
-                     subtitle: "Me • ${Utils.capitalize(state.podcast?.relationship)}",
-                     imagePath: Images.album_pic,
-                     isPlaying: state.isPlaying,
-                     onPlayPause: cubit.playPause,
-                     onNext: () {
+          ),
+          floatingActionButton: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CommonAddFab(
+                size: 56,
+                icon: Icons.add,
+                onTap: () {
+                  Navigator.pushNamed(context, RoutesName.PODCAST_RECORDING_SCREEN,arguments: {
+                    "incoming_call":false,
+                    "userName":"you"
+
+                  });
+                },
+              ),
+             const SizedBox(height: 10,),
+              BlocBuilder<PlayPodcastCubit, PlayPodcastState>(builder: (context, state) {
+                final cubit = context.read<PlayPodcastCubit>();
+                return state.isOverlayManager ?
+               Center(
+                 child: Padding(
+                   padding: const EdgeInsets.only(left: 30),
+                   child: InkWell(
+                     onTap: () {
+                       context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
+                       Navigator.pushNamed(
+                           context,
+                           RoutesName.PLAY_PODCAST ,
+                           arguments:{
+                             "podcast":state.podcast,
+                             "audioPath" : "assets/images/test_audio.mp3",
+                             "isOverlayManager" : state.isOverlayManager,
+                           });
                      },
+                     child: AudioOverlayWidget(
+                       title: state.podcast?.title??'',
+                       subtitle: "Me • ${Utils.capitalize(state.podcast?.relationship)}",
+                       imagePath: Images.album_pic,
+                       isPlaying: state.isPlaying,
+                       onPlayPause: cubit.playPause,
+                       onNext: () {
+                       },
+                     ),
                    ),
                  ),
-               ),
-             )
-              :const SizedBox.shrink();
-            },)
+               )
+                :const SizedBox.shrink();
+              },)
 
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -237,8 +254,16 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
   Widget _buildBackButton() {
     return AppButton(
       padding: const EdgeInsets.all(0),
-      onPressed: () {
-        Navigator.pop(context);
+      onPressed: () async {
+        if(startMakingPodcast){
+          final shouldPop = await _showActionSheet(context);
+          if (shouldPop == true) {
+            exit(1);
+          }
+        }else{
+      Navigator.pop(context);
+        }
+
       },
       child: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
     );
@@ -282,7 +307,6 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                         ),
 
                         selected: state.selectedTab == tab,
-
                         onSelected: (_) {
                           context.read<MyPodcastCubit>().loadTab(tab);
                         },
@@ -327,38 +351,6 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         },
       );
 
-
-  Widget _draftlist() =>
-      BlocBuilder<MyPodcastCubit, MyPodcastState>(
-        builder: (context, state) {
-          if (state.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state.listPodcastsContinueListening.isEmpty) {
-            return const Center(
-              child: Text(
-                "No podcasts found",
-                style: TextStyle(color: Colors.white70),
-              ),
-            );
-          }
-
-          return SizedBox(
-            height: 120,
-            child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-              itemCount: state.listPodcastsContinueListening.length,
-              itemBuilder: (_, i) {
-                final data = state.listPodcastsContinueListening[i];
-                return SizedBox(width: 318, child: continueListening(data));
-              },
-            ),
-          );
-        },
-      );
 
 
   Widget _list() => BlocBuilder<MyPodcastCubit, MyPodcastState>(
@@ -533,7 +525,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         // }
         // AudioOverlayManager.hide();
 
-        context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
+        // context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
         context.read<MyPodcastCubit>().loadPodcast(data);
         Navigator.pushNamed(
             context,
@@ -879,5 +871,41 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
       );
     },
   );
+
+
+  Future<bool> _showActionSheet(BuildContext context) async {
+    final result = await showCupertinoModalPopup<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoActionSheet(
+          title: const Text(
+            AppStrings.areYouSureYouWantToExit,
+            style: TextStyle(color: AppColors.whiteColor),
+          ),
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.of(context).pop(true); // return true
+              },
+              child: const Text(
+                AppStrings.exit,
+                style: TextStyle(color: AppColors.primaryColorDark),
+              ),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            isDefaultAction: true,
+            isDestructiveAction: true,
+            onPressed: () {
+              Navigator.of(context).pop(false); // return false
+            },
+            child: const Text(AppStrings.cancel),
+          ),
+        );
+      },
+    );
+
+    return result ?? false;
+  }
 
 }

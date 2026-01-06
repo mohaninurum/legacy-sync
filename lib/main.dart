@@ -1,8 +1,15 @@
+import 'dart:convert';
+
 import 'package:bot_toast/bot_toast.dart';
 import 'package:cached_video_player_plus/util/migration_utils.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_callkit_incoming/entities/android_params.dart';
+import 'package:flutter_callkit_incoming/entities/call_event.dart';
+import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
+import 'package:flutter_callkit_incoming/entities/ios_params.dart';
 import 'package:legacy_sync/config/routes/routes.dart';
 import 'package:legacy_sync/core/app_sizes/app_sizes.dart';
 import 'package:legacy_sync/config/routes/routes_name.dart';
@@ -27,7 +34,9 @@ import 'package:legacy_sync/features/social_proof/presentation/bloc/social_proof
 import 'package:legacy_sync/features/post_paywall/presentation/bloc/post_paywall_cubit.dart';
 import 'package:legacy_sync/features/answer/presentation/bloc/answer_bloc/answer_cubit.dart';
 import 'package:legacy_sync/services/app_service/app_service.dart';
+import 'package:legacy_sync/services/notification_service/notification_service.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tip_dialog/tip_dialog.dart';
 import 'config/network/api_host.dart';
 import 'features/audio_preview_edit/presentation/bloc/audio_preview_edit_cubit.dart';
@@ -44,12 +53,94 @@ import 'features/profile/presentation/bloc/profile_bloc/profile_cubit.dart';
 import 'features/settings/presentation/bloc/settings_bloc/settings_cubit.dart';
 import 'features/home/presentation/bloc/home_bloc/home_cubit.dart';
 import 'firebase_options.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
+
+
+Map<String, dynamic>? pendingCallArguments;
+
+
+
+@pragma('vm:entry-point')
+Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
+  if (message.data['type'] != 'incoming_call') return;
+
+  final params = CallKitParams(
+    id: message.data['callId']?.toString().isNotEmpty == true
+        ? message.data['callId']
+        : DateTime.now().millisecondsSinceEpoch.toString(),
+
+    nameCaller: message.data['callerName'] ?? 'Incoming Call',
+    handle: message.data['roomName'] ?? 'call',
+    type: int.tryParse(message.data['callType'] ?? '0') ?? 0,
+
+    duration: 30000,
+    extra: {
+      'roomName': message.data['roomName'],
+      'token': message.data['token'],
+    },
+    android: const AndroidParams(
+      isCustomNotification: false,
+      ringtonePath: 'system_ringtone_default',
+    ),
+    ios: const IOSParams(
+      handleType: 'generic',
+    ),
+  );
+
+
+  await FlutterCallkitIncoming.showCallkitIncoming(params);
+}
+
+
+void _listenCallKitEvents() {
+ print("call event:0");
+  FlutterCallkitIncoming.onEvent.listen((event) async {
+    print("call event:1");
+    if (event == null) return;
+    print("call event:$event");
+    switch (event.event) {
+
+      case Event.actionCallAccept:
+        print("call accept:$event");
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+          'pending_call_accept',
+          jsonEncode({
+            "incoming_call": true,
+            "userName": "Naina",
+          }),
+        );
+        pendingCallArguments={
+          "incoming_call": true,
+          "userName": "Naina",
+        };
+        break;
+//       "extra": event.body['extra'],event.body['nameCaller']
+      case Event.actionCallDecline:
+      case Event.actionCallEnded:
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('pending_call_accept');
+        FlutterCallkitIncoming.endAllCalls();
+        break;
+      default:
+        break;
+    }
+  });
+}
+
+// "extra": event.body['extra'],event.body['nameCaller']
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final fetchResult = await setup();
   final authToken = fetchResult["authToken"];
   final result = fetchResult["result"];
+  NotificationService.init();
+  FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
+  _listenCallKitEvents();
+  FirebaseMessaging.instance.getToken().then((value) {
+    print("fcm:-$value" );
+  },);
 
   runApp(
     MultiBlocProvider(
@@ -118,6 +209,7 @@ class MyApp extends StatelessWidget {
     AppSizes().init(context);
     final botToastBuilder = BotToastInit();
     return MaterialApp(
+
       builder: (context, child) {
         child = botToastBuilder(context, child);
         return Stack(

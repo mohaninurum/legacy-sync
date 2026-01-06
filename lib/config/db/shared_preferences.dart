@@ -43,6 +43,7 @@ class AppPreference {
   static String KEY_DEVICE_NAME = "KEY_DEVICE_NAME";
   static String KEY_DEVICE_MAC = "KEY_DEVICE_MAC";
   static String KEY_SURVEY_SUBMITTED = "KEY_SURVEY_SUBMITTED";
+  static String start_Making_Podcast = "start_Making_Podcast";
   static String KEY_USER_FIRST_VISIT = "KEY_USER_FIRST_VISIT";
   // Notification preference keys
   static String KEY_ENABLE_NOTIFICATIONS = "KEY_ENABLE_NOTIFICATIONS";

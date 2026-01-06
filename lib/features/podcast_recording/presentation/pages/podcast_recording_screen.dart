@@ -9,6 +9,7 @@ import 'package:legacy_sync/core/utils/utils.dart';
 import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/audio_waves_desing.dart';
 import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/audio_waves_widget.dart';
 import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/record_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../config/routes/routes_name.dart';
 import '../../../../core/colors/colors.dart';
 import '../../../../core/components/comman_components/app_button.dart';
@@ -46,7 +47,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     if(widget.isIncomingCall){
       Future.delayed(const Duration(seconds: 2),() {
         showIncomingCallDialog(context);
-
+        noticalldataclean();
       },);
 
     }
@@ -58,6 +59,11 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     super.dispose();
   }
 
+
+  noticalldataclean() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('pending_call_accept');
+  }
 
   incomingCallStartRecording(){
     context.read<PodCastRecordingCubit>().startRecording();
@@ -101,7 +107,11 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                       ],
                     ),
                   if (state.status == PodCastRecordingStatus.idle)
-                 InkWell(onTap: () {
+                 InkWell(
+                     highlightColor: Colors.transparent,
+                     hoverColor: Colors.transparent,
+                     splashColor: Colors.transparent,
+                     onTap: () {
                    Navigator.pushNamed(context, RoutesName.INCOMING_CALL_FULL_SCREEN);
                  }, child: const Text("Incoming call Screen test for click here")),
                   if (state.status == PodCastRecordingStatus.idle)
@@ -193,7 +203,11 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
               ),
             ],
           ),
-          InkWell(onTap: () {
+          InkWell(
+            highlightColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              splashColor: Colors.transparent,
+              onTap: () {
             showInviteDialog(context);
           }, child: SvgPicture.asset(Images.user_plus, width: 24, height: 24)),
         ],
@@ -1094,18 +1108,17 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
             isRed: true,
             Pressed: () async {
               context.read<PodCastRecordingCubit>().endCall();
-              FilePickerResult? result = await FilePicker.platform.pickFiles();
-
-              if (result != null) {
-                File file = File(result.files.single.path!);
-              } else {
-                // User canceled the picker
-              }
+              // FilePickerResult? result = await FilePicker.platform.pickFiles();
+              //
+              // if (result != null) {
+              //   File file = File(result.files.single.path!);
+              // } else {
+              //   // User canceled the picker
+              // }
               Navigator.pushNamed(context, RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,arguments: {
-                "audioPath": result?.files.single.path,
+                "audioPath": "result?.files.single.path",
                 "is_draft":false
               });
-
             },
           ),
         ],
@@ -1123,6 +1136,9 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     required VoidCallback Pressed,
   }) {
     return InkWell(
+      highlightColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+      splashColor: Colors.transparent,
       onTap: Pressed,
       child: Container(
         width: 56,
