@@ -150,7 +150,9 @@ class Routes {
         case RoutesName.PODCAST_CONNECTION:
         return _animatedRouteRightToLeft(const PodcastConnection());
         case RoutesName.MY_PODCAST_SCREEN:
-        return _animatedRouteRightToLeft(const MyPodcastScreen());
+          final data = settings.arguments as Map?;
+          final incomingCall = data!["isStartFirstTime"];
+        return _animatedRouteRightToLeft(MyPodcastScreen(isStartFirstTime: incomingCall,));
         case RoutesName.PODCAST_RECORDING_SCREEN:
           final data = settings.arguments as Map?;
           final incomingCall = data!["incoming_call"];

@@ -381,82 +381,84 @@ class _ControlsWidgetState extends State<ControlsWidget> {
               icon: Icon(_speakerphoneOn ? Icons.speaker_phone : Icons.phone_android),
               tooltip: 'Switch SpeakerPhone',
             ),
-          if (participant.isCameraEnabled())
-            PopupMenuButton<MediaDevice>(
-              icon: const Icon(Icons.videocam_sharp),
-              itemBuilder: (BuildContext context) {
-                return [
-                  PopupMenuItem<MediaDevice>(
-                    value: null,
-                    onTap: _disableVideo,
-                    child: const ListTile(
-                      leading: Icon(
-                        Icons.videocam_off,
-                        color: Colors.white,
-                      ),
-                      title: Text('Disable Camera'),
-                    ),
-                  ),
-                  if (_videoInputs != null)
-                    ..._videoInputs!.map((device) {
-                      return PopupMenuItem<MediaDevice>(
-                        value: device,
-                        child: ListTile(
-                          leading: (device.deviceId == widget.room.selectedVideoInputDeviceId)
-                              ? const Icon(
-                                  Icons.check_box_outlined,
-                                  color: Colors.white,
-                                )
-                              : const Icon(
-                                  Icons.check_box_outline_blank,
-                                  color: Colors.white,
-                                ),
-                          title: Text(device.label),
-                        ),
-                        onTap: () => _selectVideoInput(device),
-                      );
-                    })
-                ];
-              },
-            )
-          else
-            IconButton(
-              onPressed: _enableVideo,
-              icon: const Icon(Icons.videocam_off),
-              tooltip: 'un-mute video',
-            ),
-          IconButton(
-            icon: Icon(position == CameraPosition.back ? Icons.video_camera_back : Icons.video_camera_front),
-            onPressed: () => _toggleCamera(),
-            tooltip: 'toggle camera',
-          ),
-          if (participant.isScreenShareEnabled())
-            IconButton(
-              icon: const Icon(Icons.monitor_outlined),
-              onPressed: () => _disableScreenShare(),
-              tooltip: 'unshare screen (experimental)',
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.monitor),
-              onPressed: () => _enableScreenShare(),
-              tooltip: 'share screen (experimental)',
-            ),
+
+
+          // if (participant.isCameraEnabled())
+          //   PopupMenuButton<MediaDevice>(
+          //     icon: const Icon(Icons.videocam_sharp),
+          //     itemBuilder: (BuildContext context) {
+          //       return [
+          //         PopupMenuItem<MediaDevice>(
+          //           value: null,
+          //           onTap: _disableVideo,
+          //           child: const ListTile(
+          //             leading: Icon(
+          //               Icons.videocam_off,
+          //               color: Colors.white,
+          //             ),
+          //             title: Text('Disable Camera'),
+          //           ),
+          //         ),
+          //         if (_videoInputs != null)
+          //           ..._videoInputs!.map((device) {
+          //             return PopupMenuItem<MediaDevice>(
+          //               value: device,
+          //               child: ListTile(
+          //                 leading: (device.deviceId == widget.room.selectedVideoInputDeviceId)
+          //                     ? const Icon(
+          //                         Icons.check_box_outlined,
+          //                         color: Colors.white,
+          //                       )
+          //                     : const Icon(
+          //                         Icons.check_box_outline_blank,
+          //                         color: Colors.white,
+          //                       ),
+          //                 title: Text(device.label),
+          //               ),
+          //               onTap: () => _selectVideoInput(device),
+          //             );
+          //           })
+          //       ];
+          //     },
+          //   )
+          // else
+            // IconButton(
+            //   onPressed: _enableVideo,
+            //   icon: const Icon(Icons.videocam_off),
+            //   tooltip: 'un-mute video',
+            // ),
+          // IconButton(
+          //   icon: Icon(position == CameraPosition.back ? Icons.video_camera_back : Icons.video_camera_front),
+          //   onPressed: () => _toggleCamera(),
+          //   tooltip: 'toggle camera',
+          // ),
+          // if (participant.isScreenShareEnabled())
+            // IconButton(
+            //   icon: const Icon(Icons.monitor_outlined),
+            //   onPressed: () => _disableScreenShare(),
+            //   tooltip: 'unshare screen (experimental)',
+            // )
+          // else
+            // IconButton(
+            //   icon: const Icon(Icons.monitor),
+            //   onPressed: () => _enableScreenShare(),
+            //   tooltip: 'share screen (experimental)',
+            // ),
           IconButton(
             onPressed: _onTapDisconnect,
             icon: const Icon(Icons.close_sharp),
             tooltip: 'disconnect',
           ),
-          IconButton(
-            onPressed: _onTapSendData,
-            icon: const Icon(Icons.message),
-            tooltip: 'send demo data',
-          ),
-          IconButton(
-            onPressed: _onTapUpdateSubscribePermission,
-            icon: const Icon(Icons.settings),
-            tooltip: 'Subscribe permission',
-          ),
+          // IconButton(
+          //   onPressed: _onTapSendData,
+          //   icon: const Icon(Icons.message),
+          //   tooltip: 'send demo data',
+          // ),
+          // IconButton(
+          //   onPressed: _onTapUpdateSubscribePermission,
+          //   icon: const Icon(Icons.settings),
+          //   tooltip: 'Subscribe permission',
+          // ),
           // RecordingDot(),
           IconButton(
             onPressed:() async {

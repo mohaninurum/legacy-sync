@@ -1,4 +1,5 @@
 class PodcastModel {
+  final int podcastId;
   final String title;
   final String subtitle;
   final String relationship;
@@ -10,8 +11,10 @@ class PodcastModel {
   final String author;
   final String description;
   final String summary;
+  final String?  audioPath;
 
   PodcastModel({
+    required this.podcastId,
     required this.title,
     required this.subtitle,
     required this.relationship,
@@ -23,5 +26,88 @@ class PodcastModel {
     required this.author,
     required this.description
   ,required this.summary
+ ,this.audioPath
   });
 }
+
+
+
+class PodcastResponse {
+  final bool status;
+  final String message;
+  final List<Podcast> data;
+
+  PodcastResponse({
+    required this.status,
+    required this.message,
+    required this.data,
+  });
+
+  factory PodcastResponse.fromJson(Map<String, dynamic> json) {
+    return PodcastResponse(
+      status: json['status'] ?? false,
+      message: json['message'] ?? '',
+      data: (json['data'] as List<dynamic>?)
+          ?.map((e) => Podcast.fromJson(e))
+          .toList() ??
+          [],
+    );
+  }
+}
+
+
+class Podcast {
+  final int podcastId;
+  final String title;
+  final String thumbnail;
+  final int userId;
+  final bool isPosted;
+  final int topicId;
+  final String livekitRoomId;
+  final String audioUrl;
+  final int durationSeconds;
+  final int listened_seconds;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final String? description;
+
+
+  Podcast({
+    required this.podcastId,
+    required this.title,
+    required this.thumbnail,
+    required this.userId,
+    required this.isPosted,
+    required this.topicId,
+    required this.livekitRoomId,
+    required this.audioUrl,
+    required this.durationSeconds,
+    required this.listened_seconds,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.description,
+  });
+
+  factory Podcast.fromJson(Map<String, dynamic> json) {
+    return Podcast(
+      podcastId: json['podcast_id_PK'] ?? 0,
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      thumbnail: json['thumb_nail'] ?? '',
+      userId: json['user_id_FK'] ?? 0,
+      isPosted: (json['is_posted'] ?? 0) == 1,
+      topicId: json['topic_id_FK'] ?? 0,
+      livekitRoomId: json['livekit_room_id'] ?? '',
+      audioUrl: json['audio_url'] ?? '',
+      durationSeconds: json['duration_seconds'] ?? 0,
+      listened_seconds: json['listened_seconds'] ?? 0,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'])
+          : null,
+      updatedAt: json['updated_at'] != null
+          ? DateTime.tryParse(json['updated_at'])
+          : null,
+    );
+  }
+}
+

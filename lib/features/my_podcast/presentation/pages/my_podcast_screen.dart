@@ -30,7 +30,8 @@ import '../bloc/my_podcast_state.dart';
 import 'package:file_picker/file_picker.dart';
 
 class MyPodcastScreen extends StatefulWidget  {
-  const MyPodcastScreen({super.key});
+  final isStartFirstTime;
+  const MyPodcastScreen({super.key,this.isStartFirstTime});
 
   @override
   State<MyPodcastScreen> createState() => _MyPodcastScreenState();
@@ -44,8 +45,11 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
   @override
   void initState() {
     super.initState();
-    getstartmackingPodcast();
-    context.read<MyPodcastCubit>().loadTab("Posted");
+    if(widget.isStartFirstTime==null){
+      getstartmackingPodcast();
+    }
+
+    context.read<MyPodcastCubit>().fetchMyPodcastTab("Posted");
     context.read<MyPodcastCubit>().allPodcastsContinueListening();
     context.read<MyPodcastCubit>().fetchRecentUserList();
   }
@@ -66,6 +70,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
     return  AppWillPopScope(
       onExit: (v) {
         exit(0);
+
       },
       child: PodcastBg(
         isDark: true,
@@ -240,6 +245,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                         "Podcast",
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
+                      // _podcastjoin()
                     ],
                   ),
                 ],
@@ -251,17 +257,30 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
     );
   }
 
+
+  Widget _podcastjoin(){
+    return  InkWell(
+      onTap: () {
+        Navigator.pushNamed(context, RoutesName.PODCAST_CONNECTION);
+      },
+      child:  Text("Create Podcast",style: Theme.of(context).textTheme.bodyLarge?.copyWith(color:Colors.blue)),
+    );
+  }
+
   Widget _buildBackButton() {
     return AppButton(
       padding: const EdgeInsets.all(0),
       onPressed: () async {
+        getstartmackingPodcast();
+        print("startMakingPodcast");
+        print(startMakingPodcast);
         if(startMakingPodcast){
           final shouldPop = await _showActionSheet(context);
           if (shouldPop == true) {
             exit(1);
           }
         }else{
-      Navigator.pop(context);
+          Navigator.pushNamed(context, RoutesName.HOME_SCREEN);
         }
 
       },
@@ -322,9 +341,9 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
   Widget _listContinueListening() =>
       BlocBuilder<MyPodcastCubit, MyPodcastState>(
         builder: (context, state) {
-          if (state.loading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          // if (state.isLoading) {
+          //   return const Center(child: CircularProgressIndicator());
+          // }
 
           if (state.listPodcastsContinueListening.isEmpty) {
             return const Center(
@@ -355,7 +374,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
   Widget _list() => BlocBuilder<MyPodcastCubit, MyPodcastState>(
     builder: (context, state) {
-      if (state.loading) {
+      if (state.isLoading) {
         return const Center(child: CircularProgressIndicator());
       }
 
@@ -404,98 +423,124 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
       data.totalDurationSec,
     );
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              data.image,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
+    return InkWell(
+      onTap: () async {
+        // FilePickerResult? result = await FilePicker.platform.pickFiles();
+        //
+        // if (result != null) {
+        //   File file = File(result.files.single.path!);
+        // } else {
+        //   // User canceled the picker
+        // }
+        // AudioOverlayManager.hide();
+
+        // context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
+        context.read<MyPodcastCubit>().loadPodcast(data);
+        Navigator.pushNamed(
+            context,
+            RoutesName.PLAY_PODCAST ,
+            arguments:{
+              "podcast":data,
+              "audioPath" : "assets/images/test_audio.mp3",
+              "isOverlayManager":false
+            });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child:  Image.network(
+                data.image,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.image);
+                },
+              ),
             ),
-          ),
 
-          const SizedBox(width: 12),
+            const SizedBox(width: 12),
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 5),
-                  child: Text(
-                    data.title,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Text(
+                      data.title,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(height: 1.height),
+                  SizedBox(height: 1.height),
 
-                Row(
-                  children: [
-                    Text(
-                      "Me  ",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.dart_grey,
+                  Row(
+                    children: [
+                      Text(
+                        "Me  ",
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.dart_grey,
+                        ),
                       ),
-                    ),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.dart_grey,
-                        borderRadius: BorderRadius.circular(50),
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.dart_grey,
+                          borderRadius: BorderRadius.circular(50),
+                        ),
                       ),
-                    ),
-                    Text(
-                      "  ${Utils.capitalize(data.relationship)}",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.dart_grey,
+                      Text(
+                        "  ${Utils.capitalize(data.relationship)}",
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.dart_grey,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 100,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 6,
-                          backgroundColor: Colors.grey.shade800,
-                          valueColor: const AlwaysStoppedAnimation(
-                            AppColors.purple400,
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 100,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 6,
+                            backgroundColor: Colors.grey.shade800,
+                            valueColor: const AlwaysStoppedAnimation(
+                              AppColors.purple400,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      timeLeftText,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                      const SizedBox(width: 6),
+                      Text(
+                        timeLeftText,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -544,11 +589,14 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             /// IMAGE
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
+              child: Image.network(
                 data.image,
                 width: 80,
                 height: 80,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.image);
+                },
               ),
             ),
 
@@ -680,15 +728,15 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
     return InkWell(
       onTap: () async {
-        FilePickerResult? result = await FilePicker.platform.pickFiles();
-
-        if (result != null) {
-          File file = File(result.files.single.path!);
-        } else {
-          // User canceled the picker
-        }
+        // FilePickerResult? result = await FilePicker.platform.pickFiles();
+        //
+        // if (result != null) {
+        //   File file = File(result.files.single.path!);
+        // } else {
+        //   // User canceled the picker
+        // }
         Navigator.pushNamed(context, RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,arguments: {
-          "audioPath": result?.files.single.path,
+          "audioPath": "assets/images/test_audio.mp3",
           "is_draft":true
         });
       },
@@ -701,7 +749,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             /// IMAGE
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
+              child: Image.network(
                 data.image,
                 width: 80,
                 height: 80,
@@ -846,11 +894,11 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
   Widget recentList() => BlocBuilder<MyPodcastCubit, MyPodcastState>(
     builder: (context, state) {
-      if (state.loading) {
+      if (state.isLoading) {
         return const Center(child: CircularProgressIndicator());
       }
 
-      if (state.podcasts.isEmpty) {
+      if (state.recentUserList.isEmpty) {
         return const Center(
           child: Text(
             "No Data found",

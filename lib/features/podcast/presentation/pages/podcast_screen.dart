@@ -17,6 +17,13 @@ import '../../../../core/components/comman_components/will_pop_scope.dart';
 import '../bloc/podcast_cubit.dart';
 import '../bloc/podcast_state.dart';
 
+
+
+
+
+
+
+
 class PodcastScreen extends StatefulWidget {
   const PodcastScreen({super.key});
 
@@ -70,7 +77,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
           onTap: () {
             Navigator.pushNamed(context, RoutesName.PODCAST_CONNECTION);
           },
-          child:  Text("Create Podcast",style: Theme.of(context).textTheme.bodyLarge),
+          child:  Text("Create Podcast",style: Theme.of(context).textTheme.bodyLarge?.copyWith(color:Colors.blue)),
         );
       },
     );
@@ -223,7 +230,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
       height: 48,
       onPressed: () {
         context.read<PodcastCubit>().startMakingPodcast();
-        Navigator.pushNamed(context, RoutesName.MY_PODCAST_SCREEN);
+        Navigator.pushNamed(context, RoutesName.MY_PODCAST_SCREEN,arguments: {"isStartFirstTime":true});
       },
       // isLoadingState: state.isLoading,
       // enable: state.isFormValid,
@@ -267,5 +274,6 @@ class _PodcastScreenState extends State<PodcastScreen> {
   }
 
 }
+
 
 

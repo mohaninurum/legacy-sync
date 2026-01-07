@@ -1,19 +1,27 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../config/db/shared_preferences.dart';
+import '../../../../config/network/network_api_service.dart';
+import '../../../../core/utils/utils.dart';
 import '../../data/podcast_model.dart';
 
 
 
 import '../../data/recent_user_list_model.dart';
+import '../../domain/usecases/myPoadcast_usecase.dart';
 import 'my_podcast_state.dart';
 
 class MyPodcastCubit extends Cubit<MyPodcastState> {
   MyPodcastCubit() : super(MyPodcastState.initial()) {
-    loadTab('Posted');
+    loadTab('Posted',);
   }
 
-  final List<PodcastModel> _allPodcasts = [
+  final MyPoadastUsecase _myPoadastUsecase = MyPoadastUsecase();
+
+
+  List<PodcastModel> _allPodcasts = [
     PodcastModel(
+      podcastId: 1,
       title: "The Heart That Raised Me",
       subtitle: "A quiet talk with Mom about love...",
       relationship: "mom",
@@ -28,6 +36,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
 
     ),
     PodcastModel(
+        podcastId: 1,
       title: "Through His Eyes",
       subtitle: "Listening to Dad’s perspective...",
       relationship: "dad",
@@ -41,7 +50,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
        , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
 
     ),
-    PodcastModel(
+    PodcastModel(     podcastId: 1,
       title: "Growing Side By Side",
       subtitle: "Talking with my brother...",
       relationship: "mom",
@@ -55,7 +64,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
        , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
 
     ),
-    PodcastModel(
+    PodcastModel(     podcastId: 1,
       title: "Untitled",
       subtitle: "A quiet talk with Mom about love...",
       relationship: "mom",
@@ -69,7 +78,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       ,  summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
 
     ),
-    PodcastModel(
+    PodcastModel(     podcastId: 1,
       title: "Untitled",
       subtitle: "Listening to Dad’s perspective...",
       relationship: "dad",
@@ -83,7 +92,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
         ,summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
 
     ),
-    PodcastModel(
+    PodcastModel(     podcastId: 1,
       title: "Conversat Through His Eyes",
       subtitle: "Listening to Dad’s perspective...",
       relationship: "",
@@ -97,7 +106,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
        , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
 
     ),
-    PodcastModel(
+    PodcastModel(     podcastId: 1,
       title: "Untitled",
       subtitle: "Listening to Dad’s perspective...",
       relationship: "dad",
@@ -111,7 +120,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       ,  summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
 
     ),
-    PodcastModel(
+    PodcastModel(     podcastId: 1,
       title: "The Heart That Raised Me",
       subtitle: "A quiet talk with Mom about love...",
       relationship: "mom",
@@ -125,7 +134,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
        , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
 
     ),
-    PodcastModel(
+    PodcastModel(     podcastId: 1,
       title: "Through His Eyes",
       subtitle: "Listening to Dad’s perspective...",
       relationship: "dad",
@@ -139,7 +148,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
         ,summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
 
     ),
-    PodcastModel(
+    PodcastModel(     podcastId: 1,
       title: "Growing Side By Side",
       subtitle: "Talking with my brother...",
       relationship: "mom",
@@ -156,7 +165,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
   ];
 
   final List<PodcastModel> _allPodcastsContinueListening = [
-    PodcastModel(
+    PodcastModel(     podcastId: 1,
       title: "The Heart That Raised Me",
       subtitle: "A quiet talk with Mom about love...",
       relationship: "mom",
@@ -170,7 +179,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
        , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
 
     ),
-    PodcastModel(
+    PodcastModel(     podcastId: 1,
       title: "Through His Eyes",
       subtitle: "Listening to Dad’s perspective...",
       relationship: "dad",
@@ -184,7 +193,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
        , summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
 
     ),
-    PodcastModel(
+    PodcastModel(     podcastId: 1,
       title: "The Heart That Raised Me",
       subtitle: "A quiet talk with Mom about love...",
       relationship: "mom",
@@ -229,22 +238,96 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
     ),
   ];
 
-  void loadTab(String tab) {
+
+  Future<void> fetchMyPodcastTab(String tab,) async {
+    final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+    emit(state.copyWith(isLoading: true));
+    final mypodcast =  await _myPoadastUsecase.getMyPodcast(userId);
+    String postType='Posted';
+    mypodcast.fold(
+          (error) {
+        print("APP EXCEPTION:: ${error.message}");
+        Utils.closeLoader();
+        emit(state.copyWith(isLoading: false, error: error.message));
+      },
+          (result) {
+        Utils.closeLoader();
+        if (result.data != null) {
+          print("DATA ON SUCCESS:: ${result.data}");
+          _allPodcasts.clear();
+          _allPodcastsContinueListening.clear();
+          result.data.forEach((element) {
+            if(element.isPosted){
+              postType="Posted";
+            }else{
+              postType="Draft";
+            }
+            if(element.listened_seconds!=0){
+              _allPodcastsContinueListening.add(
+                PodcastModel(
+                    podcastId: element.podcastId,
+                    title: element.title,
+                    subtitle: element.description??'',
+                    relationship: "mom",
+                    duration: Utils.secondsToHrOrMin(element.durationSeconds),
+                    image: element.thumbnail,
+                    type: postType,
+                    author: "",
+                    listenedSec: element.listened_seconds,
+                    totalDurationSec: element.durationSeconds,
+                    description: element.description??'',
+                    summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
+                ),
+              );
+            }
+            _allPodcasts.add(
+              PodcastModel(
+                 podcastId: element.podcastId,
+                  title: element.title,
+                  subtitle: element.description??'',
+                  relationship: "mom",
+                  duration: Utils.secondsToHrOrMin(element.durationSeconds),
+                  image: element.thumbnail,
+                  type: postType,
+                  author: "",
+                  listenedSec: element.listened_seconds,
+                  totalDurationSec: element.durationSeconds,
+                  description: element.description??'',
+                  summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. "
+
+              ),
+            );
+          },);
+          emit(state.copyWith(isLoading: false,));
+
+        } else {
+          emit(state.copyWith(isLoading: false, error: "No profile data found"));
+        }
+      },
+    );
+    loadTab(tab);
+    allPodcastsContinueListening();
+  }
+
+
+
+  Future<void> loadTab(String tab,) async {
     if (tab == "all") {
       print("all");
-      emit(state.copyWith(podcasts: _allPodcasts, loading: false));
+      emit(state.copyWith(podcasts: _allPodcasts, isLoading: false));
     } else {
       emit(
         state.copyWith(
           selectedTab: tab,
           podcasts: _allPodcasts.where((e) => e.type == tab).toList(),
-          loading: false,
+          isLoading: false,
         ),
       );
     }
   }
 
-  void loadPodcast(PodcastModel podcast){
+  void loadPodcast(PodcastModel? podcast){
     emit(state.copyWith(podcast: podcast));
   }
 
@@ -252,7 +335,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
     emit(
       state.copyWith(
         listPodcastsContinueListening: _allPodcastsContinueListening,
-        loading: false,
+        isLoading: false,
       ),
     );
   }
@@ -260,7 +343,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
     emit(
       state.copyWith(
         recentUserList: recentUserList,
-        loading: false,
+        isLoading: false,
       ),
     );
   }

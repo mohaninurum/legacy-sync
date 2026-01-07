@@ -42,7 +42,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     super.initState();
     context.read<PodCastRecordingCubit>().getInviteUse();
     context.read<PodCastRecordingCubit>().initiazeRecording();
-    context.read<PodCastRecordingCubit>().loadTopics();
+    context.read<PodCastRecordingCubit>().fetchPodcastTopics();
     context.read<PodCastRecordingCubit>().addSelfParticipant(widget.isIncomingCall);
     if(widget.isIncomingCall){
       Future.delayed(const Duration(seconds: 2),() {
@@ -958,8 +958,12 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
 
   Widget _topicCard(BuildContext context, PodCastRecordingState state) {
     if (state.filteredTopics.isEmpty) return const SizedBox();
-
     final topic = state.filteredTopics[state.currentTopicIndex];
+
+    if(state.isLoading){
+      return const CircularProgressIndicator();
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),

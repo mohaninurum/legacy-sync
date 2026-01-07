@@ -86,8 +86,6 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
       handleType: 'generic',
     ),
   );
-
-
   await FlutterCallkitIncoming.showCallkitIncoming(params);
 }
 

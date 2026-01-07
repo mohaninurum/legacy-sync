@@ -580,6 +580,19 @@ class Utils {
   }
 
 
+
+  static String secondsToHrOrMin(int seconds) {
+    final totalMinutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    if (totalMinutes >= 60) {
+      final hours = totalMinutes ~/ 60;
+      return '$hours hr';
+    }
+    return '$totalMinutes:$remainingSeconds';
+  }
+
+
+
   static String formatDurationFromString(String input) {
     try {
       final parts = input.split(':'); // [0,00,11.000000]

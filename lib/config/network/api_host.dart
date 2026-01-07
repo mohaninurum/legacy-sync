@@ -38,8 +38,11 @@ class ApiURL {
   static const String GET_FAV_QUESTIONS = '$baseURL/favorite-questions/';
   static const String EDIT_PROFILE = '$baseURL/users/edit-profile-detail';
   static const String module_list = '$baseURL/legacy-modules/module-list/';
+  static const String my_podcast = '$baseURL/podcast/';
   static const String varify_email = '$baseURL/users/varify-email';
   static const String livekit_generate_channel = '$baseURL/livekit/generate-channel';
+  static const String podcast_topic = '$baseURL/podcast-topic';
+  static const String podcast_Save_Listened_PodcastTime = '$baseURL/podcast/save-listened-podcast-time';
 
 
 }

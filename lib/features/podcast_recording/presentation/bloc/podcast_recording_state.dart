@@ -46,7 +46,9 @@ class PodCastRecordingState {
   double dbLevel;
   final bool? isSpeaker;
   final bool? isMic;
+  final bool isLoading;
   final String? audioPath;
+  final String? error;
 
 
 
@@ -63,7 +65,9 @@ class PodCastRecordingState {
     required this.dbLevel,
     required this.isSpeaker,
     required this.isMic,
+    required this.isLoading,
     required this.audioPath,
+    required this.error,
 
 
   });
@@ -82,7 +86,9 @@ class PodCastRecordingState {
       dbLevel : 0.0,
       isSpeaker: false,
       isMic: false,
-        audioPath:""
+        isLoading: true,
+        audioPath:"",
+        error:""
     );
   }
 
@@ -100,7 +106,9 @@ class PodCastRecordingState {
     double? dbLevel,
     bool? isSpeaker,
     bool? isMic,
+    bool? isLoading,
     String? audioPath,
+    String? error,
   }) {
     return PodCastRecordingState(
       status: status ?? this.status,
@@ -121,8 +129,11 @@ class PodCastRecordingState {
       isSpeaker ?? this.isSpeaker,
       isMic:
       isMic ?? this.isMic,
+      isLoading:
+      isLoading ?? this.isLoading,
       audioPath:
-      audioPath ?? this.audioPath,
+      audioPath ?? this.audioPath,     error:
+    error ?? this.error,
 
     );
   }

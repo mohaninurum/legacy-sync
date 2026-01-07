@@ -56,6 +56,7 @@ class _PreJoinPageState extends State<PreJoinPage> {
   bool _enableAudio = true;
   LocalAudioTrack? _audioTrack;
   LocalVideoTrack? _videoTrack;
+  bool isloading=true;
 
   MediaDevice? _selectedVideoDevice;
   MediaDevice? _selectedAudioDevice;
@@ -103,7 +104,11 @@ class _PreJoinPageState extends State<PreJoinPage> {
         });
       }
     }
-    setState(() {});
+    setState(() {
+
+      _busy ? null : () => _join(context);
+
+    });
   }
 
   Future<void> _setEnableVideo(value) async {
@@ -254,6 +259,7 @@ class _PreJoinPageState extends State<PreJoinPage> {
         _busy = false;
       });
     }
+    isloading=true;
   }
 
   void _actionBack(BuildContext context) async {
@@ -292,7 +298,7 @@ class _PreJoinPageState extends State<PreJoinPage> {
             onPressed: () => _actionBack(context),
           ),
         ),
-        body: Container(
+        body: isloading ? Container(
             alignment: Alignment.center,
             child: SingleChildScrollView(
                 child: Container(
@@ -500,6 +506,6 @@ class _PreJoinPageState extends State<PreJoinPage> {
                   ),
                 ),
               ]),
-            ))));
+            ))):CircularProgressIndicator() );
   }
 }
