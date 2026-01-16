@@ -253,7 +253,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                         "Podcast",
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
-                      // _podcastjoin()
+                      _podcastjoin()
                     ],
                   ),
                 ],
