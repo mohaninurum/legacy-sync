@@ -11,6 +11,7 @@ class AppPreference {
   static String KEY_USER_LAST_NAME = "KEY_USER_LAST_NAME";
   static String KEY_USER_TOKEN = "KEY_USER_TOKEN";
   static String KEY_USER_DOB = "KEY_USER_DOB";
+  static String PROFILE_IMAGE = "PROFILE_IMAGE";
   static String KEY_LOGIN_TYPE_IS_SOCIAL = "KEY_LOGIN_TYPE_IS_SOCIAL";
   static String KEY_REFERRAL_CODE = "KEY_REFERRAL_CODE";
   static String KEY_SOCIAL_LOGIN_PROVIDER = "KEY_SOCIAL_LOGIN_PROVIDER";

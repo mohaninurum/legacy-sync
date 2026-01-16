@@ -96,6 +96,9 @@ class AudioPlayController extends StatelessWidget {
                 ),
                 SizedBox(width: 5.width),
                 InkWell(
+                  highlightColor: Colors.transparent,
+                  hoverColor: Colors.transparent,
+                  splashColor: Colors.transparent,
                   onTap: cubit.playPause,
                   child: Container(
                     width:  75,

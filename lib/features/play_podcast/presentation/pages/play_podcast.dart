@@ -13,6 +13,7 @@ import '../../../../core/utils/utils.dart';
 import '../../../audio_overlay_manager/audio_overlay_manager.dart';
 import '../../../audio_overlay_manager/widgets/audio_overlay_widget.dart';
 import '../../../my_podcast/data/podcast_model.dart';
+import '../../../my_podcast/presentation/bloc/my_podcast_cubit.dart';
 import '../bloc/play_podcast_cubit.dart';
 import '../bloc/play_podcast_state.dart';
 
@@ -20,8 +21,10 @@ class PlayPodcast extends StatefulWidget {
   final PodcastModel podcast;
   final String audioPath;
   final bool isOverlayManager;
+  final bool isContinue;
+  final bool isFavorite;
 
-  const PlayPodcast({Key? key, required this.podcast, required this.audioPath,required this.isOverlayManager})
+  const PlayPodcast({Key? key, required this.podcast, required this.audioPath,required this.isOverlayManager,required this.isContinue,required this.isFavorite})
     : super(key: key);
 
   @override
@@ -36,7 +39,7 @@ class _PlayPodcastState extends State<PlayPodcast> {
     if(widget.isOverlayManager){
 
     }else{
-      context.read<PlayPodcastCubit>().loadAudio(widget.audioPath,widget.podcast);
+      context.read<PlayPodcastCubit>().loadAudio(widget.audioPath,widget.podcast,widget.isContinue);
     }
 
 
@@ -126,25 +129,29 @@ class _PlayPodcastState extends State<PlayPodcast> {
         padding: const EdgeInsets.all(0),
         onPressed: () {
           Navigator.pop(context);
-          if (state.isPlaying) {
-            cubit.playPause();
-            cubit.saveListenedPodcastTime(widget.podcast?.podcastId ?? 0);
-          // cubit.loadOverlayAudioManager(true);
-            // AudioOverlayManager.show(
-            //   context: context,
-            //   title: widget.podcast?.title ?? '',
-            //   subtitle:
-            //   "Me • ${Utils.capitalize(widget.podcast?.relationship)}",
-            //   imagePath: Images.album_pic,
-            //   onPlayPause: () {
-            //     cubit.playPauseOvalayManger();
-            //   },
-            //   onNext: () {
-            //
-            //   },
-            // );
+          if (state.isPlaying&&widget.isFavorite) {
+            // cubit.playPause();
+            // cubit.saveListenedPodcastTime(widget.podcast.podcastId ?? 0);
+          cubit.loadOverlayAudioManager(true);
+          //   AudioOverlayManager.show(
+          //     context: context,
+          //     title: widget.podcast.title ?? '',
+          //     subtitle:
+          //     "Me • ${Utils.capitalize(widget.podcast.relationship)}",
+          //     imagePath: Images.album_pic,
+          //     onPlayPause: () {
+          //       cubit.playPauseOvalayManger();
+          //     },
+          //     onNext: () {
+          //
+          //     },
+          //   );
           }else{
-            cubit.saveListenedPodcastTime(widget.podcast?.podcastId ?? 0);
+          if(state.isPlaying){
+            cubit.playPause();
+          }
+
+            cubit.saveListenedPodcastTime(widget.podcast.podcastId ?? 0);
           }
         },
         child: const Icon(
@@ -170,6 +177,9 @@ class _PlayPodcastState extends State<PlayPodcast> {
             ),
           ),
           InkWell(
+            highlightColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            splashColor: Colors.transparent,
             onTap: () {
               context.read<PlayPodcastCubit>().bookmark();
             },
@@ -328,7 +338,7 @@ class _PlayPodcastState extends State<PlayPodcast> {
                     arguments: {"podcast": widget.podcast},
                   );
                 },
-                child: Icon(
+                child: const Icon(
                   Icons.open_in_full,
                   color: Colors.white70,
                   size: 18,

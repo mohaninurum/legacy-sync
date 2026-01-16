@@ -162,7 +162,8 @@ class Routes {
           final data = settings.arguments as Map?;
           final audioPath = data!["audioPath"];
           final isDraft = data["is_draft"];
-        return _animatedRouteDownToUp(AudioPreviewEditScreen(audioPath: audioPath,isdraft: isDraft,));
+          final participants = data["participants"];
+        return _animatedRouteDownToUp(AudioPreviewEditScreen(audioPath: audioPath,isdraft: isDraft,participants: participants,));
       case RoutesName.INCOMING_CALL_FULL_SCREEN:
         return _animatedRouteDownToUp(const IncomingCallFullScreen());
         case RoutesName.PLAY_PODCAST:
@@ -170,7 +171,9 @@ class Routes {
           final podcast = data!["podcast"];
           final audioPath = data["audioPath"];
           final isOverlayManager = data["isOverlayManager"];
-        return _animatedRouteDownToUp(PlayPodcast(podcast:podcast,audioPath:audioPath ,isOverlayManager: isOverlayManager,));
+          final isContinue = data["isContinue"];
+          final isFavorite = data["isFavorite"];
+        return _animatedRouteDownToUp(PlayPodcast(podcast:podcast,audioPath:audioPath ,isOverlayManager: isOverlayManager,isContinue: isContinue,isFavorite: isFavorite,));
         case RoutesName.transcript_description:
           final data = settings.arguments as Map?;
           final podcast = data!["podcast"];

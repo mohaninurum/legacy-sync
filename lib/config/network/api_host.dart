@@ -43,6 +43,9 @@ class ApiURL {
   static const String livekit_generate_channel = '$baseURL/livekit/generate-channel';
   static const String podcast_topic = '$baseURL/podcast-topic';
   static const String podcast_Save_Listened_PodcastTime = '$baseURL/podcast/save-listened-podcast-time';
+  static const String podcast__Listened_list = '$baseURL/podcast/continue-listening-podcast-list/';
+  static const String recent_podcast_friend_list = '$baseURL/podcast/recent-podcast-friend-list/';
+  static const String favourite_podcast_list = '$baseURL/favourite-podcast/';
 
 
 }

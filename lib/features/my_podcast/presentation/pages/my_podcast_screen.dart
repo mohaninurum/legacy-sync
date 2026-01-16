@@ -20,8 +20,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/utils.dart';
 import '../../../audio_overlay_manager/audio_overlay_manager.dart';
+import '../../../home/presentation/bloc/home_bloc/home_cubit.dart';
 import '../../../play_podcast/presentation/bloc/play_podcast_cubit.dart';
 import '../../../play_podcast/presentation/bloc/play_podcast_state.dart';
+import '../../../profile/presentation/bloc/profile_bloc/profile_cubit.dart';
 import '../../data/podcast_model.dart';
 import '../../data/recent_user_list_model.dart';
 import '../bloc/my_podcast_cubit.dart';
@@ -29,35 +31,35 @@ import '../bloc/my_podcast_state.dart';
 
 import 'package:file_picker/file_picker.dart';
 
-class MyPodcastScreen extends StatefulWidget  {
+class MyPodcastScreen extends StatefulWidget {
   final isStartFirstTime;
-  const MyPodcastScreen({super.key,this.isStartFirstTime});
+  const MyPodcastScreen({super.key, this.isStartFirstTime});
 
   @override
   State<MyPodcastScreen> createState() => _MyPodcastScreenState();
 }
 
 class _MyPodcastScreenState extends State<MyPodcastScreen> {
-
   bool startMakingPodcast = false;
-
 
   @override
   void initState() {
     super.initState();
-    if(widget.isStartFirstTime==null){
+    if (widget.isStartFirstTime == null) {
       getstartmackingPodcast();
     }
 
     context.read<MyPodcastCubit>().fetchMyPodcastTab("Posted");
     context.read<MyPodcastCubit>().allPodcastsContinueListening();
     context.read<MyPodcastCubit>().fetchRecentUserList();
+    context.read<ProfileCubit>().loadProfile(context);
   }
 
   getstartmackingPodcast() async {
-    startMakingPodcast= await AppPreference().getBool(key: AppPreference.start_Making_Podcast);
+    startMakingPodcast = await AppPreference().getBool(
+      key: AppPreference.start_Making_Podcast,
+    );
   }
-
 
   @override
   void deactivate() {
@@ -67,10 +69,9 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return  AppWillPopScope(
+    return AppWillPopScope(
       onExit: (v) {
         exit(0);
-
       },
       child: PodcastBg(
         isDark: true,
@@ -115,47 +116,54 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                 size: 56,
                 icon: Icons.add,
                 onTap: () {
-                  Navigator.pushNamed(context, RoutesName.PODCAST_RECORDING_SCREEN,arguments: {
-                    "incoming_call":false,
-                    "userName":"you"
-
-                  });
+                  Navigator.pushNamed(
+                    context,
+                    RoutesName.PODCAST_RECORDING_SCREEN,
+                    arguments: {"incoming_call": false, "userName": "you"},
+                  );
                 },
               ),
-             const SizedBox(height: 10,),
-              BlocBuilder<PlayPodcastCubit, PlayPodcastState>(builder: (context, state) {
-                final cubit = context.read<PlayPodcastCubit>();
-                return state.isOverlayManager ?
-               Center(
-                 child: Padding(
-                   padding: const EdgeInsets.only(left: 30),
-                   child: InkWell(
-                     onTap: () {
-                       context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
-                       Navigator.pushNamed(
-                           context,
-                           RoutesName.PLAY_PODCAST ,
-                           arguments:{
-                             "podcast":state.podcast,
-                             "audioPath" : "assets/images/test_audio.mp3",
-                             "isOverlayManager" : state.isOverlayManager,
-                           });
-                     },
-                     child: AudioOverlayWidget(
-                       title: state.podcast?.title??'',
-                       subtitle: "Me • ${Utils.capitalize(state.podcast?.relationship)}",
-                       imagePath: Images.album_pic,
-                       isPlaying: state.isPlaying,
-                       onPlayPause: cubit.playPause,
-                       onNext: () {
-                       },
-                     ),
-                   ),
-                 ),
-               )
-                :const SizedBox.shrink();
-              },)
+              const SizedBox(height: 10),
+              BlocBuilder<PlayPodcastCubit, PlayPodcastState>(
+                builder: (context, state) {
+                  final cubit = context.read<PlayPodcastCubit>();
+                  return state.isOverlayManager
+                      ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 30),
+                          child: InkWell(
+                            onTap: () {
+                              context
+                                  .read<PlayPodcastCubit>()
+                                  .loadOverlayAudioManager(false);
+                              Navigator.pushNamed(
+                                context,
+                                RoutesName.PLAY_PODCAST,
+                                arguments: {
+                                  "podcast": state.podcast,
+                                  "audioPath": "assets/images/test_audio.mp3",
+                                  "isOverlayManager": state.isOverlayManager,
+                                  "isContinue": false,
+                                  "isFavorite": true,
 
+                                },
+                              );
+                            },
+                            child: AudioOverlayWidget(
+                              title: state.podcast?.title ?? '',
+                              subtitle:
+                                  "Me • ${Utils.capitalize(state.podcast?.relationship)}",
+                              imagePath: Images.album_pic,
+                              isPlaying: state.isPlaying,
+                              onPlayPause: cubit.playPause,
+                              onNext: () {},
+                            ),
+                          ),
+                        ),
+                      )
+                      : const SizedBox.shrink();
+                },
+              ),
             ],
           ),
         ),
@@ -257,13 +265,17 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
     );
   }
 
-
-  Widget _podcastjoin(){
-    return  InkWell(
+  Widget _podcastjoin() {
+    return InkWell(
       onTap: () {
         Navigator.pushNamed(context, RoutesName.PODCAST_CONNECTION);
       },
-      child:  Text("Create Podcast",style: Theme.of(context).textTheme.bodyLarge?.copyWith(color:Colors.blue)),
+      child: Text(
+        "Create Podcast",
+        style: Theme.of(
+          context,
+        ).textTheme.bodyLarge?.copyWith(color: Colors.blue),
+      ),
     );
   }
 
@@ -274,15 +286,14 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         getstartmackingPodcast();
         print("startMakingPodcast");
         print(startMakingPodcast);
-        if(startMakingPodcast){
+        if (startMakingPodcast) {
           final shouldPop = await _showActionSheet(context);
           if (shouldPop == true) {
             exit(1);
           }
-        }else{
+        } else {
           Navigator.pushNamed(context, RoutesName.HOME_SCREEN);
         }
-
       },
       child: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
     );
@@ -342,7 +353,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
       BlocBuilder<MyPodcastCubit, MyPodcastState>(
         builder: (context, state) {
           // if (state.isLoading) {
-          //   return const Center(child: CircularProgressIndicator());
+          //   return const Center(child: SizedBox.shrink());
           // }
 
           if (state.listPodcastsContinueListening.isEmpty) {
@@ -370,13 +381,11 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         },
       );
 
-
-
   Widget _list() => BlocBuilder<MyPodcastCubit, MyPodcastState>(
     builder: (context, state) {
-      if (state.isLoading) {
-        return const Center(child: CircularProgressIndicator());
-      }
+      // if (state.isLoading) {
+      //   return const Center(child: SizedBox.shrink());
+      // }
 
       if (state.podcasts.isEmpty) {
         return const Center(
@@ -387,29 +396,33 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         );
       }
 
-      return  state.selectedTab == "Draft"
-          ?  SizedBox(
-        height: 180,
-        child: ListView.builder(
-          physics: const BouncingScrollPhysics(),
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-          itemCount: state.podcasts.length,
-          itemBuilder: (_, i) {
-            final data = state.podcasts[i];
-            return SizedBox(height: 177, child: myDraftListPodcast(data,false));
-          },
-        ),
-      ) : ListView.builder(
-        physics: const BouncingScrollPhysics(),
-        shrinkWrap: true,
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-        itemCount: state.podcasts.length,
-        itemBuilder: (_, i) {
-          final data = state.podcasts[i];
-          return myListPodcast(data, false);
-        },
-      );
+      return state.selectedTab == "Draft"
+          ? SizedBox(
+            height: 180,
+            child: ListView.builder(
+              physics: const BouncingScrollPhysics(),
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+              itemCount: state.podcasts.length,
+              itemBuilder: (_, i) {
+                final data = state.podcasts[i];
+                return SizedBox(
+                  height: 177,
+                  child: myDraftListPodcast(data, false),
+                );
+              },
+            ),
+          )
+          : ListView.builder(
+            physics: const BouncingScrollPhysics(),
+            shrinkWrap: true,
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+            itemCount: state.podcasts.length,
+            itemBuilder: (_, i) {
+              final data = state.podcasts[i];
+              return myListPodcast(data, false);
+            },
+          );
     },
   );
 
@@ -436,14 +449,19 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
         // context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
         context.read<MyPodcastCubit>().loadPodcast(data);
+        print("audio url:${data.title}");
+        print("audio url:${data.audioPath}");
         Navigator.pushNamed(
-            context,
-            RoutesName.PLAY_PODCAST ,
-            arguments:{
-              "podcast":data,
-              "audioPath" : "assets/images/test_audio.mp3",
-              "isOverlayManager":false
-            });
+          context,
+          RoutesName.PLAY_PODCAST,
+          arguments: {
+            "podcast": data,
+            "audioPath": data.audioPath,
+            "isOverlayManager": false,
+            "isContinue": true,
+            "isFavorite": false,
+          },
+        );
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
@@ -452,7 +470,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child:  Image.network(
+              child: Image.network(
                 data.image,
                 width: 80,
                 height: 80,
@@ -568,18 +586,38 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         // } else {
         //   // User canceled the picker
         // }
-        // AudioOverlayManager.hide();
 
-        // context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
+
+        // AudioOverlayManager.hide();
+        context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
+
+
+
         context.read<MyPodcastCubit>().loadPodcast(data);
+        if(data.type == "Draft"){
         Navigator.pushNamed(
+        context,
+        RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
+        arguments: {
+        "audioPath": "assets/images/test_audio.mp3",
+        "is_draft": true,
+        },
+        );
+        }else {
+          Navigator.pushNamed(
             context,
-            RoutesName.PLAY_PODCAST ,
-            arguments:{
-            "podcast":data,
-             "audioPath" : "assets/images/test_audio.mp3",
-              "isOverlayManager":false
-        });
+            RoutesName.PLAY_PODCAST,
+            arguments: {
+              "podcast": data,
+              "audioPath": data.audioPath,
+              "isOverlayManager": false,
+              "isContinue": false,
+              "isFavorite": data.type == "Favorite" ? true : false,
+            },
+          ).then((value) {
+            context.read<MyPodcastCubit>().allPodcastsContinueListening();
+          },);
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
@@ -712,6 +750,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
       ),
     );
   }
+
   Widget myDraftListPodcast(PodcastModel data, bool isContinueListening) {
     double progress = 0.0;
     String timeLeftText = "";
@@ -735,16 +774,21 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         // } else {
         //   // User canceled the picker
         // }
-        Navigator.pushNamed(context, RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,arguments: {
-          "audioPath": "assets/images/test_audio.mp3",
-          "is_draft":true
-        });
+
+        Navigator.pushNamed(
+          context,
+          RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
+          arguments: {
+            "audioPath": "assets/images/test_audio.mp3",
+            "is_draft": true,
+          },
+        );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric( horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
-         mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             /// IMAGE
             ClipRRect(
@@ -765,13 +809,13 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                 child: Text(
                   overflow: TextOverflow.ellipsis,
                   data.title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
             ),
-                 const SizedBox(height: 5),
+            const SizedBox(height: 5),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -783,24 +827,24 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                     color: AppColors.dart_grey,
                   ),
                 ),
-                if(data.relationship.isNotEmpty)
-                Container(
-                  width: 4,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.dart_grey,
-                    borderRadius: BorderRadius.circular(50),
+                if (data.relationship.isNotEmpty)
+                  Container(
+                    width: 4,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.dart_grey,
+                      borderRadius: BorderRadius.circular(50),
+                    ),
                   ),
-                ),
-                if(data.relationship.isNotEmpty)
-                Text(
-                  "  ${Utils.capitalize(data.relationship)}",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.dart_grey,
+                if (data.relationship.isNotEmpty)
+                  Text(
+                    "  ${Utils.capitalize(data.relationship)}",
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.dart_grey,
+                    ),
                   ),
-                ),
               ],
             ),
             Text(
@@ -812,14 +856,13 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                 color: AppColors.dart_grey,
               ),
             ),
-
           ],
         ),
       ),
     );
   }
 
-  Widget recentPodcastUserList(RecentUserListModel data, ) {
+  Widget recentPodcastUserList(RecentUserListModel data) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
       child: Row(
@@ -850,18 +893,27 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                     Utils.capitalize(data.relationship),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontSize: 16,
-                      color:data.type ==CallType.Missed?AppColors.redColor:Colors.white ,
+                      color:
+                          data.type == CallType.Missed
+                              ? AppColors.redColor
+                              : Colors.white,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-                const SizedBox(height: 5,),
+                const SizedBox(height: 5),
                 Row(
                   children: [
-                    SvgPicture.asset(Images.phone_incoming, height: 12,width: 12),
-                   const SizedBox(width: 5,),
+                    SvgPicture.asset(
+                      Images.phone_incoming,
+                      height: 12,
+                      width: 12,
+                    ),
+                    const SizedBox(width: 5),
                     Text(
-                      data.type ==CallType.Missed? CallType.Missed.name: data.duration,
+                      data.type == CallType.Missed
+                          ? CallType.Missed.name
+                          : data.duration,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -870,40 +922,35 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                     ),
                   ],
                 ),
-
               ],
             ),
           ),
 
           SizedBox(
-                height: 60,
-                child: Center(
-                  child: Text(
-                    Utils.timeAgo(DateTime.parse(data.date))  ,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
+            height: 60,
+            child: Center(
+              child: Text(
+                Utils.timeAgo(DateTime.parse(data.date)),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
               ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-
   Widget recentList() => BlocBuilder<MyPodcastCubit, MyPodcastState>(
     builder: (context, state) {
-      if (state.isLoading) {
-        return const Center(child: CircularProgressIndicator());
-      }
+      // if (state.isLoading) {
+      //   return const Center(child: SizedBox.shrink());
+      // }
 
       if (state.recentUserList.isEmpty) {
         return const Center(
-          child: Text(
-            "No Data found",
-            style: TextStyle(color: Colors.white70),
-          ),
+          child: Text("No Data found", style: TextStyle(color: Colors.white70)),
         );
       }
 
@@ -911,7 +958,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         physics: const BouncingScrollPhysics(),
         shrinkWrap: true,
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 0),
-        itemCount: state.recentUserList .length,
+        itemCount: state.recentUserList.length,
         itemBuilder: (_, i) {
           final data = state.recentUserList[i];
           return recentPodcastUserList(data);
@@ -919,7 +966,6 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
       );
     },
   );
-
 
   Future<bool> _showActionSheet(BuildContext context) async {
     final result = await showCupertinoModalPopup<bool>(
@@ -955,5 +1001,4 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
     return result ?? false;
   }
-
 }

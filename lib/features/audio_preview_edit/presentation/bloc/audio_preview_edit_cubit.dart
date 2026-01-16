@@ -24,7 +24,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
   }
 
   Future<void> loadAudio(String path,bool isDraft) async {
-    await _player.setFilePath(path);
+    await _player.setAsset(path);
     if(isDraft){
       loadMetadata();
     }

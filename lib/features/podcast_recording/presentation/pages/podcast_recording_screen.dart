@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,6 +19,9 @@ import '../../../../core/components/comman_components/custom_button_common_mask_
 import '../../../../core/components/comman_components/podcast_bg.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/images/images.dart';
+import '../../../home/data/model/friends_list_model.dart';
+import '../../../home/presentation/bloc/home_bloc/home_cubit.dart';
+import '../../../home/presentation/bloc/home_state/home_state.dart';
 import '../../data/user_list_model/user_list_model.dart';
 import '../bloc/podcast_recording_cubit.dart';
 import '../bloc/podcast_recording_state.dart';
@@ -44,6 +48,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     context.read<PodCastRecordingCubit>().initiazeRecording();
     context.read<PodCastRecordingCubit>().fetchPodcastTopics();
     context.read<PodCastRecordingCubit>().addSelfParticipant(widget.isIncomingCall);
+    context.read<HomeCubit>().getFriendsList();
     if(widget.isIncomingCall){
       Future.delayed(const Duration(seconds: 2),() {
         showIncomingCallDialog(context);
@@ -195,7 +200,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "${widget.userName},${widget.isIncomingCall?"you":"Mom"} ",
+                "${widget.userName},${widget.isIncomingCall?"you":state.participants.length-1==1?state.participants[1].firstName:""} ",
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -606,6 +611,8 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     );
   }
 
+
+// invite call dialog
   void showInviteDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -616,8 +623,14 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
           ),
-          child: BlocBuilder<PodCastRecordingCubit, PodCastRecordingState>(
+          child: BlocBuilder<HomeCubit, HomeState>(
             builder: (context, state) {
+             print("User Image Name:${state.friendsList?[0].profileImage}");
+              if (state.friendsList == null || state.friendsList!.isEmpty) {
+                return const Text("Not Friend Found");
+              }
+              
+              
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Column(
@@ -658,9 +671,9 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                     Flexible(
                       child: ListView.builder(
                         shrinkWrap: true,
-                        itemCount: state.inviteUserList.length,
+                        itemCount: state.friendsList?.length,
                         itemBuilder: (_, i) {
-                          final user = state.inviteUserList[i];
+                          final user = state.friendsList?[i];
                           return Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
@@ -668,19 +681,38 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                             ),
                             child: Row(
                               children: [
-                                user.avatar != null
+                                user?.profileImage != null&&user?.profileImage.toString() != null
                                     ? ClipOval(
-                                      child: Image.asset(
-                                        user.avatar!,
+                                  child: Image.network(
+                                    user!.profileImage!,
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+
+                                    // 🔄 Loading state
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+
+                                      return const SizedBox(
                                         width: 50,
                                         height: 50,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
-                                    : Text(
-                                      user.name[0],
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                        child: Center(
+                                          child: CupertinoActivityIndicator(),
+                                        ),
+                                      );
+                                    },
+
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return SizedBox.shrink();
+                                    },
+                                  ),
+                                )
+                                    : ClipOval(
+                                      child: Text(
+                                        user?.firstName?[0].toString().toUpperCase()??"",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
                                       ),
                                     ),
 
@@ -688,7 +720,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
 
                                 Expanded(
                                   child: Text(
-                                    user.name,
+                                    user?.firstName??'',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium?.copyWith(
@@ -702,7 +734,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                                   onTap: () {
                                     context
                                         .read<PodCastRecordingCubit>()
-                                        .addParticipant(user);
+                                        .addParticipant(user!);
                                     Navigator.pop(context);
 
 
@@ -852,7 +884,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     );
   }
 
-  Widget _userCard(UserListModel user,int index,int plusUser) {
+  Widget _userCard(FriendsDataList user,int index,int plusUser) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -869,7 +901,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
             height: 125,
             child: Stack(
               children: [
-                user.avatar != null
+                user.profileImage != null&&user.profileImage.toString().endsWith('/null') == false
                     ? Positioned(
                       bottom: -20,
                       left: 0,
@@ -877,13 +909,36 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                       child: Transform.scale(
                         scale: 1.5,
                         child: ClipOval(
-                          child: Image.asset(user.avatar!, height: 125),
-                        ),
+                          child: Image.network(
+                            user.profileImage!,
+                            fit: BoxFit.cover,
+                            // 🔄 Loading state
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: Center(
+                                  child: CupertinoActivityIndicator(),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.person,
+                                color: Colors.grey,
+                              );
+                            },
+                          ),
+                        )
+,
                       ),
                     )
-                    : Text(
-                      user.avatar ?? 'M',
-                      style: const TextStyle(fontSize: 22),
+                    : ClipOval(
+                      child: Text(
+                        user.firstName.toString().toUpperCase() ?? '',
+                        style: const TextStyle(fontSize: 22),
+                      ),
                     ),
               ],
             ),
@@ -894,7 +949,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                YouAudioWave(useName: user.name),
+                YouAudioWave(useName: user.firstName),
                 if(index==1&&plusUser>=3)
                 plushUser(plusUser),
               ],
@@ -1120,8 +1175,9 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
               //   // User canceled the picker
               // }
               Navigator.pushNamed(context, RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,arguments: {
-                "audioPath": "result?.files.single.path",
-                "is_draft":false
+                "audioPath": "assets/images/test_audio.mp3",
+                "is_draft":false,
+                "participants":   state.participants.length-1==1?state.participants[1].firstName:""
               });
             },
           ),

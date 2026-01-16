@@ -51,6 +51,7 @@ class _RealWaveSliderState extends State<RealWaveSlider> {
     super.initState();
     _controller = PlayerController();
     _loadWaveform();
+    print(widget.audioPath);
   }
 
   Future<void> _loadWaveform() async {

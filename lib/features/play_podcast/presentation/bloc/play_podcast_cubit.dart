@@ -38,16 +38,18 @@ class PlayPodcastCubit extends Cubit<PlayPodcastState> {
     // });
   }
 
-  Future<void> loadAudio(String url, PodcastModel podcast) async {
+  Future<void> loadAudio(String url, PodcastModel podcast,isContinue) async {
+    Utils.showLoader();
     try {
       emit(state.copyWith(podcast: podcast));
-      await _audioPlayer.setAsset(url);
-      if (podcast.listenedSec >= 0) {
+      await _audioPlayer.setUrl(url);
+      if (isContinue) {
         _audioPlayer.seek(Duration(seconds: podcast.listenedSec));
       }
     } catch (e) {
       print('Error loading audio: $e');
     }
+    Utils.closeLoader();
   }
 
   void audioPlay() {

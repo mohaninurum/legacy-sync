@@ -23,9 +23,10 @@ class AudioPreviewEditScreen extends StatefulWidget {
   final String audioPath;
   final PodcastModel? podcastModel;
   final bool isdraft;
+  final String participants;
 
 
-  const AudioPreviewEditScreen({super.key, required this.audioPath,this.podcastModel,required this.isdraft});
+  const AudioPreviewEditScreen({super.key, required this.audioPath,this.podcastModel,required this.isdraft,required this.participants});
 
   @override
   State<AudioPreviewEditScreen> createState() => _AudioPreviewEditScreenState();
@@ -61,9 +62,9 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                     AudioPreviewControls(
                       state: state,
                       cubit: cubit,
-                      audioPath: widget.audioPath,
+                      audioPath: "https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3",
                     ),
-                    AudioMetaWidget(state: state,)
+                    AudioMetaWidget(state: state,participants: widget.participants,)
                   ],
                 ),
               );

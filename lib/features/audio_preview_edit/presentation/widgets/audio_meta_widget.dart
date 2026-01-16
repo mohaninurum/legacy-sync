@@ -9,7 +9,8 @@ import '../bloc/audio_preview_edit_state.dart';
 
 class AudioMetaWidget extends StatelessWidget {
   final AudioPreviewEditState state;
-   AudioMetaWidget({super.key, required this.state});
+  final String participants;
+   AudioMetaWidget({super.key, required this.state,required this.participants});
 
 
 
@@ -42,7 +43,7 @@ class AudioMetaWidget extends StatelessWidget {
 
           _SectionTitle("Collaborator",context),
           const SizedBox(height: 12),
-          _CollaboratorTile(name: "Mom",context: context),
+          _CollaboratorTile(name:   participants,context: context),
           const SizedBox(height: 12),
 
           const SizedBox(height: 28),

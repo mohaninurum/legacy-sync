@@ -60,7 +60,6 @@ class ProfileCubit extends Cubit<ProfileState> {
           Utils.closeLoader();
           if (result.data != null) {
             print("DATA ON SUCCESS:: ${result.data}");
-
             emit(state.copyWith(profileData: result.data!, isLoading: false, error: null));
             firstNameController.text = state.profileData!.firstName ?? '';
             lastNameController.text = state.profileData!.lastName ?? '';
@@ -70,6 +69,7 @@ class ProfileCubit extends Cubit<ProfileState> {
             AppPreference().set(key: AppPreference.KEY_USER_LAST_NAME, value: lastNameController.text);
             AppPreference().set(key: AppPreference.KEY_USER_Email, value: emailController.text);
             AppPreference().set(key: AppPreference.KEY_USER_DOB, value: dobController.text);
+            AppPreference().set(key: AppPreference.PROFILE_IMAGE, value: "${state.profileData?.profileImage.toString()}");
             AppService.userFirstName = firstNameController.text;
           } else {
             emit(state.copyWith(isLoading: false, error: "No profile data found"));

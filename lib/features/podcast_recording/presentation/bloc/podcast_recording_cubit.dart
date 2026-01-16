@@ -3,6 +3,7 @@ import 'package:legacy_sync/features/podcast_recording/presentation/bloc/podcast
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../config/db/shared_preferences.dart';
 import '../../../../core/utils/utils.dart';
+import '../../../home/data/model/friends_list_model.dart';
 import '../../data/podcast_topic/podcast_topics_model.dart';
 import '../../data/user_list_model/user_list_model.dart';
 import 'package:flutter_sound/flutter_sound.dart';
@@ -14,33 +15,8 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
   UsecasePodcastRecording usecasePodcastRecording = UsecasePodcastRecording();
 
   Timer? _timer;
-  List<UserListModel> users = const [
-    UserListModel(id: "1", name: "Dad", avatar: "assets/images/user_you.png"),
-    UserListModel(id: "2", name: "Mom", avatar: "assets/images/user_you.png"),
-    UserListModel(id: "3", name: "Sis", avatar: "assets/images/user_you.png"),
-    UserListModel(id: "4", name: "Bro", avatar: "assets/images/user_you.png"),
-  ];
-  List<PodcastTopicsModel> topicsList =  [
-    PodcastTopicsModel(
-      id: "1",
-      title: "Thinking Back to Your Earliest Clear Memory",
-      description:
-          "Thinking back to your earliest clear memory, what did you see, hear, or feel that still brings a vivid sense of that time to life for you today?",
-      category: TopicCategory.relationship,
-    ),
-    PodcastTopicsModel(
-      id: "2",
-      title: "A Turning Point in Your Life",
-      description: "A decision or moment that changed your direction forever.",
-      category: TopicCategory.family,
-    ),
-    PodcastTopicsModel(
-      id: "3",
-      title: "A Lesson Learned the Hard Way",
-      description: "Something experience taught you that books never could.",
-      category: TopicCategory.family,
-    ),
-  ];
+  List<FriendsDataList> users = const [];
+  List<PodcastTopicsModel> topicsList =  [];
 
   // final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
   StreamSubscription? _recorderSub;
@@ -156,32 +132,33 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
     }
   }
 
-  void addSelfParticipant(bool incomingCall) {
+  Future<void> addSelfParticipant(bool incomingCall) async {
     if (incomingCall) {
       emit(
         state.copyWith(
           participants: [
-            const UserListModel(
-              id: "1",
-              name: "Naila",
-              avatar: "assets/images/user_you.png",
-            ),
-            const UserListModel(
-              id: "1",
-              name: "You",
-              avatar: "assets/images/user_you.png",
-            ),
+            //  FriendsDataList(
+            //   userIdPK: "1",
+            //   firstName: "Naila",
+            //   avatar: "assets/images/user_you.png",
+            // ),
+            //  FriendsDataList(
+            //   id: "1",
+            //   name: "You",
+            //   avatar: "assets/images/user_you.png",
+            // ),
           ],
         ),
       );
     } else {
+    final profileUrl= await AppPreference().get(key: AppPreference.PROFILE_IMAGE);
       emit(
         state.copyWith(
           participants: [
-            const UserListModel(
-              id: "1",
-              name: "You",
-              avatar: "assets/images/user_you.png",
+             FriendsDataList(
+              userIdPK: 118,
+              firstName: "You",
+              profileImage: profileUrl,
             ),
           ],
         ),
@@ -221,7 +198,7 @@ class PodCastRecordingCubit extends Cubit<PodCastRecordingState> {
     emit(PodCastRecordingState.initial());
   }
 
-  void addParticipant(UserListModel user) {
+  void addParticipant(FriendsDataList user) {
     emit(
       state.copyWith(
         callStatus: CallStatus.connected,

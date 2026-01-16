@@ -1,5 +1,6 @@
 
 
+import '../../../home/data/model/friends_list_model.dart';
 import '../../data/podcast_topic/podcast_topics_model.dart';
 import '../../data/user_list_model/user_list_model.dart';
 
@@ -35,8 +36,8 @@ class TopicModel {
 
 class PodCastRecordingState {
   final PodCastRecordingStatus status;
-  final List<UserListModel> participants;
-  final List<UserListModel> inviteUserList;
+  final List<FriendsDataList> participants;
+  final List<FriendsDataList> inviteUserList;
   final List<PodcastTopicsModel> allTopics;
   final Duration duration;
   final int currentTopicIndex;
@@ -94,8 +95,8 @@ class PodCastRecordingState {
 
   PodCastRecordingState copyWith({
     PodCastRecordingStatus? status,
-    List<UserListModel>? participants,
-    List<UserListModel>? inviteUserList,
+    List<FriendsDataList>? participants,
+    List<FriendsDataList>? inviteUserList,
     List<PodcastTopicsModel>? allTopics,
     List<PodcastTopicsModel>? filteredTopics,
     Duration? duration,
