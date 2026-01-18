@@ -116,11 +116,14 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                 size: 56,
                 icon: Icons.add,
                 onTap: () {
-                  Navigator.pushNamed(
-                    context,
-                    RoutesName.PODCAST_RECORDING_SCREEN,
-                    arguments: {"incoming_call": false, "userName": "you"},
-                  );
+                  Navigator.pushNamed(context, RoutesName.CREATE_NEW_PODCAST);
+                  // Navigator.pushNamed(context, RoutesName.PODCAST_CONNECTION);
+
+                  // Navigator.pushNamed(
+                  //   context,
+                  //   RoutesName.PODCAST_RECORDING_SCREEN,
+                  //   arguments: {"incoming_call": false, "userName": "you"},
+                  // );
                 },
               ),
               const SizedBox(height: 10),
@@ -253,7 +256,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                         "Podcast",
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
-                      _podcastjoin()
+                      // _podcastjoin()
                     ],
                   ),
                 ],

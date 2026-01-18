@@ -64,7 +64,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                       cubit: cubit,
                       audioPath: "https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3",
                     ),
-                    AudioMetaWidget(state: state,participants: widget.participants,)
+                    // AudioMetaWidget(state: state,participants: widget.participants,)
                   ],
                 ),
               );

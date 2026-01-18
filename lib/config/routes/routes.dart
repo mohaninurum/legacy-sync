@@ -8,6 +8,7 @@ import 'package:legacy_sync/features/auth/presentation/pages/signup_screen.dart'
 import 'package:legacy_sync/features/auth/presentation/pages/social_login_screen.dart';
 import 'package:legacy_sync/features/auth/presentation/pages/verification_code_screen.dart';
 import 'package:legacy_sync/features/card/presentation/pages/card_screen.dart';
+import 'package:legacy_sync/features/create_new_podcast/presentation/pages/create_new_podcast_screen.dart';
 import 'package:legacy_sync/features/favorite_memories/presentation/pages/favorite_memories_screen.dart';
 import 'package:legacy_sync/features/friends_profile/presentation/pages/friends_profile_page.dart';
 import 'package:legacy_sync/features/home/presentation/pages/learn_page.dart';
@@ -30,7 +31,7 @@ import '../../features/auth/presentation/pages/email_verification_screen.dart';
 import '../../features/incoming_call_full_screen/incoming_call_full_screen.dart';
 import '../../features/legacy_wrapped/presentation/pages/legacy_wrapped_screen.dart';
 import '../../features/legacy_wrapped/presentation/pages/voice_is_growing_screen.dart';
-import '../../features/livekit_connection/presentation/podcast_connection.dart';
+import '../../features/livekit_connection/presentation/pages/podcast_connection.dart';
 import '../../features/my_podcast/presentation/pages/my_podcast_screen.dart';
 import '../../features/play_podcast/presentation/pages/play_podcast.dart';
 import '../../features/play_podcast/presentation/pages/widget/transcript_description.dart';
@@ -178,6 +179,8 @@ class Routes {
           final data = settings.arguments as Map?;
           final podcast = data!["podcast"];
         return _animatedRouteDownToUp(TranscriptDescription(podcast:podcast));
+      case RoutesName.CREATE_NEW_PODCAST:
+        return _animatedRouteRightToLeft(const CreateNewPodcastScreen());
       default:
         return MaterialPageRoute(builder: (context) => const LoginScreen());
     }

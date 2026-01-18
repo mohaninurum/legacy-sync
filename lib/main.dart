@@ -24,6 +24,7 @@ import 'package:legacy_sync/features/auth/presentation/bloc/auth_bloc/reset_pass
 import 'package:legacy_sync/features/auth/presentation/bloc/auth_bloc/signup_cubit.dart';
 import 'package:legacy_sync/features/auth/presentation/bloc/auth_bloc/verification_code_cubit.dart';
 import 'package:legacy_sync/features/card/presentation/bloc/card_bloc/card_cubit.dart';
+import 'package:legacy_sync/features/create_new_podcast/presentation/bloc/create_new_podcast_cubit/create_new_podcast_cubit.dart';
 import 'package:legacy_sync/features/favorite_memories/presentation/bloc/favorite_memories_bloc/favorite_memories_cubit.dart';
 import 'package:legacy_sync/features/list_of_module/list_of_module.dart';
 import 'package:legacy_sync/features/question/presentation/bloc/question_bloc/question_cubit.dart';
@@ -172,6 +173,7 @@ void main() async {
         BlocProvider<PodCastRecordingCubit>(create: (context) => PodCastRecordingCubit()),
         BlocProvider<AudioPreviewEditCubit>(create: (context) => AudioPreviewEditCubit()),
         BlocProvider<PlayPodcastCubit>(create: (context) => PlayPodcastCubit()),
+        BlocProvider<CreateNewPodcastCubit>(create: (context) => CreateNewPodcastCubit()),
       ],
       child:  MyApp(authToken:authToken,result:result),
     ),

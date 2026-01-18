@@ -41,4 +41,5 @@ class RoutesName {
   static const String INCOMING_CALL_FULL_SCREEN = "incoming_callFull_screen";
   static const String PLAY_PODCAST = "play_podcast";
   static const String transcript_description = "transcript_description";
+  static const String CREATE_NEW_PODCAST = "create_new_podcast";
 }
