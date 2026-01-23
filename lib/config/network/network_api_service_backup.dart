@@ -11,6 +11,7 @@ import 'package:legacy_sync/config/network/base_api_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/foundation.dart';
+import 'package:legacy_sync/config/network/network_api_service.dart';
 
 typedef ResultFuture<T> = Future<Either<AppException, T>>;
 typedef ResultVoid = ResultFuture<void>;
@@ -22,9 +23,22 @@ class NetworkApiServiceBackup implements BaseApiServices {
 
 
 
-  Map<String, String> _buildHeaders([String? overrideToken]) {
+  Map<String, String> _buildHeaders({String? overrideToken, bool isSandBox = false, String sandBoxId = '', bool isMultipart = false}) {
     final tokenToUse = overrideToken ?? ApiURL.authToken;
-    return {'Content-Type': 'application/json; charset=UTF-8', if (tokenToUse.isNotEmpty) 'Authorization': 'Bearer $tokenToUse'};
+    final headers = <String, String>{};
+    if (!isMultipart) {
+      if(isSandBox) {
+        headers['Content-Type'] = 'application/json';
+        headers['X-Sandbox-ID'] = sandBoxId;
+      } else {
+        headers['Content-Type'] = 'application/json; charset=UTF-8';
+      }
+    }
+    if (tokenToUse.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $tokenToUse';
+    }
+    return headers;
+    // return {'Content-Type': 'application/json; charset=UTF-8', if (tokenToUse.isNotEmpty) 'Authorization': 'Bearer $tokenToUse'};
   }
 
   Either<AppException, T> _parseHttpResponse<T>(http.Response response) {
@@ -105,6 +119,40 @@ class NetworkApiServiceBackup implements BaseApiServices {
   ResultFuture getPostApiResponse(String url, Map<String, dynamic> dic) {
     final headers = _buildHeaders();
     return _safeRequest(() => http.post(Uri.parse(url), headers: headers, body: jsonEncode(dic)), method: 'POST', url: url, headers: headers, body: dic);
+  }
+
+  @override
+  ResultFuture<T> postSandboxApiResponse<T>(
+      String url,
+      Map<String, dynamic> body, {
+        required String sandboxId,
+        String? overrideToken,
+      }) {
+    final headers = _buildHeaders(
+      overrideToken: overrideToken,
+      isSandBox: true,
+      sandBoxId: sandboxId,
+    );
+
+    return _safeRequest<T>(
+          () => http.post(Uri.parse(url), headers: headers, body: jsonEncode(body)),
+      method: 'POST',
+      url: url,
+      headers: headers,
+      body: body,
+    );
+  }
+
+  @override
+  ResultFuture getPostApiResponseNoAuth(String url, Map<String, dynamic> dic) {
+    final headers = {'Content-Type': 'application/json; charset=UTF-8'};
+    return _safeRequest(
+          () => http.post(Uri.parse(url), headers: headers, body: jsonEncode(dic)),
+      method: 'POST',
+      url: url,
+      headers: headers,
+      body: dic,
+    );
   }
 
   @override

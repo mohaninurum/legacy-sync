@@ -11,7 +11,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/foundation.dart';
 
-
 typedef ResultFuture<T> = Future<Either<AppException, T>>;
 typedef ResultVoid = ResultFuture<void>;
 typedef DataMap = Map<String, dynamic>;
@@ -19,9 +18,40 @@ typedef DataMap = Map<String, dynamic>;
 class NetworkApiService implements BaseApiServices {
   final dio.Dio _dio = dio.Dio();
 
-  Map<String, String> _buildHeaders([String? overrideToken]) {
+  Map<String, String> _buildHeaders({
+    String? overrideToken,
+    bool isSandBox = false,
+    String sandBoxId = '',
+    bool isMultipart = false,
+  }) {
     final tokenToUse = overrideToken ?? ApiURL.authToken;
-    return {'Content-Type': 'application/json; charset=UTF-8', if (tokenToUse.isNotEmpty) 'Authorization': 'Bearer $tokenToUse'};
+    final headers = <String, String>{};
+    if (!isMultipart) {
+      if(isSandBox) {
+        headers['Content-Type'] = 'application/json';
+        headers['X-Sandbox-ID'] = sandBoxId;
+      } else {
+        headers['Content-Type'] = 'application/json; charset=UTF-8';
+      }
+    }
+    if (tokenToUse.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $tokenToUse';
+    }
+    return headers;
+  }
+
+  Map<String, String> _buildHeadersNoAuth() {
+    final headers = <String, String>{};
+    return {'Content-Type': 'application/json; charset=UTF-8'};
+    // if (!isMultipart) {
+    //   if (isSandBox) {
+    //     headers['Content-Type'] = 'application/json';
+    //     headers['X-Sandbox-ID'] = sandBoxId;
+    //   } else {
+    //     headers['Content-Type'] = 'application/json; charset=UTF-8';
+    //   }
+    // }
+    // return headers;
   }
 
   Either<AppException, T> _parseHttpResponse<T>(http.Response response) {
@@ -51,7 +81,6 @@ class NetworkApiService implements BaseApiServices {
       default:
         return const Left(FetchDataException("Unexpected server error"));
     }
-
   }
 
   Either<AppException, T> _parseDioResponse<T>(dio.Response response) {
@@ -81,13 +110,25 @@ class NetworkApiService implements BaseApiServices {
       default:
         return const Left(FetchDataException("Unexpected server error"));
     }
-
   }
 
-  Future<Either<AppException, T>> _safeRequest<T>(Future<http.Response> Function() call, {required String method, required String url, Map<String, String>? headers, Map<String, dynamic>? body, Map<String, dynamic>? queryParams}) async {
+  Future<Either<AppException, T>> _safeRequest<T>(
+    Future<http.Response> Function() call, {
+    required String method,
+    required String url,
+    Map<String, String>? headers,
+    Map<String, dynamic>? body,
+    Map<String, dynamic>? queryParams,
+  }) async {
     try {
       if (kDebugMode) {
-        printCurlRequest(url: url, method: method, headers: headers, queryParams: queryParams, body: body);
+        printCurlRequest(
+          url: url,
+          method: method,
+          headers: headers,
+          queryParams: queryParams,
+          body: body,
+        );
       }
       final response = await call().timeout(const Duration(seconds: 60));
       return _parseHttpResponse<T>(response);
@@ -101,14 +142,57 @@ class NetworkApiService implements BaseApiServices {
   @override
   ResultFuture getGetApiResponse(String url) {
     final headers = _buildHeaders();
-    return _safeRequest(() => http.get(Uri.parse(url), headers: headers), method: 'GET', url: url, headers: headers);
+    return _safeRequest(
+      () => http.get(Uri.parse(url), headers: headers),
+      method: 'GET',
+      url: url,
+      headers: headers,
+    );
   }
 
   @override
   ResultFuture getPostApiResponse(String url, Map<String, dynamic> dic) {
     final headers = _buildHeaders();
-    return _safeRequest(() => http.post(Uri.parse(url), headers: headers, body: jsonEncode(dic)), method: 'POST', url: url, headers: headers, body: dic);
+    return _safeRequest(
+      () => http.post(Uri.parse(url), headers: headers, body: jsonEncode(dic)),
+      method: 'POST',
+      url: url,
+      headers: headers,
+      body: dic,
+    );
   }
+
+  @override
+  ResultFuture getPostApiResponseNoAuth(String url, Map<String, dynamic> dic) {
+    final headers = _buildHeadersNoAuth();
+    return _safeRequest(
+          () => http.post(Uri.parse(url), headers: headers, body: jsonEncode(dic)),
+      method: 'POST',
+      url: url,
+      headers: headers,
+      body: dic,
+    );
+  }
+
+  @override
+  ResultFuture<T> postSandboxApiResponse<T>(
+      String url,
+      Map<String, dynamic> body, {required String sandboxId, String? overrideToken,}) {
+    final headers = _buildHeaders(
+      overrideToken: overrideToken,
+      isSandBox: true,
+      sandBoxId: sandboxId,
+    );
+
+    return _safeRequest<T>(
+          () => http.post(Uri.parse(url), headers: headers, body: jsonEncode(body)),
+      method: 'POST',
+      url: url,
+      headers: headers,
+      body: body,
+    );
+  }
+
 
   // @override
   // ResultFuture getPostApiProgress(
@@ -141,53 +225,100 @@ class NetworkApiService implements BaseApiServices {
   //   }
   // }
 
-
   @override
   ResultFuture getPutApiResponse(String url, Map<String, dynamic> dic) {
     final headers = _buildHeaders();
-    return _safeRequest(() => http.put(Uri.parse(url), headers: headers, body: jsonEncode(dic)), method: 'PUT', url: url, headers: headers, body: dic);
+    return _safeRequest(
+      () => http.put(Uri.parse(url), headers: headers, body: jsonEncode(dic)),
+      method: 'PUT',
+      url: url,
+      headers: headers,
+      body: dic,
+    );
   }
 
   @override
   ResultFuture patchApiResponse(String url, Map<String, dynamic> dic) {
     final headers = _buildHeaders();
-    return _safeRequest(() => http.patch(Uri.parse(url), headers: headers, body: jsonEncode(dic)), method: 'PATCH', url: url, headers: headers, body: dic);
+    return _safeRequest(
+      () => http.patch(Uri.parse(url), headers: headers, body: jsonEncode(dic)),
+      method: 'PATCH',
+      url: url,
+      headers: headers,
+      body: dic,
+    );
   }
 
   @override
-  ResultFuture pathResponse(String url, Map<String, dynamic> dic) => patchApiResponse(url, dic);
+  ResultFuture pathResponse(String url, Map<String, dynamic> dic) =>
+      patchApiResponse(url, dic);
 
   @override
-  ResultFuture deleteResponse(String url, Map<String, dynamic> dic) => patchApiResponse(url, dic);
+  ResultFuture deleteResponse(String url, Map<String, dynamic> dic) =>
+      patchApiResponse(url, dic);
 
   @override
   ResultFuture getDeleteApiResponse(String url, Map<String, dynamic> dic) {
     final headers = _buildHeaders();
-    return _safeRequest(() => http.delete(Uri.parse(url), headers: headers, body: jsonEncode(dic)), method: 'DELETE', url: url, headers: headers, body: dic);
+    return _safeRequest(
+      () =>
+          http.delete(Uri.parse(url), headers: headers, body: jsonEncode(dic)),
+      method: 'DELETE',
+      url: url,
+      headers: headers,
+      body: dic,
+    );
   }
 
   @override
   ResultFuture getPostDownloadZip(String url, Map<String, dynamic> dic) {
     final headers = _buildHeaders();
-    return _safeRequest(() => http.post(Uri.parse(url), headers: headers, body: jsonEncode(dic)), method: 'POST', url: url, headers: headers, body: dic);
+    return _safeRequest(
+      () => http.post(Uri.parse(url), headers: headers, body: jsonEncode(dic)),
+      method: 'POST',
+      url: url,
+      headers: headers,
+      body: dic,
+    );
   }
 
   @override
-  ResultFuture getPostUploadMultiPartApiResponse(String url, Map<String, String> fields, dynamic fileBytes, String fileName, String key, String method) async {
-
-
+  ResultFuture getPostUploadMultiPartApiResponse(
+    String url,
+    Map<String, String> fields,
+    dynamic fileBytes,
+    String fileName,
+    String key,
+    String method,
+  ) async {
     try {
-      final request = http.MultipartRequest(method.isEmpty ? 'POST' : method, Uri.parse(url));
+      final request = http.MultipartRequest(
+        method.isEmpty ? 'POST' : method,
+        Uri.parse(url),
+      );
       request.fields.addAll(fields);
       if (fileBytes != null && fileBytes.isNotEmpty) {
-        request.files.add(http.MultipartFile.fromBytes(key, fileBytes, filename: fileName));
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            key,
+            fileBytes,
+            filename: fileName,
+            contentType: getContentType(fileName),
+          ),
+        );
       }
-      final headers = _buildHeaders();
+      final headers = _buildHeaders(isMultipart: true);
       request.headers.addAll(headers);
       if (kDebugMode) {
-        printCurlRequest(url: url, method: method, headers: headers, body: fields);
+        _printMultipartCurl(
+          url: url,
+          method: method,
+          headers: headers,
+          fields: fields,
+          fileKey: key,
+          fileName: fileName,
+        );
       }
-
 
       final streamed = await request.send();
       final response = await http.Response.fromStream(streamed);
@@ -198,21 +329,42 @@ class NetworkApiService implements BaseApiServices {
   }
 
   @override
-  ResultFuture getPostMultiFileUpload(String url, Map<String, String> fields, List<PlatformFile> files, String key, String method) async {
+  ResultFuture getPostMultiFileUpload(
+    String url,
+    Map<String, String> fields,
+    List<PlatformFile> files,
+    String key,
+    String method,
+  ) async {
     try {
-      final request = http.MultipartRequest(method.isEmpty ? 'POST' : method, Uri.parse(url));
+      final request = http.MultipartRequest(
+        method.isEmpty ? 'POST' : method,
+        Uri.parse(url),
+      );
       request.fields.addAll(fields);
       request.headers.addAll(_buildHeaders());
 
       for (final file in files) {
         final bytes = await getFileBytes(file.path!);
         if (bytes.isNotEmpty) {
-          request.files.add(http.MultipartFile.fromBytes(key, bytes, filename: file.name, contentType: getContentType(file.name)));
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              key,
+              bytes,
+              filename: file.name,
+              contentType: getContentType(file.name),
+            ),
+          );
         }
       }
 
       if (kDebugMode) {
-        printCurlRequest(url: url, method: method, headers: _buildHeaders(), body: fields);
+        printCurlRequest(
+          url: url,
+          method: method,
+          headers: _buildHeaders(),
+          body: fields,
+        );
       }
 
       final response = await http.Response.fromStream(await request.send());
@@ -223,27 +375,53 @@ class NetworkApiService implements BaseApiServices {
   }
 
   @override
-  ResultFuture multiFileUpload(String url, Map<String, String> fields, List<PlatformFile> files, String key, String method, Function(double progress)? onUploadProgress) async {
+  ResultFuture multiFileUpload(
+    String url,
+    Map<String, String> fields,
+    List<PlatformFile> files,
+    String key,
+    String method,
+    Function(double progress)? onUploadProgress,
+  ) async {
     try {
       final formData = dio.FormData();
 
       for (final file in files) {
         final bytes = await getFileBytes(file.path!);
-        formData.files.add(MapEntry(key, dio.MultipartFile.fromBytes(bytes, filename: file.name, contentType: getContentType(file.name))));
+        formData.files.add(
+          MapEntry(
+            key,
+            dio.MultipartFile.fromBytes(
+              bytes,
+              filename: file.name,
+              contentType: getContentType(file.name),
+            ),
+          ),
+        );
       }
 
-      formData.fields.addAll(fields.entries.map((e) => MapEntry(e.key, e.value)));
+      formData.fields.addAll(
+        fields.entries.map((e) => MapEntry(e.key, e.value)),
+      );
 
       final headers = _buildHeaders();
 
       if (kDebugMode) {
-        printCurlRequest(url: url, method: method, headers: headers, body: fields);
+        printCurlRequest(
+          url: url,
+          method: method,
+          headers: headers,
+          body: fields,
+        );
       }
 
       final response = await _dio.request(
         url,
         data: formData,
-        options: dio.Options(method: method.isEmpty ? 'POST' : method, headers: headers),
+        options: dio.Options(
+          method: method.isEmpty ? 'POST' : method,
+          headers: headers,
+        ),
         onSendProgress: (sent, total) {
           if (onUploadProgress != null && total > 0) {
             onUploadProgress((sent / total) * 100);
@@ -282,7 +460,13 @@ class NetworkApiService implements BaseApiServices {
     }
   }
 
-  static void printCurlRequest({required String url, required String method, Map<String, String>? headers, Map<String, dynamic>? queryParams, dynamic body}) {
+  static void printCurlRequest({
+    required String url,
+    required String method,
+    Map<String, String>? headers,
+    Map<String, dynamic>? queryParams,
+    dynamic body,
+  }) {
     if (queryParams != null && queryParams.isNotEmpty) {
       url += '?${Uri(queryParameters: queryParams).query}';
     }
@@ -300,4 +484,30 @@ class NetworkApiService implements BaseApiServices {
 
     print("cURL Command:\n$curlCommand\n");
   }
+
+  static void _printMultipartCurl({
+    required String url,
+    required String method,
+    Map<String, String>? headers,
+    required Map<String, String> fields,
+    String? fileKey,
+    String? fileName,
+  }) {
+    var curl = "curl --location -X $method '$url'";
+
+    headers?.forEach((k, v) {
+      curl += " -H '$k: $v'";
+    });
+
+    fields.forEach((k, v) {
+      curl += " --form '$k=\"$v\"'";
+    });
+
+    if (fileKey != null && fileName != null) {
+      curl += " --form '$fileKey=@\"$fileName\"'";
+    }
+
+    print("Multipart cURL:\n$curl\n");
+  }
+
 }

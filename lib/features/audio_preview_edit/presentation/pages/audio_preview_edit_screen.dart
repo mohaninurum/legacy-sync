@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:legacy_sync/config/routes/routes.dart';
+import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/core/colors/colors.dart';
 import 'package:legacy_sync/core/components/comman_components/custom_button_common_mask_widgets.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
@@ -156,9 +158,10 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
             child: CustomButtonCommonMaskWidgets(
               text: "Save",
               onTap: () async {
-             final path=   context.read<AudioPreviewEditCubit>().save(widget.audioPath,context);
-             debugPrint("Saved Audio => $path");
-                Navigator.pop(context);
+             // final path=   context.read<AudioPreviewEditCubit>().save(widget.audioPath,context);
+             // debugPrint("Saved Audio => $path");
+             //    Navigator.pop(context);
+                Navigator.pushNamed(context, RoutesName.MY_PODCAST_SCREEN,arguments: {"isStartFirstTime":false});
               },
             ),
 

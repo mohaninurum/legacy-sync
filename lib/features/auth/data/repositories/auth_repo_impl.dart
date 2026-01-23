@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:legacy_sync/config/network/network_api_service.dart';
+import 'package:legacy_sync/features/auth/data/model/fcm_token_update.dart';
 import 'package:legacy_sync/features/auth/data/model/login_model.dart';
 import 'package:legacy_sync/features/auth/data/model/reset_password_model.dart';
 import 'package:legacy_sync/features/auth/data/model/send_otp_on_email_model.dart';
@@ -16,6 +17,16 @@ import '../model/social_login_response.dart';
 
 class AuthRepoImpl extends AuthRepositories {
   static final BaseApiServices _apiServices = NetworkApiService();
+
+  @override
+  ResultFuture<FcmTokenUpdate> updateFcmToken(Map<String, dynamic> body) async {
+    try{
+      final res = await _apiServices.getPostApiResponse(ApiURL.updateToken, body);
+      return res.fold((error) => Left(error), (data) => Right(FcmTokenUpdate.fromJson(data)));
+    } on AppException catch (e) {
+      return Left(e);
+    }
+  }
 
   @override
   ResultFuture<SignupModel> signUp(Map<String, dynamic> body) async {

@@ -13,6 +13,7 @@ class ApiURL {
 
   static const String baseURL = 'http://139.59.57.87:5000/api';
   static String authToken = '';
+  static const String updateToken = '$baseURL/users/fcm-token-user';
   static const String sign_up = '$baseURL/users/sign-up';
   static const String sign_IN = '$baseURL/users/sign-in';
   static const String SEND_OTP_ON_EMAIL = '$baseURL/users/reset-password-otp';
@@ -46,6 +47,10 @@ class ApiURL {
   static const String podcast__Listened_list = '$baseURL/podcast/continue-listening-podcast-list/';
   static const String recent_podcast_friend_list = '$baseURL/podcast/recent-podcast-friend-list/';
   static const String favourite_podcast_list = '$baseURL/favourite-podcast/';
+  static const String create_new_podcast = '$baseURL/podcast/create-podcast';
 
-
+  static const String liveKitApi = 'https://cloud-api.livekit.io/api/sandbox/connection-details';
+  static const String inviteFriendToPodcast = '$baseURL/podcast/invite-friend';
+  static const String record_start = "$baseURL/record-podcast/start";
+  static const String record_stop = "$baseURL/record-podcast/stop";
 }

@@ -1,8 +1,5 @@
-
-
-import '../../../home/data/model/friends_list_model.dart';
-import '../../data/podcast_topic/podcast_topics_model.dart';
-import '../../data/user_list_model/user_list_model.dart';
+import 'package:legacy_sync/features/home/data/model/friends_list_model.dart';
+import 'package:legacy_sync/features/podcast_recording/data/podcast_topic/podcast_topics_model.dart';
 
 enum PodCastRecordingStatus {
   idle,

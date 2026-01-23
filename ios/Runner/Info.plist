@@ -25,12 +25,6 @@
 	<key>MinimumOSVersion</key>
 	<string>15.0</string>
 	<key>CFBundleURLTypes</key>
-	<key>UIBackgroundModes</key>
-	<array>
-        <string>voip</string>
-        <string>remote-notification</string>
-        <string>processing</string>
-    </array>
 	<array>
 		<dict>
 			<key>CFBundleTypeRole</key>
@@ -67,8 +61,6 @@
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UISupportedInterfaceOrientations</key>
-	<key>ITSAppUsesNonExemptEncryption</key>
-    <false/>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
@@ -81,5 +73,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+    <key>BGTaskSchedulerPermittedIdentifiers</key>
+    <array>
+        <string>com.apple.background.processing</string>
+    </array>
 </dict>
 </plist>

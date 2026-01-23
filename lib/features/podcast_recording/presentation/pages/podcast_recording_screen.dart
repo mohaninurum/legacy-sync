@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/core/strings/strings.dart';
 import 'package:legacy_sync/core/utils/utils.dart';
+import 'package:legacy_sync/features/podcast_recording/presentation/bloc/podcast_recording_state.dart';
 import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/audio_waves_desing.dart';
 import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/audio_waves_widget.dart';
 import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/record_button.dart';
@@ -24,7 +25,6 @@ import '../../../home/presentation/bloc/home_bloc/home_cubit.dart';
 import '../../../home/presentation/bloc/home_state/home_state.dart';
 import '../../data/user_list_model/user_list_model.dart';
 import '../bloc/podcast_recording_cubit.dart';
-import '../bloc/podcast_recording_state.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:file_picker/file_picker.dart';
@@ -1174,6 +1174,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
               // } else {
               //   // User canceled the picker
               // }
+
               Navigator.pushNamed(context, RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,arguments: {
                 "audioPath": "assets/images/test_audio.mp3",
                 "is_draft":false,
@@ -1224,7 +1225,8 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     IconData? icon,
     required String label,
     bool selected = false,
-  }) {
+  })
+  {
     return Container(
       margin: const EdgeInsets.only(left: 10),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

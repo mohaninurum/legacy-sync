@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../config/db/shared_preferences.dart';
@@ -8,6 +10,8 @@ import '../../data/podcast_model.dart';
 import '../../data/recent_user_list_model.dart';
 import '../../domain/usecases/myPoadcast_usecase.dart';
 import 'my_podcast_state.dart';
+
+
 
 class MyPodcastCubit extends Cubit<MyPodcastState> {
   MyPodcastCubit() : super(MyPodcastState.initial()) {
@@ -20,7 +24,50 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
   final List<PodcastModel> _allPodcastsContinueListening = [];
   final List<RecentUserListModel> recentUserList = [];
 
+  String _sanitize(String input) {
+    final s = input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    return s.isEmpty ? 'user' : s;
+  }
 
+  Future<String> _generateShortRoomId() async {
+    final prefs = AppPreference();
+    final raw = await prefs.get(key: AppPreference.KEY_USER_FIRST_NAME);
+    final namePart = _sanitize((raw ?? '').trim());
+
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final rand = Random.secure();
+    final randomPart = List.generate(8, (_) => chars[rand.nextInt(chars.length)]).join();
+
+    return '${namePart}_$randomPart';
+  }
+
+
+  Future<void> createRoomAndId() async {
+    emit(state.copyWith(createRoomStatus: CreateRoomStatus.loading, error: ''));
+    final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+    final firstName = await AppPreference().get(key: AppPreference.KEY_USER_FIRST_NAME);
+    final lastName = await AppPreference().get(key: AppPreference.KEY_USER_LAST_NAME);
+    final userName = "${firstName}_$lastName";
+
+    print("FirstName New Podcast Cubit :: $firstName");
+    print("LastName New Podcast Cubit :: $lastName");
+    print("UserName New Podcast Cubit :: $userName");
+
+    if (userId == null) {
+      emit(state.copyWith(
+        createRoomStatus: CreateRoomStatus.failure,
+        error: "Login session expired, try to login again!",
+      ));
+      return;
+    }
+
+    // Keep if you need it later, otherwise remove.
+    final roomId = await _generateShortRoomId();
+
+    print("ROOM ID CREATED SUCCESSFULLY :::: $roomId");
+
+    emit(state.copyWith(createRoomStatus: CreateRoomStatus.success,roomId: roomId, userId: userId, userName: userName, error: ''));
+  }
 
   Future<void> fetchMyPodcastTab(String tab) async {
     Utils.showLoader();

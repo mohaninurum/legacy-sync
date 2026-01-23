@@ -130,4 +130,5 @@ class AppStrings {
   static const String invitedPodcast  = "Naila Invited you to podcast.";
   static const String invitedIncomingCallPodcast  = "Heads up! This session will\n be recorded.";
   static const String invitedIncomingCallDescription  = "LegacySync saves these moments so you and your family can revisit them later.Tap Agree & Join if you’re okay being recorded.";
+  static const String createNewPodcast = "Create New Podcast";
 }

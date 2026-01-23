@@ -74,7 +74,7 @@ class LoginCubit extends Cubit<LoginState> {
     var login = await authUseCase.login(body: body);
     emit(state.copyWith(isLoading: false));
     login.fold(
-      (failure) {
+      (failure) async {
         print("Login FAIl");
         print("${failure.errorCode}");
         if((failure.errorCode ?? 0) == 403){
@@ -92,7 +92,7 @@ class LoginCubit extends Cubit<LoginState> {
           ),
         );
       },
-      (data) {
+      (data) async {
         print("login data");
         print(data);
         // Add null safety checks to prevent null check operator errors
@@ -114,8 +114,13 @@ class LoginCubit extends Cubit<LoginState> {
           AppPreference().set(key: AppPreference.LEGACY_STARTED, value: userData.legacy_started ?? '');
           AppPreference().setInt(key: AppPreference.MEMORIES_CAPTURED, value: userData.memories_captured ?? 0);
 
-          AppService.initializeUserData();
+
           ApiURL.authToken = userData.token ?? '';
+          AppService.initializeUserData();
+
+          // ✅ Call update fcm token here
+          await AppService.updateFcmTokenIfNeeded();
+
           emit(state.copyWith(loginSuccess: true));
           emit(LoginSuccessState());
         } else {

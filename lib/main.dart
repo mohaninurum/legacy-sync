@@ -24,8 +24,10 @@ import 'package:legacy_sync/features/auth/presentation/bloc/auth_bloc/reset_pass
 import 'package:legacy_sync/features/auth/presentation/bloc/auth_bloc/signup_cubit.dart';
 import 'package:legacy_sync/features/auth/presentation/bloc/auth_bloc/verification_code_cubit.dart';
 import 'package:legacy_sync/features/card/presentation/bloc/card_bloc/card_cubit.dart';
+import 'package:legacy_sync/features/create_new_podcast/presentation/bloc/create_new_podcast_cubit/create_new_podcast_cubit.dart';
 import 'package:legacy_sync/features/favorite_memories/presentation/bloc/favorite_memories_bloc/favorite_memories_cubit.dart';
 import 'package:legacy_sync/features/list_of_module/list_of_module.dart';
+import 'package:legacy_sync/features/livekit_connection/presentation/bloc/livekit_connection_cubit.dart';
 import 'package:legacy_sync/features/question/presentation/bloc/question_bloc/question_cubit.dart';
 import 'package:legacy_sync/features/onboarding/presentation/bloc/onboarding_cubit.dart';
 import 'package:legacy_sync/features/social_proof/presentation/bloc/social_proof_bloc/choose_your_goals_cubit.dart';
@@ -62,21 +64,48 @@ Map<String, dynamic>? pendingCallArguments;
 
 @pragma('vm:entry-point')
 Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
-  if (message.data['type'] != 'incoming_call') return;
+  // IMPORTANT: background isolate needs Firebase initialized
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (_) {
+    // It's OK if already initialized
+  }
+
+
+  final data = message.data;
+
+
+  // ✅ Your backend does not send "type", so detect by room_id
+  final roomId = (data['room_id'] ?? '').toString();
+  if (roomId.isEmpty) return;
+
+  // Optional stricter check (uncomment if you want only status=100)
+  // final status = (data['notification_status'] ?? '').toString();
+  // if (status != '100') return;
+
+  // if (message.data['type'] != 'incoming_call') return;
+
+
+  final callId = (data['callId']?.toString().isNotEmpty == true)
+      ? message.data['callId'].toString()
+      : DateTime.now().millisecondsSinceEpoch.toString();
+
 
   final params = CallKitParams(
-    id: message.data['callId']?.toString().isNotEmpty == true
-        ? message.data['callId']
-        : DateTime.now().millisecondsSinceEpoch.toString(),
-
-    nameCaller: message.data['callerName'] ?? 'Incoming Call',
-    handle: message.data['roomName'] ?? 'call',
-    type: int.tryParse(message.data['callType'] ?? '0') ?? 0,
+    id: callId,
+    nameCaller: (data['user_name'] ?? 'Incoming Call').toString(),
+    handle: (data['room_id'] ?? 'call').toString(),
+    type: int.tryParse((data['callType'] ?? '0').toString()) ?? 0,
 
     duration: 30000,
     extra: {
-      'roomName': message.data['roomName'],
-      'token': message.data['token'],
+      'room_id': (data['room_id'] ?? '').toString(),
+      'user_id': (data['user_id'] ?? '').toString(),
+      'user_name': (data['user_name'] ?? '').toString(),
+      'profile_image': (data['profile_image'] ?? '').toString(),
+      'notification_status': (data['notification_status'] ?? '').toString(),
     },
     android: const AndroidParams(
       isCustomNotification: false,
@@ -99,25 +128,40 @@ void _listenCallKitEvents() {
     switch (event.event) {
 
       case Event.actionCallAccept:
+        final body = event.body ?? {};
+        final extra = (body['extra'] ?? {}) as Map;
+
+        pendingCallArguments = {
+          "incoming_call": true,
+          "room_id": (extra['room_id'] ?? "").toString(),
+          "user_id": (extra['user_id'] ?? "").toString(),
+          "user_name": (extra['user_name'] ?? "").toString(),
+          "profile_image": (extra['profile_image'] ?? "").toString(),
+          "notification_status": (extra['notification_status'] ?? "").toString(),
+        };
+
         print("call accept:$event");
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(
           'pending_call_accept',
-          jsonEncode({
-            "incoming_call": true,
-            "userName": "Naina",
-          }),
+          jsonEncode(pendingCallArguments),
         );
-        pendingCallArguments={
-          "incoming_call": true,
-          "userName": "Naina",
-        };
+        // Navigate immediately if app is open
+        Utils.navigatorKey.currentState?.pushNamed(
+          RoutesName.INCOMING_CALL_FULL_SCREEN,
+          arguments: pendingCallArguments,
+        );
+        // pendingCallArguments={
+        //   "incoming_call": true,
+        //   "userName": "Naina",
+        // };
         break;
 //       "extra": event.body['extra'],event.body['nameCaller']
       case Event.actionCallDecline:
       case Event.actionCallEnded:
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('pending_call_accept');
+        pendingCallArguments = null;
         FlutterCallkitIncoming.endAllCalls();
         break;
       default:
@@ -139,6 +183,8 @@ void main() async {
   FirebaseMessaging.instance.getToken().then((value) {
     print("fcm:-$value" );
   },);
+
+
 
   runApp(
     MultiBlocProvider(
@@ -172,6 +218,8 @@ void main() async {
         BlocProvider<PodCastRecordingCubit>(create: (context) => PodCastRecordingCubit()),
         BlocProvider<AudioPreviewEditCubit>(create: (context) => AudioPreviewEditCubit()),
         BlocProvider<PlayPodcastCubit>(create: (context) => PlayPodcastCubit()),
+        BlocProvider<CreateNewPodcastCubit>(create: (context) => CreateNewPodcastCubit()),
+        BlocProvider<LiveKitConnectionCubit>(create: (context) => LiveKitConnectionCubit()),
       ],
       child:  MyApp(authToken:authToken,result:result),
     ),

@@ -17,13 +17,6 @@ import '../../../../core/components/comman_components/will_pop_scope.dart';
 import '../bloc/podcast_cubit.dart';
 import '../bloc/podcast_state.dart';
 
-
-
-
-
-
-
-
 class PodcastScreen extends StatefulWidget {
   const PodcastScreen({super.key});
 
@@ -58,8 +51,6 @@ class _PodcastScreenState extends State<PodcastScreen> {
               children: [
                 _buildBgStackImageAndOptions(),
                 _buildCardInfo(),
-
-
             ],
             ),
           ),
@@ -71,11 +62,23 @@ class _PodcastScreenState extends State<PodcastScreen> {
 
 
   Widget _podcastjoin(){
-    return   BlocBuilder<PodcastCubit, PodcastState>(
+    return BlocConsumer<PodcastCubit,PodcastState>(
+      listenWhen: (prev, curr) => prev.createRoomStatus != curr.createRoomStatus,
+        listener: (context, state) {
+          if (state.createRoomStatus == CreateRoomStatus.success) {
+            Navigator.pushNamed(context, RoutesName.ROOM_PAGE, arguments: {
+              "roomId": state.roomId,
+              "incoming_call": false,
+              "userName": state.userName,
+              "userId": state.userId,
+            },);
+          }
+        },
       builder: (context, state) {
+        final myPodcastCubit = context.read<PodcastCubit>();
         return InkWell(
-          onTap: () {
-            Navigator.pushNamed(context, RoutesName.PODCAST_CONNECTION);
+          onTap: () async {
+            await myPodcastCubit.createRoomAndId();
           },
           child:  Text("Create Podcast",style: Theme.of(context).textTheme.bodyLarge?.copyWith(color:Colors.blue)),
         );
@@ -144,7 +147,6 @@ class _PodcastScreenState extends State<PodcastScreen> {
               ),
             ),
           ),
-
         ],
       ),
     );

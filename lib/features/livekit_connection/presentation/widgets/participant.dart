@@ -1,9 +1,9 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:legacy_sync/features/livekit_connection/presentation/utils/theme.dart';
 import 'package:livekit_client/livekit_client.dart';
 
 import 'dart:async';
-import '../theme.dart';
 import 'no_video.dart';
 import 'participant_info.dart';
 import 'participant_stats.dart';

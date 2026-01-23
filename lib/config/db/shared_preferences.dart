@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:legacy_sync/config/db/encryption_service.dart';
 
 class AppPreference {
+  static String KEY_FCM_TOKEN = "KEY_FCM_TOKEN";
   static String KEY_USER_IS_ADMIN = "KEY_USER_IS_ADMIN";
   static String KEY_USER_ID = "KEY_USER_ID";
   static String KEY_ATTENDANCE_LOGIN = "KEY_ATTENDANCE_LOGIN";

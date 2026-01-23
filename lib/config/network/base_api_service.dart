@@ -2,6 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:legacy_sync/config/network/network_api_service.dart';
 
 abstract class BaseApiServices {
+  ResultFuture getPostApiResponseNoAuth(String serviceUrl, Map<String, dynamic> body,);
+  ResultFuture<T> postSandboxApiResponse<T>(String serviceUrl, Map<String, dynamic> body, {required String sandboxId, String? overrideToken});
   ResultFuture getGetApiResponse(String serviceUrl);
   ResultFuture getPostApiResponse(String serviceUrl, Map<String, dynamic> body);
   ResultFuture patchApiResponse(String serviceUrl, Map<String, dynamic> body);

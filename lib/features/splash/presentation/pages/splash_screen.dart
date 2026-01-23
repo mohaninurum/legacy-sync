@@ -37,10 +37,11 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
 
+    //TODO
     // If launched via call, show IncomingCallScreen
-    if (launchArgs != null && launchArgs!['type'] == 'call') {
-      return IncomingCallFullScreen();//roomId: launchArgs!['room_id']
-    }
+    // if (launchArgs != null && launchArgs!['type'] == 'call') {
+    //   return IncomingCallFullScreen();//roomId: launchArgs!['room_id']
+    // }
 
     return Scaffold(
       body: BgImageStack(

@@ -33,6 +33,7 @@ import 'package:file_picker/file_picker.dart';
 
 class MyPodcastScreen extends StatefulWidget {
   final isStartFirstTime;
+
   const MyPodcastScreen({super.key, this.isStartFirstTime});
 
   @override
@@ -75,97 +76,125 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
       },
       child: PodcastBg(
         isDark: true,
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: SingleChildScrollView(
-            physics: const ClampingScrollPhysics(),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                _buildBgStackImageAndOptions(),
-                SizedBox(height: 0.5.height),
-                _header(AppStrings.continueListening, ''),
-                SizedBox(height: 0.2.height),
-                _listContinueListening(),
-                _header(AppStrings.myPodcast, AppStrings.seeAll),
-                SizedBox(height: 1.height),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: _tabs(),
-                ),
-                SizedBox(height: 1.height),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: _list(),
-                ),
-                _header(AppStrings.recent, ""),
-                SizedBox(height: 1.height),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: recentList(),
-                ),
-              ],
-            ),
-          ),
-          floatingActionButton: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CommonAddFab(
-                size: 56,
-                icon: Icons.add,
-                onTap: () {
-                  Navigator.pushNamed(
-                    context,
-                    RoutesName.PODCAST_RECORDING_SCREEN,
-                    arguments: {"incoming_call": false, "userName": "you"},
-                  );
+        child: BlocConsumer<MyPodcastCubit, MyPodcastState>(
+          listenWhen: (prev, curr) => prev.createRoomStatus != curr.createRoomStatus,
+          listener: (context, state) {
+            if (state.createRoomStatus == CreateRoomStatus.success) {
+              Navigator.pushNamed(
+                context,
+                RoutesName.ROOM_PAGE,
+                arguments: {
+                  "roomId": state.roomId,
+                  "incoming_call": false,
+                  "userName": state.userName,
+                  "userId": state.userId,
                 },
+              );
+            }
+          },
+          builder: (context, state) {
+            final myPodcastCubit = context.read<MyPodcastCubit>();
+            return Scaffold(
+              backgroundColor: Colors.transparent,
+              body: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    _buildBgStackImageAndOptions(),
+                    SizedBox(height: 0.5.height),
+                    _header(AppStrings.continueListening, ''),
+                    SizedBox(height: 0.2.height),
+                    _listContinueListening(),
+                    _header(AppStrings.myPodcast, AppStrings.seeAll),
+                    SizedBox(height: 1.height),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: _tabs(),
+                    ),
+                    SizedBox(height: 1.height),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: _list(),
+                    ),
+                    _header(AppStrings.recent, ""),
+                    SizedBox(height: 1.height),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: recentList(),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 10),
-              BlocBuilder<PlayPodcastCubit, PlayPodcastState>(
-                builder: (context, state) {
-                  final cubit = context.read<PlayPodcastCubit>();
-                  return state.isOverlayManager
-                      ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 30),
-                          child: InkWell(
-                            onTap: () {
-                              context
-                                  .read<PlayPodcastCubit>()
-                                  .loadOverlayAudioManager(false);
-                              Navigator.pushNamed(
-                                context,
-                                RoutesName.PLAY_PODCAST,
-                                arguments: {
-                                  "podcast": state.podcast,
-                                  "audioPath": "assets/images/test_audio.mp3",
-                                  "isOverlayManager": state.isOverlayManager,
-                                  "isContinue": false,
-                                  "isFavorite": true,
-
+              floatingActionButton: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CommonAddFab(
+                    size: 56,
+                    icon: Icons.add,
+                    onTap: () async {
+                      await myPodcastCubit.createRoomAndId();
+                      // Navigator.pushNamed(context, RoutesName.CREATE_NEW_PODCAST);
+                      // Navigator.pushNamed(context, RoutesName.PODCAST_CONNECTION);
+                      // Navigator.pushNamed(context, RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,arguments: {
+                      //   "audioPath": "assets/images/test_audio.mp3",
+                      //   "is_draft":false,
+                      //   "participants": "",
+                      //   // "participants":   state.participants.length-1==1?state.participants[1].firstName:""
+                      // });
+                      // Navigator.pushNamed(
+                      //   context,
+                      //   RoutesName.PODCAST_RECORDING_SCREEN,
+                      //   arguments: {"incoming_call": false, "userName": "you"},
+                      // );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  BlocBuilder<PlayPodcastCubit, PlayPodcastState>(
+                    builder: (context, state) {
+                      final cubit = context.read<PlayPodcastCubit>();
+                      return state.isOverlayManager
+                          ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 30),
+                              child: InkWell(
+                                onTap: () {
+                                  context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
+                                  Navigator.pushNamed(
+                                    context,
+                                    RoutesName.PLAY_PODCAST,
+                                    arguments: {
+                                      "podcast": state.podcast,
+                                      "audioPath":
+                                          "assets/images/test_audio.mp3",
+                                      "isOverlayManager":
+                                          state.isOverlayManager,
+                                      "isContinue": false,
+                                      "isFavorite": true,
+                                    },
+                                  );
                                 },
-                              );
-                            },
-                            child: AudioOverlayWidget(
-                              title: state.podcast?.title ?? '',
-                              subtitle:
-                                  "Me • ${Utils.capitalize(state.podcast?.relationship)}",
-                              imagePath: Images.album_pic,
-                              isPlaying: state.isPlaying,
-                              onPlayPause: cubit.playPause,
-                              onNext: () {},
+                                child: AudioOverlayWidget(
+                                  title: state.podcast?.title ?? '',
+                                  subtitle:
+                                      "Me • ${Utils.capitalize(state.podcast?.relationship)}",
+                                  imagePath: Images.album_pic,
+                                  isPlaying: state.isPlaying,
+                                  onPlayPause: cubit.playPause,
+                                  onNext: () {},
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      )
-                      : const SizedBox.shrink();
-                },
+                          )
+                          : const SizedBox.shrink();
+                    },
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -253,7 +282,6 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                         "Podcast",
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
-                      // _podcastjoin()
                     ],
                   ),
                 ],
@@ -261,20 +289,6 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _podcastjoin() {
-    return InkWell(
-      onTap: () {
-        Navigator.pushNamed(context, RoutesName.PODCAST_CONNECTION);
-      },
-      child: Text(
-        "Create Podcast",
-        style: Theme.of(
-          context,
-        ).textTheme.bodyLarge?.copyWith(color: Colors.blue),
       ),
     );
   }
@@ -587,23 +601,20 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         //   // User canceled the picker
         // }
 
-
         // AudioOverlayManager.hide();
         context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
 
-
-
         context.read<MyPodcastCubit>().loadPodcast(data);
-        if(data.type == "Draft"){
-        Navigator.pushNamed(
-        context,
-        RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
-        arguments: {
-        "audioPath": "assets/images/test_audio.mp3",
-        "is_draft": true,
-        },
-        );
-        }else {
+        if (data.type == "Draft") {
+          Navigator.pushNamed(
+            context,
+            RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
+            arguments: {
+              "audioPath": "assets/images/test_audio.mp3",
+              "is_draft": true,
+            },
+          );
+        } else {
           Navigator.pushNamed(
             context,
             RoutesName.PLAY_PODCAST,
@@ -616,7 +627,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             },
           ).then((value) {
             context.read<MyPodcastCubit>().allPodcastsContinueListening();
-          },);
+          });
         }
       },
       child: Container(

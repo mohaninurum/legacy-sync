@@ -569,6 +569,14 @@ class Utils {
     return "$m:$s";
   }
 
+  static String formatDurationHours(Duration d) {
+    final h = d.inHours.toString().padLeft(2, '0');
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return "$h:$m:$s";
+  }
+
+
   static String minAndSecDuration(String input) {
     final parts = input.split(':');
     if (parts.length != 2) return input;

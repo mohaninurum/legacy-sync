@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:legacy_sync/features/livekit_connection/presentation/utils/theme.dart';
 import 'dart:math' as math;
 
-import '../theme.dart';
-
-
 class NoVideoWidget extends StatelessWidget {
-  //
   const NoVideoWidget({super.key});
 
   @override

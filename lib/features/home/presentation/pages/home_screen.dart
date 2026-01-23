@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkPendingCall();
+    // _checkPendingCall();
     // WidgetsBinding.instance.addPostFrameCallback((_) {
     //   if (pendingCallArguments != null) {
     //     Utils.navigatorKey.currentState?.pushNamed(
@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _checkPendingCall();
+      // _checkPendingCall();
     }
   }
 
@@ -83,30 +83,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
     startMakingPodcast= await AppPreference().getBool(key: AppPreference.start_Making_Podcast);
   }
 
-  Future<void> _checkPendingCall() async {
-    final prefs = await SharedPreferences.getInstance();
-    final data = prefs.getString('pending_call_accept');
-   print("notification Data:$data");
-    if (data != null) {
-      final args = jsonDecode(data);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Utils.navigatorKey.currentState?.pushNamed(
-          RoutesName.PODCAST_RECORDING_SCREEN,
-          arguments: args,
-        );
-      });
-    }else{
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if(pendingCallArguments!=null){
-          Utils.navigatorKey.currentState?.pushNamed(
-            RoutesName.PODCAST_RECORDING_SCREEN,
-            arguments: pendingCallArguments,
-          );
-        }
-
-      });
-    }
-  }
+  // Future<void> _checkPendingCall() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final data = prefs.getString('pending_call_accept');
+  //  print("notification Data:$data");
+  //   if (data != null) {
+  //     final args = jsonDecode(data);
+  //     WidgetsBinding.instance.addPostFrameCallback((_) {
+  //       Utils.navigatorKey.currentState?.pushNamed(
+  //         RoutesName.PODCAST_RECORDING_SCREEN,
+  //         arguments: args,
+  //       );
+  //     });
+  //   }else{
+  //     WidgetsBinding.instance.addPostFrameCallback((_) {
+  //       if(pendingCallArguments!=null){
+  //         Utils.navigatorKey.currentState?.pushNamed(
+  //           RoutesName.PODCAST_RECORDING_SCREEN,
+  //           arguments: pendingCallArguments,
+  //         );
+  //       }
+  //
+  //     });
+  //   }
+  // }
 
 
   getModule() async {

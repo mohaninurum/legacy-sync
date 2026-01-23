@@ -8,10 +8,14 @@ import 'package:legacy_sync/features/auth/presentation/pages/signup_screen.dart'
 import 'package:legacy_sync/features/auth/presentation/pages/social_login_screen.dart';
 import 'package:legacy_sync/features/auth/presentation/pages/verification_code_screen.dart';
 import 'package:legacy_sync/features/card/presentation/pages/card_screen.dart';
+import 'package:legacy_sync/features/create_new_podcast/presentation/pages/create_new_podcast_screen.dart';
 import 'package:legacy_sync/features/favorite_memories/presentation/pages/favorite_memories_screen.dart';
 import 'package:legacy_sync/features/friends_profile/presentation/pages/friends_profile_page.dart';
 import 'package:legacy_sync/features/home/presentation/pages/learn_page.dart';
 import 'package:legacy_sync/features/list_of_module/presentation/pages/list_of_module_screen.dart';
+import 'package:legacy_sync/features/livekit_connection/presentation/bloc/livekit_connection_cubit.dart';
+import 'package:legacy_sync/features/livekit_connection/presentation/pages/podcast_connection.dart';
+import 'package:legacy_sync/features/livekit_connection/presentation/pages/room.dart';
 import 'package:legacy_sync/features/question/presentation/pages/question_screen.dart';
 import 'package:legacy_sync/features/settings/presentation/pages/f_a_q_screen.dart';
 import 'package:legacy_sync/features/social_proof/presentation/pages/choose_your_goals_screen.dart';
@@ -30,7 +34,6 @@ import '../../features/auth/presentation/pages/email_verification_screen.dart';
 import '../../features/incoming_call_full_screen/incoming_call_full_screen.dart';
 import '../../features/legacy_wrapped/presentation/pages/legacy_wrapped_screen.dart';
 import '../../features/legacy_wrapped/presentation/pages/voice_is_growing_screen.dart';
-import '../../features/livekit_connection/presentation/podcast_connection.dart';
 import '../../features/my_podcast/presentation/pages/my_podcast_screen.dart';
 import '../../features/play_podcast/presentation/pages/play_podcast.dart';
 import '../../features/play_podcast/presentation/pages/widget/transcript_description.dart';
@@ -54,10 +57,14 @@ class Routes {
         return _animatedRouteRightToLeft(const ResetPasswordScreen());
       case RoutesName.VERIFICATION_CODE_SCREEN:
         final email = settings.arguments as String?;
-        return _animatedRouteRightToLeft(VerificationCodeScreen(email: email ?? ""));
-        case RoutesName.email_verification_screen:
+        return _animatedRouteRightToLeft(
+          VerificationCodeScreen(email: email ?? ""),
+        );
+      case RoutesName.email_verification_screen:
         final email = settings.arguments as String?;
-        return _animatedRouteRightToLeft(EmailVerificationScreen(email: email ?? ""));
+        return _animatedRouteRightToLeft(
+          EmailVerificationScreen(email: email ?? ""),
+        );
       case RoutesName.LOGIN_SCREEN:
         return _animatedRouteRightToLeft(const LoginScreen());
       case RoutesName.SOCIAL_LOGIN_SCREEN:
@@ -69,20 +76,22 @@ class Routes {
       case RoutesName.FAVORITE_MEMORIES_SCREEN:
         return _animatedRouteRightToLeft(const FavoriteMemories());
 
-        case RoutesName.FAQ_SCREEN:
+      case RoutesName.FAQ_SCREEN:
         return _animatedRouteRightToLeft(const FAQScreen());
       case RoutesName.CARD_SCREEN:
         final args = settings.arguments as Map<String, dynamic>?;
         final hide_c_btn = args?['hide_c_btn'] as bool? ?? false;
 
-       // hide_c_btn
-        return _animatedRouteZoomOut( CardScreen(hideContinueButton: hide_c_btn));
+        // hide_c_btn
+        return _animatedRouteZoomOut(
+          CardScreen(hideContinueButton: hide_c_btn),
+        );
 
-        case RoutesName.FRIENDS_PROFILE_PAGE:
-          final args = settings.arguments as Map<String, dynamic>?;
-          final friendId = args?['friendId'] as int? ?? 0;
+      case RoutesName.FRIENDS_PROFILE_PAGE:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final friendId = args?['friendId'] as int? ?? 0;
 
-        return _animatedRouteZoomOut( FriendsProfilePage(friendId:friendId));
+        return _animatedRouteZoomOut(FriendsProfilePage(friendId: friendId));
       case RoutesName.ANALYSIS_SCREEN:
         return _animatedRouteZoomOut(const AnalysisScreen());
 
@@ -102,7 +111,16 @@ class Routes {
         print("Module Title: '$moduleTitle'");
         print("Module Image: '$moduleImage'");
 
-        return _animatedRouteZoomOut(ListOfModuleScreen(moduleId: moduleId, moduleTitle: moduleTitle, moduleImage: moduleImage,fromFriends:fromFriends,friendId:friendId,preExpanded: preExpanded));
+        return _animatedRouteZoomOut(
+          ListOfModuleScreen(
+            moduleId: moduleId,
+            moduleTitle: moduleTitle,
+            moduleImage: moduleImage,
+            fromFriends: fromFriends,
+            friendId: friendId,
+            preExpanded: preExpanded,
+          ),
+        );
       case RoutesName.ANALYSIS_COMPLETE_SCREEN:
         return _animatedRouteRightToLeft(const AnalysisCompleteScreen());
       case RoutesName.ONBOARDING_SCREEN:
@@ -117,7 +135,12 @@ class Routes {
       case RoutesName.NOTIFICATIONS_SCREEN:
         return _animatedRouteRightToLeft(const NotificationsScreen());
       case RoutesName.HOME_SCREEN:
-        return _animatedRouteZoomOut(BlocProvider(create: (context) => HomeCubit(), child: const HomeScreen()));
+        return _animatedRouteZoomOut(
+          BlocProvider(
+            create: (context) => HomeCubit(),
+            child: const HomeScreen(),
+          ),
+        );
       case RoutesName.CHOOSE_YOUR_GOALS_SCREEN:
         return _animatedRouteRightToLeft(const ChooseYourGoalsScreen());
       case RoutesName.RATING_SCREEN:
@@ -134,7 +157,14 @@ class Routes {
         final mIndex = data!["mIndex"];
         final questionText = data!["questionText"];
         final moduleIndex = data!["moduleIndex"];
-        return _animatedRouteDownToUp(AnswerScreen(qId: qId ?? 0, mIndex: mIndex ?? 0,questionText:questionText??"",moduleIndex: moduleIndex??1,));
+        return _animatedRouteDownToUp(
+          AnswerScreen(
+            qId: qId ?? 0,
+            mIndex: mIndex ?? 0,
+            questionText: questionText ?? "",
+            moduleIndex: moduleIndex ?? 1,
+          ),
+        );
       case RoutesName.LEGACY_WRAPPED_SCREEN:
         return _animatedRouteDownToUp(const LegacyWrappedScreen());
       case RoutesName.VOICE_GROWING_SCREEN:
@@ -145,39 +175,141 @@ class Routes {
         return _animatedRouteRightToLeft(const ProfilePage());
       case RoutesName.EDIT_PROFILE_SCREEN:
         return _animatedRouteRightToLeft(const EditProfilePage());
-        case RoutesName.PODCAST_SCREEN:
+      case RoutesName.PODCAST_SCREEN:
         return _animatedRouteRightToLeft(const PodcastScreen());
-        case RoutesName.PODCAST_CONNECTION:
-        return _animatedRouteRightToLeft(const PodcastConnection());
-        case RoutesName.MY_PODCAST_SCREEN:
-          final data = settings.arguments as Map?;
-          final incomingCall = data!["isStartFirstTime"];
-        return _animatedRouteRightToLeft(MyPodcastScreen(isStartFirstTime: incomingCall,));
-        case RoutesName.PODCAST_RECORDING_SCREEN:
-          final data = settings.arguments as Map?;
-          final incomingCall = data!["incoming_call"];
-          final userName = data["userName"];
-        return _animatedRouteDownToUp(PodcastRecordingScreen(isIncomingCall: incomingCall,userName: userName,));
-        case RoutesName.AUDIO_PREVIEW_EDIT_SCREEN:
-          final data = settings.arguments as Map?;
-          final audioPath = data!["audioPath"];
-          final isDraft = data["is_draft"];
-          final participants = data["participants"];
-        return _animatedRouteDownToUp(AudioPreviewEditScreen(audioPath: audioPath,isdraft: isDraft,participants: participants,));
+      case RoutesName.ROOM_PAGE:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final roomId = args?['roomId'] as String? ?? '';
+
+        final incomingCall = args!["incoming_call"];
+        final userName = args["userName"];
+        final userId = args["userId"] as int? ?? -1;
+
+        print("Routes - Received arguments:");
+        print("room Id: $roomId");
+        print("incomingCall : $incomingCall");
+        print("userName : $userName");
+        print("userId : $userId");
+
+        return _animatedRouteZoomOut(
+          BlocProvider(
+            create: (context) => LiveKitConnectionCubit(),
+            child: RoomPage(
+              roomId: roomId,
+              incomingCall: incomingCall,
+              userName: userName,
+              userId: userId,
+            ),
+          ),
+        );
+      // case RoutesName.PODCAST_CONNECTION:
+      //   final args = settings.arguments as Map<String, dynamic>?;
+      //   final roomId = args?['roomId'] as String? ?? '';
+      //   final podcastId = args?['podcastId'] as int? ?? -1;
+      //
+      //   final incomingCall = args!["incoming_call"];
+      //   final userName = args["userName"];
+      //   final userId = args["userId"] as int? ?? -1;
+      //
+      //   print("Routes - Received arguments:");
+      //   print("room Id: $roomId");
+      //   print("podcast Id: $podcastId");
+      //   print("incomingCall : $incomingCall");
+      //   print("userName : $userName");
+      //   print("userId : $userId");
+      //
+      //   return _animatedRouteZoomOut(
+      //     PodcastConnection(
+      //       roomId: roomId,
+      //       podcastId: podcastId,
+      //       incomingCall: incomingCall,
+      //       userName: userName,
+      //       userId: userId,
+      //     ),
+      //   );
+
+      case RoutesName.MY_PODCAST_SCREEN:
+        final data = settings.arguments as Map?;
+        final incomingCall = data!["isStartFirstTime"];
+        return _animatedRouteRightToLeft(
+          MyPodcastScreen(isStartFirstTime: incomingCall),
+        );
+      case RoutesName.PODCAST_RECORDING_SCREEN:
+        final data = settings.arguments as Map?;
+        final incomingCall = data!["incoming_call"];
+        final userName = data["userName"];
+        return _animatedRouteDownToUp(
+          PodcastRecordingScreen(
+            isIncomingCall: incomingCall,
+            userName: userName,
+          ),
+        );
+      case RoutesName.AUDIO_PREVIEW_EDIT_SCREEN:
+        final data = settings.arguments as Map?;
+        final audioPath = data!["audioPath"];
+        final isDraft = data["is_draft"];
+        final participants = data["participants"];
+        return _animatedRouteDownToUp(
+          AudioPreviewEditScreen(
+            audioPath: audioPath,
+            isdraft: isDraft,
+            participants: participants,
+          ),
+        );
+      // case RoutesName.INCOMING_CALL_FULL_SCREEN:
+      //   return _animatedRouteDownToUp(const IncomingCallFullScreen());
+
       case RoutesName.INCOMING_CALL_FULL_SCREEN:
-        return _animatedRouteDownToUp(const IncomingCallFullScreen());
-        case RoutesName.PLAY_PODCAST:
-          final data = settings.arguments as Map?;
-          final podcast = data!["podcast"];
-          final audioPath = data["audioPath"];
-          final isOverlayManager = data["isOverlayManager"];
-          final isContinue = data["isContinue"];
-          final isFavorite = data["isFavorite"];
-        return _animatedRouteDownToUp(PlayPodcast(podcast:podcast,audioPath:audioPath ,isOverlayManager: isOverlayManager,isContinue: isContinue,isFavorite: isFavorite,));
-        case RoutesName.transcript_description:
-          final data = settings.arguments as Map?;
-          final podcast = data!["podcast"];
-        return _animatedRouteDownToUp(TranscriptDescription(podcast:podcast));
+        final raw = settings.arguments as Map<dynamic, dynamic>? ?? {};
+
+        final incomingCall =
+            raw["incoming_call"] == true ||
+            raw["incoming_call"]?.toString() == "true";
+        final roomId = (raw["room_id"] ?? raw["roomId"] ?? "").toString();
+        final callerUserId =
+            (raw["user_id"] ?? raw["callerUserId"] ?? "").toString();
+        final callerUserName =
+            (raw["user_name"] ?? raw["callerUserName"] ?? "").toString();
+        final callerProfileImage =
+            (raw["profile_image"] ?? raw["callerProfileImage"] ?? "")
+                .toString();
+        final notificationStatus =
+            (raw["notification_status"] ?? "").toString();
+
+        return _animatedRouteDownToUp(
+          IncomingCallFullScreen(
+            incomingCall: incomingCall,
+            roomId: roomId,
+            callerProfileImage: callerProfileImage,
+            callerUserId: callerUserId,
+            callerUserName: callerUserName,
+            notificationStatus: notificationStatus,
+          ),
+        );
+
+      case RoutesName.PLAY_PODCAST:
+        final data = settings.arguments as Map?;
+        final podcast = data!["podcast"];
+        final audioPath = data["audioPath"];
+        final isOverlayManager = data["isOverlayManager"];
+        final isContinue = data["isContinue"];
+        final isFavorite = data["isFavorite"];
+        return _animatedRouteDownToUp(
+          PlayPodcast(
+            podcast: podcast,
+            audioPath: audioPath,
+            isOverlayManager: isOverlayManager,
+            isContinue: isContinue,
+            isFavorite: isFavorite,
+          ),
+        );
+      case RoutesName.transcript_description:
+        final data = settings.arguments as Map?;
+        final podcast = data!["podcast"];
+        return _animatedRouteDownToUp(TranscriptDescription(podcast: podcast));
+
+      case RoutesName.CREATE_NEW_PODCAST:
+        return _animatedRouteRightToLeft(const CreateNewPodcastScreen());
       default:
         return MaterialPageRoute(builder: (context) => const LoginScreen());
     }
@@ -203,9 +335,21 @@ class Routes {
       pageBuilder: (context, animation, secondaryAnimation) => page,
       transitionDuration: const Duration(milliseconds: 250),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        final scaleTween = Tween<double>(begin: 1.2, end: 1.0).chain(CurveTween(curve: Curves.easeOutBack)); // smoother zoom
-        final fadeTween = Tween<double>(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeInOut));
-        return ScaleTransition(scale: animation.drive(scaleTween), child: FadeTransition(opacity: animation.drive(fadeTween), child: child));
+        final scaleTween = Tween<double>(
+          begin: 1.2,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOutBack)); // smoother zoom
+        final fadeTween = Tween<double>(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeInOut));
+        return ScaleTransition(
+          scale: animation.drive(scaleTween),
+          child: FadeTransition(
+            opacity: animation.drive(fadeTween),
+            child: child,
+          ),
+        );
       },
     );
   }
@@ -220,7 +364,10 @@ class Routes {
           end: Offset.zero, // move to normal position
         ).chain(CurveTween(curve: Curves.easeOutCubic));
 
-        return SlideTransition(position: animation.drive(slideTween), child: child);
+        return SlideTransition(
+          position: animation.drive(slideTween),
+          child: child,
+        );
       },
     );
   }

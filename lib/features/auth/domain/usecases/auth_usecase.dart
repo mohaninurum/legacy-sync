@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:legacy_sync/features/auth/data/model/fcm_token_update.dart';
 import 'package:legacy_sync/features/auth/data/model/social_login_response.dart';
 
 import '../../../../config/network/network_api_service.dart';
@@ -12,6 +13,11 @@ import '../repositories/auth_repositories.dart';
 
 class AuthUseCase {
   final AuthRepositories repository = AuthRepoImpl();
+
+  ResultFuture<FcmTokenUpdate> updateFcmToken({required Map<String, dynamic> body}) async {
+   return await repository.updateFcmToken(body);
+  }
+
   ResultFuture<LoginModel> login({required Map<String, dynamic> body}) async {
     return await repository.login(body);
   }

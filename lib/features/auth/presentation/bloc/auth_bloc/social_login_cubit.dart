@@ -57,6 +57,9 @@ class SocialLoginCubit extends Cubit<SocialLoginState> {
     await AppPreference().setBool(key: AppPreference.KEY_SURVEY_SUBMITTED, value: data.data?.surveyQuestionCompleted ?? false);
     AppService.initializeUserData();
 
+    // ✅ update fcm token
+    await AppService.updateFcmTokenIfNeeded();
+
     final isSurveyCompleted = await AppPreference().getBool(
       key: AppPreference.KEY_SURVEY_SUBMITTED,
     );
