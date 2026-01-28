@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -54,7 +55,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
             builder: (context, state) {
               final cubit = context.read<AudioPreviewEditCubit>();
               return SingleChildScrollView(
-                child: Column(
+                child: !widget.isdraft ? Column(
                   children: [
                     _topHeader(state),
                     SizedBox(height: 2.height),
@@ -68,7 +69,10 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                     ),
                     AudioMetaWidget(state: state,participants: widget.participants,)
                   ],
-                ),
+                ) : Column(children: [
+                  processingNoticeCard(context: context),
+                  AudioMetaWidget(state: state,participants: widget.participants,)
+                ],)
               );
             },
           ),
@@ -77,6 +81,110 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
       ),
     );
   }
+
+  Widget processingNoticeCard({
+    required BuildContext context,
+    int minMinutes = 10,
+    int maxMinutes = 15,
+    VoidCallback? onLearnMore,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withOpacity(0.12)),
+        color: Colors.white.withOpacity(0.06),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              color: AppColors.yellow.withOpacity(0.14),
+            ),
+            child: Icon(
+              Icons.schedule_rounded,
+              color: AppColors.yellow,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Processing your recording",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "It can take $minMinutes–$maxMinutes minutes before it’s ready. "
+                      "Once processing is complete, you’ll be able to save it.",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 13,
+                    height: 1.35,
+                    color: Colors.white.withOpacity(0.78),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        color: Colors.white.withOpacity(0.08),
+                      ),
+                      child: Text(
+                        "Usually ready soon",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withOpacity(0.82),
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (onLearnMore != null)
+                      InkWell(
+                        onTap: onLearnMore,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          child: Text(
+                            "Learn more",
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.yellow,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget title(String title) {
     return Padding(
@@ -146,7 +254,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
         children: [
           Expanded(
             child: CustomButtonCommonMaskWidgets(
-              isDisable: true,
+              isDisable: false,
               text: "Draft",
               onTap: () {
                 Navigator.pop(context);
@@ -156,12 +264,18 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: CustomButtonCommonMaskWidgets(
+              isDisable: widget.isdraft,
               text: "Save",
               onTap: () async {
+                if (widget.isdraft) {
+                  BotToast.showText(text: "Please wait 10–15 minutes. We’re still processing.");
+                  return;
+                }
+                Navigator.pop(context);
              // final path=   context.read<AudioPreviewEditCubit>().save(widget.audioPath,context);
              // debugPrint("Saved Audio => $path");
              //    Navigator.pop(context);
-                Navigator.pushNamed(context, RoutesName.MY_PODCAST_SCREEN,arguments: {"isStartFirstTime":false});
+             //    Navigator.pushNamed(context, RoutesName.MY_PODCAST_SCREEN,arguments: {"isStartFirstTime":false});
               },
             ),
 

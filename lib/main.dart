@@ -174,6 +174,7 @@ void _listenCallKitEvents() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  AppLifeCycleTracker.instance.start();
   final fetchResult = await setup();
   final authToken = fetchResult["authToken"];
   final result = fetchResult["result"];

@@ -27,9 +27,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
   List<FriendsDataList> users = const [];
   List<PodcastTopicsModel> topicsList = [];
 
-  // final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
-  // StreamSubscription? _recorderSub;
-
   LiveKitConnectionCubit() : super(const LiveKitConnectionState());
 
   String _displayNameFromLiveKit(String nameOrIdentity) {
@@ -131,62 +128,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       _listener = listener;
 
       _bindRoomEvents(room, listener);
-      // void addIfMissing(FriendsDataList p) {
-      //   final id = p.userIdPK;
-      //   final exists = id != null
-      //       ? state.participants.any((x) => x.userIdPK == id)
-      //       : state.participants.any((x) => x.firstName == p.firstName);
-      //   // final exists = state.participants.any(
-      //   //   (x) => x.firstName == p.firstName,
-      //   // );
-      //   if (!exists) {
-      //     emit(state.copyWith(participants: [...state.participants, p]));
-      //   }
-      // }
-      //
-      // void removeByIdentity(String raw) {
-      //   final id = _userIdFromLiveKit(raw);
-      //   if (id != null) {
-      //     emit(state.copyWith(
-      //       participants: state.participants.where((x) => x.userIdPK != id).toList(),
-      //     ));
-      //   } else {
-      //     final name = _displayNameFromLiveKit(raw);
-      //     emit(state.copyWith(
-      //       participants: state.participants.where((x) => x.firstName != name).toList(),
-      //     ));
-      //   }
-      // }
-
-      // listener
-      //   ..on<ParticipantConnectedEvent>((e) {
-      //     final raw =
-      //         (e.participant.name?.isNotEmpty == true)
-      //             ? e.participant.name!
-      //             : e.participant.identity;
-      //
-      //     final name = _displayNameFromLiveKit(raw);
-      //     final pid = _userIdFromLiveKit(raw);
-      //
-      //     addIfMissing(FriendsDataList(userIdPK: pid, firstName: name, profileImage: null));
-      //   })
-      //   ..on<ParticipantDisconnectedEvent>((e) {
-      //     final raw =
-      //         (e.participant.name?.isNotEmpty == true)
-      //             ? e.participant.name!
-      //             : e.participant.identity;
-      //
-      //     removeByIdentity(raw);
-      //
-      //     // final name = _displayNameFromLiveKit(raw);
-      //     //
-      //     // emit(
-      //     //   state.copyWith(
-      //     //     participants:
-      //     //         state.participants.where((x) => x.firstName != name).toList(),
-      //     //   ),
-      //     // );
-      //   });
 
       emit(state.copyWith(message: "Connecting to room..."));
 
@@ -195,44 +136,8 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
         token,
         fastConnectOptions: FastConnectOptions(
           microphone: TrackOption(track: audioTrack),
-          // camera: null (audio-only)
         ),
       );
-
-      // final me = FriendsDataList(
-      //   userIdPK: userId,
-      //   firstName: userName,
-      //   profileImage: null,
-      // );
-      //
-      // // ✅ build list from current remote participants
-      // final remote =
-      //     room.remoteParticipants.values.map((p) {
-      //       final raw = (p.name?.isNotEmpty == true) ? p.name! : p.identity;
-      //       // final name = _displayNameFromLiveKit(raw);
-      //       return FriendsDataList(
-      //         userIdPK: _userIdFromLiveKit(raw),
-      //         firstName: _displayNameFromLiveKit(raw),
-      //         profileImage: null,
-      //       );
-      //     }).toList();
-      //
-      // // merge without duplicates (by userIdPK when available)
-      // final merged = <FriendsDataList>[];
-      // void addMerged(FriendsDataList p) {
-      //   final id = p.userIdPK;
-      //   final exists =
-      //       id != null
-      //           ? merged.any((x) => x.userIdPK == id)
-      //           : merged.any((x) => x.firstName == p.firstName);
-      //   if (!exists) merged.add(p);
-      // }
-      //
-      // addMerged(me);
-      //
-      // for (final r in remote) {
-      //   addMerged(r);
-      // }
 
       final needsConfirm = room.engine.fastConnectOptions == null;
 
@@ -242,7 +147,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
           message: null,
           room: room,
           listener: listener,
-          // participants: merged,
           callStatus: CallStatus.connected,
           needsPublishConfirm: needsConfirm,
         ),
@@ -262,9 +166,7 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
         state.copyWith(
           status: LiveKitStatus.failure,
           message: e.toString(),
-          callStatus: CallStatus.disconnected,
-          myUserId: null,
-          myUserName: null,
+          callStatus: CallStatus.idle,
         ),
       );
     }
@@ -317,9 +219,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
             activeRecording: event.activeRecording,
           ),
         );
-        // unawaited(
-        //   context.showRecordingStatusChangedDialog(event.activeRecording),
-        // );
       })
       ..on<RoomAttemptReconnectEvent>((event) {
         print(
@@ -393,8 +292,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
 
         // If you still want your old "showDataReceivedDialog"
         emit(state.copyWith(dataReceivedText: decoded));
-        // emit(state.copyWith(dataReceivedText: decoded));
-        // unawaited(context.showDataReceivedDialog(decoded));
       })
       ..on<AudioPlaybackStatusChanged>((event) async {
         final room = _room;
@@ -402,40 +299,9 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
 
         if (!room.canPlaybackAudio) {
           emit(state.copyWith(showPlayAudioManuallyDialog: true));
-
-          // print('Audio playback failed for iOS Safari ..........');
-          // final yesno = await context.showPlayAudioManuallyDialog();
-          // if (yesno == true) {
-          //   await widget.room.startAudio();
-          // }
         }
       })
       ..on<ParticipantConnectedEvent>((e) {
-        // final raw =
-        //     (e.participant.name?.isNotEmpty == true)
-        //         ? e.participant.name!
-        //         : e.participant.identity;
-        //
-        // final name = _displayNameFromLiveKit(raw);
-        // final pid = _userIdFromLiveKit(raw);
-        //
-        // final newP = FriendsDataList(
-        //   userIdPK: pid,
-        //   firstName: name,
-        //   profileImage: null,
-        // );
-        //
-        // final updated = [...state.participants];
-        // final exists =
-        //     pid != null
-        //         ? updated.any((x) => x.userIdPK == pid)
-        //         : updated.any((x) => x.firstName == name);
-        //
-        // if (!exists) {
-        //   updated.add(newP);
-        //   emit(state.copyWith(participants: updated));
-        // }
-
         if (state.myUserId != null && state.myUserName != null) {
           _syncParticipantsFromRoom(
             myUserId: state.myUserId!,
@@ -447,20 +313,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
         }
       })
       ..on<ParticipantDisconnectedEvent>((e) {
-        // final raw =
-        //     (e.participant.name?.isNotEmpty == true)
-        //         ? e.participant.name!
-        //         : e.participant.identity;
-        //
-        // final pid = _userIdFromLiveKit(raw);
-        // final name = _displayNameFromLiveKit(raw);
-        //
-        // final updated =
-        //     pid != null
-        //         ? state.participants.where((x) => x.userIdPK != pid).toList()
-        //         : state.participants.where((x) => x.firstName != name).toList();
-        //
-        // emit(state.copyWith(participants: updated));
         if (state.myUserId != null && state.myUserName != null) {
           _syncParticipantsFromRoom(
             myUserId: state.myUserId!,
@@ -474,8 +326,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
           if (!state.isHost) {
             unawaited(disconnect()); // invitee leaves room automatically
           }
-          // host should NOT disconnect automatically
-          // return;
         }
       });
   }
@@ -555,18 +405,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     if (!mic.isGranted) throw Exception("Microphone permission denied");
   }
 
-  // // ✅ Real mic toggle
-  // Future<void> micONOff() async {
-  //   final room = _room;
-  //   if (room == null) return;
-  //
-  //   final enabledNow = !(state.isMic ?? true);
-  //   try {
-  //     await room.localParticipant?.setMicrophoneEnabled(enabledNow);
-  //     emit(state.copyWith(isMic: enabledNow));
-  //   } catch (_) {}
-  // }
-
   Future<void> micONOff() async {
     final room = _room;
     if (room == null) {
@@ -581,17 +419,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
 
     emit(state.copyWith(isMic: enabledNow));
   }
-
-  // // ✅ Real speaker toggle (basic Android case)
-  // Future<void> speakerONOff() async {
-  //   final enabledNow = !(state.isSpeaker ?? true);
-  //   try {
-  //     if (lkPlatformIs(PlatformType.android)) {
-  //       await Hardware.instance.setSpeakerphoneOn(enabledNow);
-  //     }
-  //     emit(state.copyWith(isSpeaker: enabledNow));
-  //   } catch (_) {}
-  // }
 
   Future<void> speakerONOff() async {
     final enabledNow = !(state.isSpeaker ?? true);
@@ -621,42 +448,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     }
     return updated;
   }
-
-  // Future<void> addSelfParticipant(bool incomingCall) async {
-  //   if (incomingCall) {
-  //     emit(
-  //       state.copyWith(
-  //         participants: [
-  //           //  FriendsDataList(
-  //           //   userIdPK: "1",
-  //           //   firstName: "Naila",
-  //           //   avatar: "assets/images/user_you.png",
-  //           // ),
-  //           //  FriendsDataList(
-  //           //   id: "1",
-  //           //   name: "You",
-  //           //   avatar: "assets/images/user_you.png",
-  //           // ),
-  //         ],
-  //       ),
-  //     );
-  //   } else {
-  //     final profileUrl = await AppPreference().get(
-  //       key: AppPreference.PROFILE_IMAGE,
-  //     );
-  //     emit(
-  //       state.copyWith(
-  //         participants: [
-  //           FriendsDataList(
-  //             userIdPK: 118,
-  //             firstName: "You",
-  //             profileImage: profileUrl,
-  //           ),
-  //         ],
-  //       ),
-  //     );
-  //   }
-  // }
 
   void sortParticipants() {
     final room = _room;
@@ -734,10 +525,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     });
 
     emit(state.copyWith(participantTracks: [...screenTracks, ...userTracks]));
-
-    // setState(() {
-    //   participantTracks = [...screenTracks, ...userTracks];
-    // });
   }
 
   Future<void> fetchPodcastTopics() async {
@@ -908,13 +695,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
         await _broadcastRecordingState();
       },
     );
-
-    // emit(state.copyWith(recordingStatus: LiveKitRecordingStatus.recording));
-    // _startTimer();
-    // await _broadcastRecordingState();
-    // await _recorder.startRecorder(
-    //   toFile: 'recording.aac',
-    // );
   }
 
   void pauseRecording() {
@@ -938,12 +718,7 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
 
     res.fold(
       (error) {
-        emit(
-          state.copyWith(
-            inviteStatus: InviteStatus.failure,
-            inviteMessage: error.message ?? "Stop recording failed",
-          ),
-        );
+        emit(state.copyWith(recordingStatus: LiveKitRecordingStatus.recording, error: error.message));
       },
       (data) async {
         _timer?.cancel();
@@ -1007,22 +782,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     );
   }
 
-  // void speakerONOff() {
-  //   if (state.isSpeaker == true) {
-  //     emit(state.copyWith(isSpeaker: false));
-  //   } else {
-  //     emit(state.copyWith(isSpeaker: true));
-  //   }
-  // }
-  //
-  // void micONOff() {
-  //   if (state.isMic == true) {
-  //     emit(state.copyWith(isMic: false));
-  //   } else {
-  //     emit(state.copyWith(isMic: true));
-  //   }
-  // }
-
   void _syncParticipantsFromRoom({
     required int myUserId,
     required String myUserName,
@@ -1070,23 +829,16 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     emit(
       state.copyWith(participants: merged, invitedFriendIds: updatedInvites),
     );
-
-    // emit(state.copyWith(participants: merged));
   }
 
   Future<void> endCall() async {
-    stopRecording();
-    // ✅ tell the other side to close to
+    if(state.recordingStatus != LiveKitRecordingStatus.idle){
+      stopRecording();
+    }
     if (state.isHost) {
       await _broadcastCallEnd();
     }
     await disconnect(); // important
-    // emit(
-    //   state.copyWith(
-    //     recordingStatus: LiveKitRecordingStatus.completed,
-    //     callStatus: CallStatus.disconnected,
-    //   ),
-    // );
   }
 
   Future<void> _broadcastRecordingState() async {

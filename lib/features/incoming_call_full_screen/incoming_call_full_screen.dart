@@ -243,7 +243,7 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
 
             SizedBox(height: 1.0.height),
             Text(
-              AppStrings.invitedPodcast,
+              "$callerName ${AppStrings.invitedPodcast}",
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,

@@ -51,6 +51,7 @@ class RoomPage extends StatefulWidget {
 class _RoomPageState extends State<RoomPage> {
   late final LiveKitConnectionCubit _lkCubit;
   late final HomeCubit _homeCubit;
+
   @override
   void initState() {
     super.initState();
@@ -160,7 +161,8 @@ class _RoomPageState extends State<RoomPage> {
 
           // Publish confirm
           if (state.needsPublishConfirm) {
-            _lkCubit.clearPublishConfirm(); // clear FIRST so it won't re-trigger
+            _lkCubit
+                .clearPublishConfirm(); // clear FIRST so it won't re-trigger
             WidgetsBinding.instance.addPostFrameCallback((_) async {
               final result = await context.showPublishDialog();
               if (!context.mounted) return;
@@ -367,7 +369,8 @@ class _RoomPageState extends State<RoomPage> {
           ),
           child: BlocBuilder<LiveKitConnectionCubit, LiveKitConnectionState>(
             builder: (context, state) {
-              final liveKitCubit = roomPageContext.read<LiveKitConnectionCubit>();
+              final liveKitCubit =
+                  roomPageContext.read<LiveKitConnectionCubit>();
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Column(
@@ -477,25 +480,43 @@ class _RoomPageState extends State<RoomPage> {
   Widget _bottomCallControls(bool isHost) {
     return BlocConsumer<LiveKitConnectionCubit, LiveKitConnectionState>(
       listener: (context, state) {
+        print("Recording Status :: ${state.recordingStatus}");
         if (state.callStatus != CallStatus.disconnected) return;
-        if (state.callStatus == CallStatus.disconnected && state.isHost) {
+        if (state.callStatus == CallStatus.disconnected &&
+            state.isHost &&
+            state.recordingStatus != LiveKitRecordingStatus.idle) {
           Navigator.pushReplacementNamed(
             context,
             RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
             arguments: {
               "audioPath": "assets/images/test_audio.mp3",
-              "is_draft": false,
+              "is_draft": true,
               "participants":
                   state.participants.length - 1 == 1
                       ? state.participants[1].firstName
                       : "",
             },
           );
-        } else if (state.callStatus == CallStatus.disconnected && !state.isHost){
+        } else if (state.callStatus == CallStatus.disconnected &&
+            state.isHost &&
+            state.recordingStatus == LiveKitRecordingStatus.idle) {
           if (Navigator.of(context).canPop()) {
             Navigator.of(context).pop();
           } else {
-            Navigator.pushReplacementNamed(context, RoutesName.MY_PODCAST_SCREEN);
+            Navigator.pushReplacementNamed(
+              context,
+              RoutesName.MY_PODCAST_SCREEN,
+            );
+          }
+        } else if (state.callStatus == CallStatus.disconnected &&
+            !state.isHost) {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          } else {
+            Navigator.pushReplacementNamed(
+              context,
+              RoutesName.MY_PODCAST_SCREEN,
+            );
           }
         }
       },
@@ -767,7 +788,6 @@ class _RoomPageState extends State<RoomPage> {
             // _waveform(),
             // const AudioWaveDesign(),
             // const SizedBox(height: 8),
-
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1087,7 +1107,7 @@ class _RoomPageState extends State<RoomPage> {
     String title = "Recording Not Started Yet";
     Color color = Colors.white;
     final other = state.participants.firstWhere(
-          (p) => p.userIdPK != state.myUserId,
+      (p) => p.userIdPK != state.myUserId,
       orElse: () => FriendsDataList(firstName: ""),
     );
     final otherName = other.firstName ?? "";
@@ -1150,9 +1170,9 @@ class _RoomPageState extends State<RoomPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                  "${state.myUserName}, ${widget.incomingCall ? "you" : otherName}",
+                "${state.myUserName}, ${widget.incomingCall ? "you" : otherName}",
 
-                  // "${state.myUserName},${widget.incomingCall
+                // "${state.myUserName},${widget.incomingCall
                 //     ? "you"
                 //     : state.participants.length - 1 == 1
                 //     ? state.participants[1].firstName
@@ -1476,7 +1496,7 @@ class _RoomPageState extends State<RoomPage> {
                                               width: 50,
                                               height: 50,
                                               decoration: const BoxDecoration(
-                                                  color: Colors.deepOrangeAccent,
+                                                color: Colors.deepOrangeAccent,
                                               ),
                                               alignment: Alignment.center,
                                               child: Text(

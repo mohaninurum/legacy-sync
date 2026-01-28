@@ -86,4 +86,25 @@ class AppService {
       debugPrint(s.toString());
     }
   }
+
+
 }
+
+
+class AppLifeCycleTracker with WidgetsBindingObserver {
+  static final AppLifeCycleTracker instance = AppLifeCycleTracker._();
+  AppLifeCycleTracker._();
+
+  final ValueNotifier<bool> isForeground = ValueNotifier<bool>(false);
+
+  void start() {
+    WidgetsBinding.instance.addObserver(this);
+    isForeground.value = true;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    isForeground.value = (state == AppLifecycleState.resumed);
+  }
+}
+

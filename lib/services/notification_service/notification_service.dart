@@ -3,6 +3,8 @@ import 'package:flutter_callkit_incoming/entities/android_params.dart';
 import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
 import 'package:flutter_callkit_incoming/entities/ios_params.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
+import 'package:legacy_sync/config/routes/routes_name.dart';
+import 'package:legacy_sync/core/utils/utils.dart';
 
 class NotificationService {
 
@@ -27,9 +29,27 @@ class NotificationService {
 
 
   static Future<void> _onForegroundMessage(RemoteMessage message) async {
-    if (_isIncomingCall(message.data)) {
-      await _showCall(message.data);
-    }
+    if (!_isIncomingCall(message.data)) return;
+    // ✅ App is open -> go to your Flutter screen (NOT CallKit)
+    final args = {
+      "incoming_call": true,
+      "room_id": (message.data['room_id'] ?? "").toString(),
+      "user_id": (message.data['user_id'] ?? "").toString(),
+      "user_name": (message.data['user_name'] ?? "").toString(),
+      "profile_image": (message.data['profile_image'] ?? "").toString(),
+      "notification_status": (message.data['notification_status'] ?? "").toString(),
+    };
+
+    // Avoid opening multiple times if same call spams
+    // Optional: store last room_id/callId check here
+
+    Utils.navigatorKey.currentState?.pushNamed(
+      RoutesName.INCOMING_CALL_FULL_SCREEN,
+      arguments: args,
+    );
+    // if (_isIncomingCall(message.data)) {
+    //   await _showCall(message.data);
+    // }
     // if (message.data['type'] == 'incoming_call') {
     //   await _showCall(message.data);
     // }
@@ -40,9 +60,24 @@ class NotificationService {
 
   static Future<void> _onMessageOpened(RemoteMessage message) async {
     print("onMessageOpened");
-    if (_isIncomingCall(message.data)) {
-      await _showCall(message.data);
-    }
+    // if (_isIncomingCall(message.data)) {
+    //   await _showCall(message.data);
+    // }
+    if (!_isIncomingCall(message.data)) return;
+
+    final args = {
+      "incoming_call": true,
+      "room_id": (message.data['room_id'] ?? "").toString(),
+      "user_id": (message.data['user_id'] ?? "").toString(),
+      "user_name": (message.data['user_name'] ?? "").toString(),
+      "profile_image": (message.data['profile_image'] ?? "").toString(),
+      "notification_status": (message.data['notification_status'] ?? "").toString(),
+    };
+
+    Utils.navigatorKey.currentState?.pushNamed(
+      RoutesName.INCOMING_CALL_FULL_SCREEN,
+      arguments: args,
+    );
   }
 
   static Future<void> _showCall(Map<String, dynamic> data) async {
@@ -65,6 +100,7 @@ class NotificationService {
         'notification_status': (data['notification_status'] ?? '').toString(),
       },
       android: const AndroidParams(
+
         isCustomNotification: false,
         ringtonePath: 'system_ringtone_default',
       ),
