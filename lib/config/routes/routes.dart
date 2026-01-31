@@ -229,10 +229,10 @@ class Routes {
       //   );
 
       case RoutesName.MY_PODCAST_SCREEN:
-        final data = settings.arguments as Map?;
-        final incomingCall = data!["isStartFirstTime"];
+        // final data = settings.arguments as Map?;
+        // final incomingCall = data!["isStartFirstTime"];
         return _animatedRouteRightToLeft(
-          MyPodcastScreen(isStartFirstTime: incomingCall),
+          const MyPodcastScreen(),
         );
       case RoutesName.PODCAST_RECORDING_SCREEN:
         final data = settings.arguments as Map?;
@@ -246,16 +246,20 @@ class Routes {
         );
       case RoutesName.AUDIO_PREVIEW_EDIT_SCREEN:
         final data = settings.arguments as Map?;
-        final audioPath = data!["audioPath"];
-        final isDraft = data["is_draft"];
-        final participants = data["participants"];
+        final podcastModel = data?["podcastModel"];
+        final isDraft = data?["is_draft"];
+        final participants = data?["participants"];
+        final roomId = data?["roomId"] ?? '';
+
         return _animatedRouteDownToUp(
           AudioPreviewEditScreen(
-            audioPath: audioPath,
-            isdraft: isDraft,
+            podcastModel: podcastModel,
+            isDraft: isDraft,
             participants: participants,
+            roomId: roomId,
           ),
         );
+
       // case RoutesName.INCOMING_CALL_FULL_SCREEN:
       //   return _animatedRouteDownToUp(const IncomingCallFullScreen());
 

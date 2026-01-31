@@ -53,4 +53,7 @@ class ApiURL {
   static const String inviteFriendToPodcast = '$baseURL/podcast/invite-friend';
   static const String record_start = "$baseURL/record-podcast/start";
   static const String record_stop = "$baseURL/record-podcast/stop";
+
+  static const String savePodcast_AsDraft = "$baseURL/podcast/save-draft-podcast";
+  static const String postPodcast = "$baseURL/podcast/post-podcast";
 }

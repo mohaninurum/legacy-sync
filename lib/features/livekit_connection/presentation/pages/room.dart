@@ -24,6 +24,7 @@ import 'package:legacy_sync/features/livekit_connection/presentation/utils/exts.
 import 'package:legacy_sync/features/livekit_connection/presentation/utils/utils.dart';
 import 'package:legacy_sync/features/livekit_connection/presentation/widgets/audio_waves_desing.dart';
 import 'package:legacy_sync/features/livekit_connection/presentation/widgets/audio_waves_widget.dart';
+import 'package:legacy_sync/features/livekit_connection/presentation/widgets/joined_participants.dart';
 import 'package:legacy_sync/features/livekit_connection/presentation/widgets/record_button.dart';
 import 'package:livekit_client/livekit_client.dart';
 import '../../../home/presentation/bloc/home_bloc/home_cubit.dart';
@@ -170,6 +171,14 @@ class _RoomPageState extends State<RoomPage> {
                 await _lkCubit.enableMic();
               }
             });
+          }
+
+          if (state.error != null) {
+            messenger
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(content: Text(state.error ?? "Something went wrong")),
+              );
           }
 
           // // Recording status dialog
@@ -480,7 +489,6 @@ class _RoomPageState extends State<RoomPage> {
   Widget _bottomCallControls(bool isHost) {
     return BlocConsumer<LiveKitConnectionCubit, LiveKitConnectionState>(
       listener: (context, state) {
-        print("Recording Status :: ${state.recordingStatus}");
         if (state.callStatus != CallStatus.disconnected) return;
         if (state.callStatus == CallStatus.disconnected &&
             state.isHost &&
@@ -489,12 +497,14 @@ class _RoomPageState extends State<RoomPage> {
             context,
             RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
             arguments: {
-              "audioPath": "assets/images/test_audio.mp3",
+              "podcastModel": null,
               "is_draft": true,
               "participants":
                   state.participants.length - 1 == 1
                       ? state.participants[1].firstName
                       : "",
+              "roomId": widget.roomId,
+              // state.participants,
             },
           );
         } else if (state.callStatus == CallStatus.disconnected &&
@@ -856,16 +866,58 @@ class _RoomPageState extends State<RoomPage> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        SizedBox(height: 22.height),
-        MicButton(
-          label: "Record",
-          icon: Images.mic,
-          isRounded: false,
-          isRedColor: true,
-          onPressed: () {
-            context.read<LiveKitConnectionCubit>().startRecording();
-          },
-        ),
+        SizedBox(height: 16.height),
+        if (state.isStartingRecording)
+          Container(
+            width: 95,
+            height: 50,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(40),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: const [AppColors.redColor, AppColors.redColor],
+              ),
+
+              /// 🌟 SHADOWS (OUTER + INNER)
+              boxShadow: const [
+                /// INNER WHITE SHADOW
+                BoxShadow(
+                  color: Color.fromRGBO(255, 255, 255, 0.30),
+                  blurRadius: 20,
+                  offset: Offset(0, -4),
+                  // inset: true,
+                ),
+
+                BoxShadow(
+                  color: Color.fromRGBO(255, 255, 255, 0.22),
+                  blurRadius: 15,
+                  offset: Offset(0, 6),
+                  // inset: true,
+                ),
+              ],
+            ),
+            child: const Center(
+              child: SizedBox(
+                height: 16,
+                width: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.25,
+                  color: AppColors.bgColor,
+                ),
+              ),
+            ),
+          )
+        else
+          MicButton(
+            label: "Record",
+            icon: Images.mic,
+            isRounded: false,
+            isRedColor: true,
+            onPressed: () {
+              context.read<LiveKitConnectionCubit>().startRecording();
+            },
+          ),
       ],
     );
   }
@@ -938,46 +990,116 @@ class _RoomPageState extends State<RoomPage> {
   }
 
   Widget _participantsGrid(LiveKitConnectionState state, BuildContext context) {
-    const int maxItems = 4;
+    final participants = state.participants;
 
-    final int participantCount = state.participants.length.clamp(0, maxItems);
+    // const int maxItems = 4;
+    //
+    // final int participantCount = state.participants.length.clamp(0, maxItems);
 
-    final bool showInvite =
-        !widget.incomingCall && state.participants.length < 2;
-    final plusUser = state.participants.length;
+    // show "Invite" tile only when host and less than 2 users
+    final showInviteTile =
+        state.isHost == true && !widget.incomingCall && participants.length < 2;
+    // final bool showInvite =
+    //     !widget.incomingCall && state.participants.length < 2;
 
-    final int itemCount = participantCount + (showInvite ? 1 : 0);
+    Widget tile0 =
+        participants.isNotEmpty
+            ? _userCard(state, participants[0], 0)
+            : const SizedBox.shrink();
+
+    Widget tile1;
+    if (participants.length > 1) {
+      tile1 = _userCard(state, participants[1], 1);
+    } else if (showInviteTile) {
+      tile1 = GestureDetector(
+        onTap: () => showInviteDialog(context),
+        child: _inviteCard(),
+      );
+    } else {
+      tile1 = const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: GridView.builder(
+      child: GridView.count(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: itemCount,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 17,
-          mainAxisSpacing: 17,
-        ),
-        itemBuilder: (_, i) {
-          if (i < participantCount) {
-            return _userCard(state.participants[i], i, plusUser);
-          }
-
-          if (showInvite && i == participantCount) {
-            return GestureDetector(
-              onTap: () {
-                showInviteDialog(context);
-              },
-              child:
-                  widget.incomingCall ? const SizedBox.shrink() : _inviteCard(),
-            );
-          }
-
-          return const SizedBox.shrink();
-        },
+        crossAxisCount: 2,
+        crossAxisSpacing: 17,
+        mainAxisSpacing: 17,
+        children: [tile0, tile1],
       ),
     );
+    // // Build exactly 2 slots
+    // final tiles = <Widget>[];
+    //
+    // if (participants.isNotEmpty) {
+    //   tiles.add(_userCard(participants[0], 0, participants.length));
+    // } else {
+    //   tiles.add(const SizedBox.shrink());
+    // }
+    //
+    // if (participants.length > 1) {
+    //   tiles.add(_userCard(participants[1], 1, participants.length));
+    // } else if (showInviteTile) {
+    //   tiles.add(
+    //     GestureDetector(
+    //       onTap: () => showInviteDialog(context),
+    //       child: _inviteCard(),
+    //     ),
+    //   );
+    // } else {
+    //   tiles.add(const SizedBox.shrink());
+    // }
+    //
+    // return Padding(
+    //   padding: const EdgeInsets.all(16),
+    //   child: GridView.builder(
+    //     shrinkWrap: true,
+    //     physics: const NeverScrollableScrollPhysics(),
+    //     itemCount: 2, // ✅ always 2 slots
+    //     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+    //       crossAxisCount: 2,
+    //       crossAxisSpacing: 17,
+    //       mainAxisSpacing: 17,
+    //     ),
+    //     itemBuilder: (_, i) => tiles[i],
+    //   ),
+    // );
+    // final plusUser = state.participants.length;
+    //
+    // final int itemCount = participantCount + (showInviteTile ? 1 : 0);
+    //
+    // return Padding(
+    //   padding: const EdgeInsets.all(16),
+    //   child: GridView.builder(
+    //     shrinkWrap: true,
+    //     physics: const NeverScrollableScrollPhysics(),
+    //     itemCount: itemCount,
+    //     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+    //       crossAxisCount: 2,
+    //       crossAxisSpacing: 17,
+    //       mainAxisSpacing: 17,
+    //     ),
+    //     itemBuilder: (_, i) {
+    //       if (i < participantCount) {
+    //         return _userCard(state.participants[i], i, plusUser);
+    //       }
+    //
+    //       if (showInvite && i == participantCount) {
+    //         return GestureDetector(
+    //           onTap: () {
+    //             showInviteDialog(context);
+    //           },
+    //           child:
+    //               widget.incomingCall ? const SizedBox.shrink() : _inviteCard(),
+    //         );
+    //       }
+    //
+    //       return const SizedBox.shrink();
+    //     },
+    //   ),
+    // );
   }
 
   Widget _inviteCard() {
@@ -1009,80 +1131,140 @@ class _RoomPageState extends State<RoomPage> {
     );
   }
 
-  Widget _userCard(FriendsDataList user, int index, int plusUser) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: AppColors.gray_light,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.Border_Color, width: 4),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            alignment: Alignment.center,
-            height: 125,
-            child: Stack(
-              children: [
-                user.profileImage != null &&
-                        user.profileImage.toString().endsWith('/null') == false
-                    ? Positioned(
-                      bottom: -20,
-                      left: 0,
-                      right: 0,
-                      child: Transform.scale(
-                        scale: 1.5,
-                        child: ClipOval(
-                          child: Image.network(
-                            user.profileImage!,
-                            fit: BoxFit.cover,
-                            // 🔄 Loading state
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: Center(
-                                  child: CupertinoActivityIndicator(),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.person,
-                                color: Colors.grey,
-                              );
-                            },
+  Widget _userCard(
+    LiveKitConnectionState state,
+    FriendsDataList user,
+    int index,
+  ) {
+    final total = state.participants.length;
+    final extraCount = total - 2;
+
+    return Stack(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.gray_light,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.Border_Color, width: 4),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                alignment: Alignment.center,
+                height: 125,
+                child: Stack(
+                  children: [
+                    user.profileImage != null &&
+                            user.profileImage.toString().endsWith('/null') ==
+                                false
+                        ? Positioned(
+                          bottom: -20,
+                          left: 0,
+                          right: 0,
+                          child: Transform.scale(
+                            scale: 1.5,
+                            child: ClipOval(
+                              child: Image.network(
+                                user.profileImage!,
+                                fit: BoxFit.cover,
+                                // 🔄 Loading state
+                                loadingBuilder: (
+                                  context,
+                                  child,
+                                  loadingProgress,
+                                ) {
+                                  if (loadingProgress == null) return child;
+                                  return const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: Center(
+                                      child: CupertinoActivityIndicator(),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.person,
+                                    color: Colors.grey,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        )
+                        : ClipOval(
+                          child: Text(
+                            (user.firstName ?? "").toUpperCase(),
+                            style: const TextStyle(fontSize: 22),
                           ),
                         ),
-                      ),
-                    )
-                    : ClipOval(
-                      child: Text(
-                        user.firstName.toString().toUpperCase() ?? '',
-                        style: const TextStyle(fontSize: 22),
-                      ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Align(
+                alignment: AlignmentGeometry.bottomLeft,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    YouAudioWave(
+                      useName: user.firstName?.trim()
+                          .split(RegExp(r'[ _]+'))
+                          .first,
                     ),
-              ],
+                    // YouAudioWave(useName: user.firstName),
+                    // if (index == 1 && plusUser >= 3) plushUser(plusUser),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // ✅ Badge only on 2nd tile when participants > 2
+        if (index == 1 && extraCount > 0)
+          Positioned(
+            right: 10,
+            bottom: 12,
+            child: GestureDetector(
+              onTap: () => _openParticipantsSheet(state),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFB8C0C0), // grey pill
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  "$extraCount+",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.whiteColor,
+                  ),
+                ),
+              ),
             ),
           ),
-          const Spacer(),
-          Align(
-            alignment: AlignmentGeometry.bottomLeft,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                YouAudioWave(useName: user.firstName),
-                if (index == 1 && plusUser >= 3) plushUser(plusUser),
-              ],
-            ),
-          ),
-        ],
-      ),
+
+      ],
     );
   }
+
+  void _openParticipantsSheet(LiveKitConnectionState state) {
+    showModalBottomSheet(
+
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      barrierColor: Colors.transparent, // we handle dim ourselves
+
+      builder: (_) => ParticipantsSheet(participants: state.participants),
+    );
+  }
+
 
   Widget plushUser(plusUser) {
     return Container(
@@ -1170,7 +1352,7 @@ class _RoomPageState extends State<RoomPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                "${state.myUserName}, ${widget.incomingCall ? "you" : otherName}",
+                "You, $otherName",
 
                 // "${state.myUserName},${widget.incomingCall
                 //     ? "you"
@@ -1232,44 +1414,99 @@ class _RoomPageState extends State<RoomPage> {
               ),
               const SizedBox(width: 8),
 
-              /// SHUFFLE
-              GestureDetector(
-                onTap: () {
-                  context.read<LiveKitConnectionCubit>().shuffleTopics(
-                    TopicCategory.Shuffle,
-                  );
-                },
-                child: _topicChip(
-                  icon: Icons.shuffle,
-                  label: "Shuffle",
-                  selected: state.selectedCategory == TopicCategory.Shuffle,
-                ),
-              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      /// SHUFFLE
+                      GestureDetector(
+                        onTap: () {
+                          context.read<LiveKitConnectionCubit>().shuffleTopics(
+                            TopicCategory.Shuffle,
+                          );
+                        },
+                        child: _topicChip(
+                          icon: Icons.shuffle,
+                          label: "Shuffle",
+                          selected:
+                              state.selectedCategory == TopicCategory.Shuffle,
+                        ),
+                      ),
 
-              /// FAMILY
-              GestureDetector(
-                onTap: () {
-                  context.read<LiveKitConnectionCubit>().filterByCategory(
-                    TopicCategory.family,
-                  );
-                },
-                child: _topicChip(
-                  label: "Family",
-                  selected: state.selectedCategory == TopicCategory.family,
-                ),
-              ),
+                      /// Beginnings
+                      GestureDetector(
+                        onTap: () {
+                          context
+                              .read<LiveKitConnectionCubit>()
+                              .filterByCategory(TopicCategory.Beginnings);
+                        },
+                        child: _topicChip(
+                          label: "Beginnings",
+                          selected:
+                              state.selectedCategory ==
+                              TopicCategory.Beginnings,
+                        ),
+                      ),
 
-              /// RELATIONSHIP
-              GestureDetector(
-                onTap: () {
-                  context.read<LiveKitConnectionCubit>().filterByCategory(
-                    TopicCategory.relationship,
-                  );
-                },
-                child: _topicChip(
-                  label: "Relationship",
-                  selected:
-                      state.selectedCategory == TopicCategory.relationship,
+                      /// Bonds
+                      GestureDetector(
+                        onTap: () {
+                          context
+                              .read<LiveKitConnectionCubit>()
+                              .filterByCategory(TopicCategory.Bonds);
+                        },
+                        child: _topicChip(
+                          label: "Bonds",
+                          selected:
+                              state.selectedCategory == TopicCategory.Bonds,
+                        ),
+                      ),
+
+                      /// Becoming
+                      GestureDetector(
+                        onTap: () {
+                          context
+                              .read<LiveKitConnectionCubit>()
+                              .filterByCategory(TopicCategory.Becoming);
+                        },
+                        child: _topicChip(
+                          label: "Becoming",
+                          selected:
+                              state.selectedCategory == TopicCategory.Becoming,
+                        ),
+                      ),
+
+                      /// Hopes
+                      GestureDetector(
+                        onTap: () {
+                          context
+                              .read<LiveKitConnectionCubit>()
+                              .filterByCategory(TopicCategory.Hopes);
+                        },
+                        child: _topicChip(
+                          label: "Hopes",
+                          selected:
+                              state.selectedCategory == TopicCategory.Hopes,
+                        ),
+                      ),
+
+                      /// Remembrance
+                      GestureDetector(
+                        onTap: () {
+                          context
+                              .read<LiveKitConnectionCubit>()
+                              .filterByCategory(TopicCategory.Remembrance);
+                        },
+                        child: _topicChip(
+                          label: "Remembrance",
+                          selected:
+                              state.selectedCategory ==
+                              TopicCategory.Remembrance,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

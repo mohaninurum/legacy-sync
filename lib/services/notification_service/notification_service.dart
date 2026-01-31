@@ -74,10 +74,16 @@ class NotificationService {
       "notification_status": (message.data['notification_status'] ?? "").toString(),
     };
 
-    Utils.navigatorKey.currentState?.pushNamed(
-      RoutesName.INCOMING_CALL_FULL_SCREEN,
+    Utils.navigatorKey.currentState?.pushNamedAndRemoveUntil(
+      RoutesName.ROOM_PAGE,
+          (r) => false,
       arguments: args,
     );
+
+    // Utils.navigatorKey.currentState?.pushNamed(
+    //   RoutesName.INCOMING_CALL_FULL_SCREEN,
+    //   arguments: args,
+    // );
   }
 
   static Future<void> _showCall(Map<String, dynamic> data) async {

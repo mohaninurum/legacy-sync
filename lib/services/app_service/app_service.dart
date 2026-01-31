@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:legacy_sync/config/network/api_host.dart';
@@ -12,6 +14,53 @@ class AppService {
   static String userName = "";
   static String userFirstName = "";
   static String cachePath = "";
+
+  static final ValueNotifier<bool> isOnline = ValueNotifier<bool>(true);
+  static StreamSubscription<List<ConnectivityResult>>? _connSub;
+
+  /// Call once (ex: in main after Firebase init)
+  static Future<void> startNetworkWatcher() async {
+    // set initial value
+    isOnline.value = await hasInternet();
+
+    _connSub?.cancel();
+    _connSub = Connectivity().onConnectivityChanged.listen((_) async {
+      // debounce a bit (network changes can fire multiple times)
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      final ok = await hasInternet();
+      if (isOnline.value != ok) {
+        isOnline.value = ok;
+        debugPrint("[NET] Online: $ok");
+      }
+    });
+  }
+
+  static Future<void> stopNetworkWatcher() async {
+    await _connSub?.cancel();
+    _connSub = null;
+  }
+
+  /// Use anywhere: `await AppService.hasInternet()`
+  static Future<bool> hasInternet({Duration timeout = const Duration(seconds: 3)}) async {
+    try {
+      final results = await Connectivity().checkConnectivity();
+      final hasNetwork = results.any((r) => r != ConnectivityResult.none);
+      if (!hasNetwork) return false;
+
+      // real internet validation
+      final lookup = await InternetAddress.lookup('google.com').timeout(timeout);
+      return lookup.isNotEmpty && lookup.first.rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+
+  /// If you just want fast "connected to wifi/mobile?" check (no DNS)
+  static Future<bool> hasNetworkConnection() async {
+    final results = await Connectivity().checkConnectivity();
+    return results.any((r) => r != ConnectivityResult.none);
+  }
 
   static Future<void> initializeUserData() async {
     final f = await AppPreference().get(key: AppPreference.KEY_USER_FIRST_NAME);

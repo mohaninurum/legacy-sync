@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audio_waveforms/audio_waveforms.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:legacy_sync/features/audio_preview_edit/presentation/bloc/audio_preview_edit_cubit.dart';
 
 import '../../../../core/colors/colors.dart';
 import '../bloc/audio_preview_edit_state.dart';
@@ -7,7 +9,6 @@ import '../bloc/audio_preview_edit_state.dart';
 typedef CallbackSelection = void Function(double seconds);
 
 class RealWaveSlider extends StatefulWidget {
-  final String audioPath;
   final double duration; // seconds
   final CallbackSelection onStart;
   final CallbackSelection onEnd;
@@ -15,7 +16,6 @@ class RealWaveSlider extends StatefulWidget {
 
   const RealWaveSlider({
     super.key,
-    required this.audioPath,
     required this.duration,
     required this.onStart,
     required this.onEnd,
@@ -27,8 +27,6 @@ class RealWaveSlider extends StatefulWidget {
 }
 
 class _RealWaveSliderState extends State<RealWaveSlider> {
-  late final PlayerController _controller;
-
   double startPx = 0;
   double endPx = 0;
 
@@ -46,29 +44,46 @@ class _RealWaveSliderState extends State<RealWaveSlider> {
   double get endTime =>
       (endPx * secondsPerPixel).clamp(0, widget.duration);
 
+
   @override
-  void initState() {
-    super.initState();
-    _controller = PlayerController();
-    _loadWaveform();
-    print(widget.audioPath);
-  }
-
-  Future<void> _loadWaveform() async {
-    await _controller.preparePlayer(
-      path: widget.audioPath,
-      shouldExtractWaveform: true,
-      noOfSamples: 150,
-    );
-
-    setState(() {
-      startPx = 0;
-      endPx = waveWidth - handleWidth;
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // initialize handles once we know width
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        startPx = 0;
+        endPx = waveWidth - handleWidth;
+      });
     });
   }
 
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _controller = PlayerController();
+  //   _loadWaveform();
+  //   print(widget.audioPath);
+  // }
+
+  // Future<void> _loadWaveform() async {
+  //   await _controller.preparePlayer(
+  //     path: widget.audioPath,
+  //     shouldExtractWaveform: true,
+  //     noOfSamples: 150,
+  //   );
+  //
+  //   setState(() {
+  //     startPx = 0;
+  //     endPx = waveWidth - handleWidth;
+  //   });
+  // }
+
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<AudioPreviewEditCubit>();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0),
       child: SingleChildScrollView(
@@ -82,9 +97,9 @@ class _RealWaveSliderState extends State<RealWaveSlider> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 0),
                 child: AudioFileWaveforms(
-                  padding: const EdgeInsets.all(0),
+                  padding: EdgeInsets.zero,
                   size: Size(waveWidth, waveHeight),
-                  playerController: _controller,
+                  playerController: cubit.playerController,
                   waveformType:widget.state.isAudioEdit?  WaveformType.long:WaveformType.fitWidth,
                   playerWaveStyle:  PlayerWaveStyle(
                     waveThickness: 3,
@@ -153,12 +168,6 @@ class _RealWaveSliderState extends State<RealWaveSlider> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 }
 

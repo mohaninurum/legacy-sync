@@ -2,6 +2,28 @@ import 'package:flutter/material.dart';
 
 extension LKExampleExt on BuildContext {
   //
+
+  Future<bool?> showUnsavedPodcastDialog() => showDialog<bool>(
+    context: this,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Unsaved podcast'),
+      content: const Text(
+        'Your recording hasn’t been saved yet. If you go back now, you may lose your changes. Do you want to leave anyway?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Leave'),
+        ),
+      ],
+    ),
+  );
+
   Future<bool?> showPublishDialog() => showDialog<bool>(
         context: this,
         builder: (ctx) => AlertDialog(

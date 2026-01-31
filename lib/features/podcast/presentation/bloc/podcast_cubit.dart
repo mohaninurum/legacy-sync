@@ -23,22 +23,18 @@ class PodcastCubit extends Cubit<PodcastState> {
 
   @override
   Future<void> close() async {
-
     return super.close();
   }
 
   void fetchBuildOnwPodcast() async {
-
     emit(state.copyWith(isLoading: true));
     emit(state.copyWith(buildOwnPodcastList: buildOwnPodcastList));
     emit(state.copyWith(isLoading: false));
-
-
   }
+
   void startMakingPodcast() async {
     AppPreference().setBool(key: AppPreference.start_Making_Podcast, value:  true);
   }
-
 
   String _sanitize(String input) {
     final s = input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');

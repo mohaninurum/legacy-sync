@@ -57,14 +57,10 @@ import 'features/home/presentation/bloc/home_bloc/home_cubit.dart';
 import 'firebase_options.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 
-
 Map<String, dynamic>? pendingCallArguments;
-
-
 
 @pragma('vm:entry-point')
 Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
-  // IMPORTANT: background isolate needs Firebase initialized
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -73,25 +69,14 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
     // It's OK if already initialized
   }
 
-
   final data = message.data;
 
-
-  // ✅ Your backend does not send "type", so detect by room_id
   final roomId = (data['room_id'] ?? '').toString();
   if (roomId.isEmpty) return;
-
-  // Optional stricter check (uncomment if you want only status=100)
-  // final status = (data['notification_status'] ?? '').toString();
-  // if (status != '100') return;
-
-  // if (message.data['type'] != 'incoming_call') return;
-
 
   final callId = (data['callId']?.toString().isNotEmpty == true)
       ? message.data['callId'].toString()
       : DateTime.now().millisecondsSinceEpoch.toString();
-
 
   final params = CallKitParams(
     id: callId,
@@ -120,13 +105,9 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
 
 
 void _listenCallKitEvents() {
- print("call event:0");
   FlutterCallkitIncoming.onEvent.listen((event) async {
-    print("call event:1");
     if (event == null) return;
-    print("call event:$event");
     switch (event.event) {
-
       case Event.actionCallAccept:
         final body = event.body ?? {};
         final extra = (body['extra'] ?? {}) as Map;
@@ -140,7 +121,6 @@ void _listenCallKitEvents() {
           "notification_status": (extra['notification_status'] ?? "").toString(),
         };
 
-        print("call accept:$event");
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(
           'pending_call_accept',
@@ -151,12 +131,8 @@ void _listenCallKitEvents() {
           RoutesName.INCOMING_CALL_FULL_SCREEN,
           arguments: pendingCallArguments,
         );
-        // pendingCallArguments={
-        //   "incoming_call": true,
-        //   "userName": "Naina",
-        // };
         break;
-//       "extra": event.body['extra'],event.body['nameCaller']
+
       case Event.actionCallDecline:
       case Event.actionCallEnded:
         final prefs = await SharedPreferences.getInstance();
@@ -170,10 +146,9 @@ void _listenCallKitEvents() {
   });
 }
 
-// "extra": event.body['extra'],event.body['nameCaller']
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppService.startNetworkWatcher();
   AppLifeCycleTracker.instance.start();
   final fetchResult = await setup();
   final authToken = fetchResult["authToken"];
@@ -182,10 +157,8 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
   _listenCallKitEvents();
   FirebaseMessaging.instance.getToken().then((value) {
-    print("fcm:-$value" );
+    debugPrint("fcm:-$value" );
   },);
-
-
 
   runApp(
     MultiBlocProvider(

@@ -26,6 +26,7 @@ class AudioPreviewControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
           alignment: Alignment.center,
@@ -38,14 +39,22 @@ class AudioPreviewControls extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           child:
-        state.isAudioInitial?
-        RealWaveSlider( state: state, audioPath: audioPath, duration: state.duration.inSeconds.toDouble(), onStart: (seconds) {
-              print("onStart $seconds");
-        cubit.onStartTrimSecond(seconds);
-            }, onEnd: (seconds) {
-          cubit.onEndTrimSecond(seconds);
-              print("onEnd $seconds");
-            },):const SizedBox.shrink()
+              state.isAudioInitial
+                  ? state.isWaveLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : RealWaveSlider(
+                        state: state,
+                        duration: state.duration.inSeconds.toDouble(),
+                        onStart: (seconds) {
+                          print("onStart $seconds");
+                          cubit.onStartTrimSecond(seconds);
+                        },
+                        onEnd: (seconds) {
+                          cubit.onEndTrimSecond(seconds);
+                          print("onEnd $seconds");
+                        },
+                      )
+                  : const SizedBox.shrink(),
         ),
 
         Padding(
@@ -74,7 +83,6 @@ class AudioPreviewControls extends StatelessWidget {
                 InkWell(
                   onTap: () {
                     cubit.audioEditDiscard();
-
                   },
                   child: Text(
                     "Edit Audio",
@@ -90,17 +98,16 @@ class AudioPreviewControls extends StatelessWidget {
                 InkWell(
                   onTap: () {
                     final path =
-                    context.read<AudioPreviewEditCubit>()
-                      ..saveTrimmedAudio(audioPath,context);
+                        context.read<AudioPreviewEditCubit>()
+                          ..saveTrimmedAudio(audioPath, context);
                     debugPrint("Saved Audio => $path");
-
                   },
                   child: Text(
                     "Save Audio",
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color:AppColors.yellow,
+                      color: AppColors.yellow,
                     ),
                   ),
                 ),
@@ -142,6 +149,7 @@ class AudioPreviewControls extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 10),
+
         /// ⏱️ Time Row
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -164,7 +172,7 @@ class AudioPreviewControls extends StatelessWidget {
 
         /// ▶️ Controls Row
         Padding(
-          padding: const EdgeInsets.only(left: 0, right: 16),
+          padding: const EdgeInsets.only(left: 16, right: 0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [

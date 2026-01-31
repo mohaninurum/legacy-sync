@@ -6,7 +6,8 @@ import 'package:livekit_client/livekit_client.dart';
 
 enum LiveKitRecordingStatus { idle, recording, paused, completed }
 
-enum TopicCategory { family, relationship, Shuffle }
+// enum TopicCategory { family, relationship, Shuffle }
+enum TopicCategory {Shuffle, Beginnings, Bonds, Becoming, Hopes, Remembrance}
 
 enum CallStatus { idle, calling, connected, disconnected }
 
@@ -16,7 +17,7 @@ enum LiveKitStatus { initial, connecting, connected, failure }
 
 class LiveKitConnectionState extends Equatable {
   final List<ParticipantTrack> participantTracks;
-
+  final bool isStartingRecording;
   final InviteStatus inviteStatus;
   final String? inviteMessage;
   final Set<int> invitedFriendIds;
@@ -62,6 +63,7 @@ class LiveKitConnectionState extends Equatable {
 
 
   const LiveKitConnectionState({
+    this.isStartingRecording = false,
     this.myUserId,
     this.myUserName,
     this.participantTracks = const [],
@@ -101,6 +103,7 @@ class LiveKitConnectionState extends Equatable {
   });
 
   LiveKitConnectionState copyWith({
+    bool? isStartingRecording,
     int? myUserId,
     String? myUserName,
     List<ParticipantTrack>? participantTracks,
@@ -146,6 +149,7 @@ class LiveKitConnectionState extends Equatable {
 
   }) {
     return LiveKitConnectionState(
+      isStartingRecording: isStartingRecording ?? this.isStartingRecording,
       myUserId: myUserId ?? this.myUserId,
       myUserName: myUserName ?? this.myUserName,
       participantTracks: participantTracks ?? this.participantTracks,
@@ -190,6 +194,7 @@ class LiveKitConnectionState extends Equatable {
 
   @override
   List<Object?> get props => [
+    isStartingRecording,
     myUserId,
     myUserName,
     invitingFriendId,

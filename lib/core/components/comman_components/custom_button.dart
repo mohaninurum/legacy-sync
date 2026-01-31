@@ -10,6 +10,7 @@ class CustomButton extends StatelessWidget {
   final Widget rightWidget;
   final bool enable;
   final bool isMoudel;
+  final bool isOtherColor;
   final bool bgTransparent;
   final bool isShadows;
   final bool onlyBorder;
@@ -22,6 +23,7 @@ class CustomButton extends StatelessWidget {
     this.isLoadingState = false,
     this.enable = true,
     this.isMoudel = false,
+    this.isOtherColor = false,
     this.bgTransparent = false,
     this.isShadows = false,
     this.onlyBorder = false,
@@ -49,9 +51,12 @@ class CustomButton extends StatelessWidget {
               bgTransparent
                   ? null
                   : RadialGradient(
-                    colors:
-                        enable
-                            ? isMoudel?[const Color(0xFF879bf2), const Color(0xFF5b77f0)]:[const Color(0xFF9480fa), const Color(0xFF6447f8)]
+                    colors: enable
+                            ? isOtherColor
+                              ? [ const Color(0xFF3ED17A), const Color(0xFF3ED17A).withValues(alpha: 0.8),const Color(0xFF3ED17A).withValues(alpha: 0.8), const Color(0xFF3ED17A),]
+                              : isMoudel
+                              ?[const Color(0xFF879bf2), const Color(0xFF5b77f0)]
+                              :[const Color(0xFF9480fa), const Color(0xFF6447f8)]
                             : [
                               AppColors.grey400, // Gray-400
                               AppColors.grey500, // Gray-500

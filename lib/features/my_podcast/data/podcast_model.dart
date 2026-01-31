@@ -26,7 +26,7 @@ class PodcastModel {
     required this.author,
     required this.description
   ,required this.summary
- ,this.audioPath
+ ,this.audioPath,
   });
 }
 

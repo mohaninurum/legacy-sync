@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:legacy_sync/core/colors/colors.dart';
+import 'package:legacy_sync/features/home/data/model/friends_list_model.dart';
 
 import '../../../../core/components/comman_components/custom_text_field.dart';
 import '../../../../core/strings/strings.dart';
@@ -9,8 +10,9 @@ import '../bloc/audio_preview_edit_state.dart';
 
 class AudioMetaWidget extends StatelessWidget {
   final AudioPreviewEditState state;
+  // final List<FriendsDataList> participants;
   final String participants;
-   AudioMetaWidget({super.key, required this.state,required this.participants});
+   const AudioMetaWidget({super.key, required this.state,required this.participants});
 
 
 
@@ -43,7 +45,17 @@ class AudioMetaWidget extends StatelessWidget {
 
           _SectionTitle("Collaborator",context),
           const SizedBox(height: 12),
-          _CollaboratorTile(name:   participants,context: context),
+          // if (participants.isEmpty)
+          //   _HelperText("No collaborators added", context)
+          // else
+          //   Wrap(
+          //     spacing: 12,
+          //     runSpacing: 12,
+          //     children: participants
+          //         .map((u) => collaboratorTile(collaborators: u, context: context))
+          //         .toList(),
+          //   ),
+          collaboratorTile(name:   participants,context: context),
           const SizedBox(height: 12),
 
           const SizedBox(height: 28),
@@ -79,19 +91,45 @@ class AudioMetaWidget extends StatelessWidget {
     );
   }
 
-  Widget _CollaboratorTile({required String name,context}) {
-    return Row(
-      children: [
-        ClipOval(
-         child: Image.asset("assets/images/user_you.png",width: 50,height: 50,),
-        ),
-        const SizedBox(width: 12),
-        Text(name,style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-    fontSize: 16,
-    fontWeight: FontWeight.w500,
-    ),),
-      ],
+  Widget collaboratorTile({required String name, context}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          ClipOval(
+            child: Image.asset(
+              "assets/images/user_you.png",
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              name,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
+    // return Row(
+    //   children: [
+    //     ClipOval(
+    //      child: Image.asset("assets/images/user_you.png",width: 50,height: 50,),
+    //     ),
+    //     const SizedBox(width: 12),
+    //     Text(name,style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+    // fontSize: 16,
+    // fontWeight: FontWeight.w500,
+    // ),),
+    //   ],
+    // );
   }
 
   Widget _TopicsRow({required List<String> topics,context}) {

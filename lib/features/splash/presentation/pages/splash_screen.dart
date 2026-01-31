@@ -52,6 +52,7 @@ class _SplashScreenState extends State<SplashScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               children: [
+                const SizedBox(height: 50),
                 TypingText(
                   fullText: AppStrings.splash_text,
                   textStyle: const TextStyle(
@@ -82,8 +83,6 @@ class _SplashScreenState extends State<SplashScreen> {
                     }
                   },
                 ),
-
-
               ],
             ),
           ),

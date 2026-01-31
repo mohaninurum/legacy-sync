@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
     //     pendingCallArguments = null;
     //   }
     // });
-    getstartmackingPodcast();
+    getStartMakingPodcast();
     _setupAnimations();
     context.read<HomeCubit>().initializeHome(context);
     context.read<HomeCubit>().getFriendsList();
@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
   }
 
 
-  getstartmackingPodcast() async {
+  getStartMakingPodcast() async {
     startMakingPodcast= await AppPreference().getBool(key: AppPreference.start_Making_Podcast);
   }
 

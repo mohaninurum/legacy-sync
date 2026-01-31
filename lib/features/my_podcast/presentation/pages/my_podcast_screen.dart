@@ -1,12 +1,10 @@
 import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/core/strings/strings.dart';
 import 'package:legacy_sync/features/audio_overlay_manager/widgets/audio_overlay_widget.dart';
-
 import '../../../../config/db/shared_preferences.dart';
 import '../../../../config/routes/routes_name.dart';
 import '../../../../core/colors/colors.dart';
@@ -17,10 +15,8 @@ import '../../../../core/components/comman_components/podcast_bg.dart';
 import '../../../../core/components/comman_components/will_pop_scope.dart';
 import '../../../../core/images/images.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../../../core/utils/utils.dart';
 import '../../../audio_overlay_manager/audio_overlay_manager.dart';
-import '../../../home/presentation/bloc/home_bloc/home_cubit.dart';
 import '../../../play_podcast/presentation/bloc/play_podcast_cubit.dart';
 import '../../../play_podcast/presentation/bloc/play_podcast_state.dart';
 import '../../../profile/presentation/bloc/profile_bloc/profile_cubit.dart';
@@ -29,26 +25,24 @@ import '../../data/recent_user_list_model.dart';
 import '../bloc/my_podcast_cubit.dart';
 import '../bloc/my_podcast_state.dart';
 
-import 'package:file_picker/file_picker.dart';
-
 class MyPodcastScreen extends StatefulWidget {
-  final isStartFirstTime;
+  // final isStartFirstTime;
 
-  const MyPodcastScreen({super.key, this.isStartFirstTime});
+  const MyPodcastScreen({super.key});
 
   @override
   State<MyPodcastScreen> createState() => _MyPodcastScreenState();
 }
 
 class _MyPodcastScreenState extends State<MyPodcastScreen> {
-  bool startMakingPodcast = false;
+  // bool startMakingPodcast = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.isStartFirstTime == null) {
-      getstartmackingPodcast();
-    }
+    // if (widget.isStartFirstTime == null) {
+    //   getStartMakingPodcast();
+    // }
 
     context.read<MyPodcastCubit>().fetchMyPodcastTab("Posted");
     context.read<MyPodcastCubit>().allPodcastsContinueListening();
@@ -56,11 +50,11 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
     context.read<ProfileCubit>().loadProfile(context);
   }
 
-  getstartmackingPodcast() async {
-    startMakingPodcast = await AppPreference().getBool(
-      key: AppPreference.start_Making_Podcast,
-    );
-  }
+  // getStartMakingPodcast() async {
+  //   startMakingPodcast = await AppPreference().getBool(
+  //     key: AppPreference.start_Making_Podcast,
+  //   );
+  // }
 
   @override
   void deactivate() {
@@ -79,6 +73,15 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         child: BlocConsumer<MyPodcastCubit, MyPodcastState>(
           listenWhen: (prev, curr) => prev.createRoomStatus != curr.createRoomStatus,
           listener: (context, state) {
+            final messenger = ScaffoldMessenger.of(context);
+            if(state.error.isNotEmpty) {
+              messenger
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(content: Text(state.error)),
+                );
+            }
+
             if (state.createRoomStatus == CreateRoomStatus.success) {
               Navigator.pushNamed(
                 context,
@@ -136,19 +139,6 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                     icon: Icons.add,
                     onTap: () async {
                       await myPodcastCubit.createRoomAndId();
-                      // Navigator.pushNamed(context, RoutesName.CREATE_NEW_PODCAST);
-                      // Navigator.pushNamed(context, RoutesName.PODCAST_CONNECTION);
-                      // Navigator.pushNamed(context, RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,arguments: {
-                      //   "audioPath": "assets/images/test_audio.mp3",
-                      //   "is_draft":false,
-                      //   "participants": "",
-                      //   // "participants":   state.participants.length-1==1?state.participants[1].firstName:""
-                      // });
-                      // Navigator.pushNamed(
-                      //   context,
-                      //   RoutesName.PODCAST_RECORDING_SCREEN,
-                      //   arguments: {"incoming_call": false, "userName": "you"},
-                      // );
                     },
                   ),
                   const SizedBox(height: 10),
@@ -297,20 +287,25 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
     return AppButton(
       padding: const EdgeInsets.all(0),
       onPressed: () async {
-        getstartmackingPodcast();
-        print("startMakingPodcast");
-        print(startMakingPodcast);
-        if (startMakingPodcast) {
-          final shouldPop = await _showActionSheet(context);
-          if (shouldPop == true) {
-            exit(1);
-          }
-        } else {
-          Navigator.pushNamed(context, RoutesName.HOME_SCREEN);
-        }
+        Navigator.pushNamed(context, RoutesName.HOME_SCREEN);
       },
       child: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
     );
+    // return AppButton(
+    //   padding: const EdgeInsets.all(0),
+    //   onPressed: () async {
+    //     getStartMakingPodcast();
+    //     if (startMakingPodcast) {
+    //       final shouldPop = await _showActionSheet(context);
+    //       if (shouldPop == true) {
+    //         exit(1);
+    //       }
+    //     } else {
+    //       Navigator.pushNamed(context, RoutesName.HOME_SCREEN);
+    //     }
+    //   },
+    //   child: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+    // );
   }
 
   Widget _tabs() => BlocBuilder<MyPodcastCubit, MyPodcastState>(
@@ -366,10 +361,6 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
   Widget _listContinueListening() =>
       BlocBuilder<MyPodcastCubit, MyPodcastState>(
         builder: (context, state) {
-          // if (state.isLoading) {
-          //   return const Center(child: SizedBox.shrink());
-          // }
-
           if (state.listPodcastsContinueListening.isEmpty) {
             return const Center(
               child: Text(
@@ -397,10 +388,6 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
   Widget _list() => BlocBuilder<MyPodcastCubit, MyPodcastState>(
     builder: (context, state) {
-      // if (state.isLoading) {
-      //   return const Center(child: SizedBox.shrink());
-      // }
-
       if (state.podcasts.isEmpty) {
         return const Center(
           child: Text(
@@ -412,7 +399,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
       return state.selectedTab == "Draft"
           ? SizedBox(
-            height: 180,
+            height: 260,
             child: ListView.builder(
               physics: const BouncingScrollPhysics(),
               scrollDirection: Axis.horizontal,
@@ -593,25 +580,18 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
     return InkWell(
       onTap: () async {
-        // FilePickerResult? result = await FilePicker.platform.pickFiles();
-        //
-        // if (result != null) {
-        //   File file = File(result.files.single.path!);
-        // } else {
-        //   // User canceled the picker
-        // }
-
-        // AudioOverlayManager.hide();
         context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
-
         context.read<MyPodcastCubit>().loadPodcast(data);
         if (data.type == "Draft") {
+          print("Podcast Id :: ${data.podcastId.toString()}");
           Navigator.pushNamed(
             context,
             RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
             arguments: {
-              "audioPath": "assets/images/test_audio.mp3",
-              "is_draft": true,
+              "podcastModel":data,
+              "is_draft": data.audioPath != null ? false : true,
+              "participants": data.relationship,
+              "roomId": '',
             },
           );
         } else {
@@ -778,20 +758,15 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
     return InkWell(
       onTap: () async {
-        // FilePickerResult? result = await FilePicker.platform.pickFiles();
-        //
-        // if (result != null) {
-        //   File file = File(result.files.single.path!);
-        // } else {
-        //   // User canceled the picker
-        // }
-
+        print("Podcast Id :: ${data.podcastId.toString()}");
         Navigator.pushNamed(
           context,
           RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
           arguments: {
-            "audioPath": "assets/images/test_audio.mp3",
-            "is_draft": true,
+            "podcastModel":data,
+            "is_draft": data.audioPath != null ? false : true,
+            "participants": data.relationship,
+            "roomId": '',
           },
         );
       },

@@ -29,66 +29,67 @@ class _PodcastScreenState extends State<PodcastScreen> {
   void initState() {
     super.initState();
     context.read<PodcastCubit>().fetchBuildOnwPodcast();
-
   }
 
   @override
   Widget build(BuildContext context) {
-    return
-      AppWillPopScope(
-        onExit: (v) {
-          exit(0);
-        },
-        child: PodcastBg(
-          isDark: false,
+    return AppWillPopScope(
+      onExit: (v) {
+        exit(0);
+      },
+      child: PodcastBg(
+        isDark: false,
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          body:
-          SingleChildScrollView(
+          body: SingleChildScrollView(
             physics: const ClampingScrollPhysics(),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                _buildBgStackImageAndOptions(),
-                _buildCardInfo(),
-            ],
+              children: [_buildBgStackImageAndOptions(), _buildCardInfo()],
             ),
           ),
         ),
-             ),
-      );
+      ),
+    );
   }
 
-
-
-  Widget _podcastjoin(){
-    return BlocConsumer<PodcastCubit,PodcastState>(
-      listenWhen: (prev, curr) => prev.createRoomStatus != curr.createRoomStatus,
-        listener: (context, state) {
-          if (state.createRoomStatus == CreateRoomStatus.success) {
-            Navigator.pushNamed(context, RoutesName.ROOM_PAGE, arguments: {
+  Widget _podcastjoin() {
+    return BlocConsumer<PodcastCubit, PodcastState>(
+      listenWhen:
+          (prev, curr) => prev.createRoomStatus != curr.createRoomStatus,
+      listener: (context, state) {
+        if (state.createRoomStatus == CreateRoomStatus.success) {
+          Navigator.pushNamed(
+            context,
+            RoutesName.ROOM_PAGE,
+            arguments: {
               "roomId": state.roomId,
               "incoming_call": false,
               "userName": state.userName,
               "userId": state.userId,
-            },);
-          }
-        },
+            },
+          );
+        }
+      },
       builder: (context, state) {
         final myPodcastCubit = context.read<PodcastCubit>();
         return InkWell(
           onTap: () async {
             await myPodcastCubit.createRoomAndId();
           },
-          child:  Text("Create Podcast",style: Theme.of(context).textTheme.bodyLarge?.copyWith(color:Colors.blue)),
+          child: Text(
+            "Create Podcast",
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: Colors.blue),
+          ),
         );
       },
     );
   }
 
-
   Widget _buildBackButton() {
-    return  AppButton(
+    return AppButton(
       padding: const EdgeInsets.all(0),
       onPressed: () async {
         final shouldPop = await _showActionSheet(context);
@@ -96,7 +97,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
           exit(1);
         }
       },
-      child:  const Icon(Icons.arrow_back_ios_rounded, color:Colors.white),
+      child: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
     );
   }
 
@@ -107,7 +108,6 @@ class _PodcastScreenState extends State<PodcastScreen> {
       width: double.infinity,
       child: Stack(
         children: [
-
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -115,11 +115,12 @@ class _PodcastScreenState extends State<PodcastScreen> {
                 clipper: CurvedHeaderClipper(),
                 child: SizedBox(
                   height: 25.height,
-                  child: Image.asset(Images.pod_cast_img,
+                  child: Image.asset(
+                    Images.pod_cast_img,
                     height: 25.height, // match parent height
-                      width: double.infinity,
-                      fit: BoxFit.fill,
-                  )
+                    width: double.infinity,
+                    fit: BoxFit.fill,
+                  ),
                   // Lottie.asset(
                   //   LottieFiles.pod_cast,
                   //   height: 25.height, // match parent height
@@ -140,8 +141,16 @@ class _PodcastScreenState extends State<PodcastScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                Row(mainAxisSize: MainAxisSize.min, children: [  _buildBackButton(),
-                  Text("Podcast", style: Theme.of(context).textTheme.bodyLarge),],),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildBackButton(),
+                      Text(
+                        "Podcast",
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ],
+                  ),
                   _podcastjoin(),
                 ],
               ),
@@ -152,77 +161,111 @@ class _PodcastScreenState extends State<PodcastScreen> {
     );
   }
 
-
-
   Widget _buildCardInfo() {
     return Container(
       width: 363.width,
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(color:   AppColors.primaryBlueDark.withOpacity(0.25), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.2))),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _firstPartCartText(),
-        SizedBox(height: 2.height),
-        _SecondPartCartText(),
-        SizedBox(height: 2.5.height),
-        _buildStartMakingPodcastButton(context),
-        SizedBox(height: 0.5.height),
-      ],),
-    );
-  }
-
-
-  Widget _firstPartCartText(){
-    return Center(
+      decoration: BoxDecoration(
+        color: AppColors.primaryBlueDark.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 1.height),
-          SvgPicture.asset(Images.microphone, height: 40,width: 40),
+          _firstPartCartText(),
           SizedBox(height: 2.height),
-          Text(AppStrings.podcastJourney, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 20)),
-          SizedBox(height: 2.height),
-          Text(AppStrings.meaningfulStories, style: Theme.of(context).textTheme.bodyMedium,textAlign: TextAlign.center,),
-
+          secondPartCartText(),
+          SizedBox(height: 2.5.height),
+          _buildStartMakingPodcastButton(context),
+          SizedBox(height: 0.5.height),
         ],
       ),
     );
   }
 
-  Widget _SecondPartCartText(){
+  Widget _firstPartCartText() {
+    return Center(
+      child: Column(
+        children: [
+          SizedBox(height: 1.height),
+          SvgPicture.asset(Images.microphone, height: 40, width: 40),
+          SizedBox(height: 2.height),
+          Text(
+            AppStrings.podcastJourney,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(fontSize: 20),
+          ),
+          SizedBox(height: 2.height),
+          Text(
+            AppStrings.meaningfulStories,
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget secondPartCartText() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(height: 2.height),
-        Text(AppStrings.buildOwnPodcast, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
-       BlocBuilder<PodcastCubit, PodcastState>(
-         builder: (context, state) {
-           return state.isLoading?
-            Center(child: CircularProgressIndicator(color:AppColors.bg_container.withOpacity(0.5) ,),)
-        : ListView.builder(
-             shrinkWrap: true,
-          padding: const EdgeInsets.only(top: 10),
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount:state.buildOwnPodcastList.length ,
-          itemBuilder: (context, index) {
-            return ListTile(
-              contentPadding: const EdgeInsets.all(0),
-              minTileHeight: 2.height,
-              minVerticalPadding: 10,
-              dense: true,
-              title: Text(state.buildOwnPodcastList[index].title,style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
-              subtitle: Text(state.buildOwnPodcastList[index].subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                 style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w400 )
-              ),
-              leading: Image.asset(state.buildOwnPodcastList[index].image,height: 40,width: 40,),
-              onTap: () {}
-            );
-          }
-           );
-         },
-       )
+        Text(
+          AppStrings.buildOwnPodcast,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        BlocBuilder<PodcastCubit, PodcastState>(
+          builder: (context, state) {
+            return state.isLoading
+                ? Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.bg_container.withOpacity(0.5),
+                  ),
+                )
+                : ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.only(top: 10),
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: state.buildOwnPodcastList.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      contentPadding: const EdgeInsets.all(0),
+                      minTileHeight: 2.height,
+                      minVerticalPadding: 10,
+                      dense: true,
+                      title: Text(
+                        state.buildOwnPodcastList[index].title,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: Text(
+                        state.buildOwnPodcastList[index].subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      leading: Image.asset(
+                        state.buildOwnPodcastList[index].image,
+                        height: 40,
+                        width: 40,
+                      ),
+                      onTap: () {},
+                    );
+                  },
+                );
+          },
+        ),
       ],
     );
   }
@@ -232,10 +275,11 @@ class _PodcastScreenState extends State<PodcastScreen> {
       height: 48,
       onPressed: () {
         context.read<PodcastCubit>().startMakingPodcast();
-        Navigator.pushNamed(context, RoutesName.MY_PODCAST_SCREEN,arguments: {"isStartFirstTime":true});
+        Navigator.pushReplacementNamed(
+          context,
+          RoutesName.MY_PODCAST_SCREEN,
+        );
       },
-      // isLoadingState: state.isLoading,
-      // enable: state.isFormValid,
       btnText: AppStrings.startMakingPodcast,
     );
   }
@@ -274,8 +318,4 @@ class _PodcastScreenState extends State<PodcastScreen> {
 
     return result ?? false;
   }
-
 }
-
-
-

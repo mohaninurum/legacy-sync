@@ -1,3 +1,5 @@
+import 'package:legacy_sync/features/livekit_connection/data/model/helper_typecast.dart';
+
 class InviteFriendResponse {
   final bool status;
   final String message;
@@ -13,7 +15,9 @@ class InviteFriendResponse {
     return InviteFriendResponse(
       status: json['status'] == true,
       message: (json['message'] ?? '').toString(),
-      invitedFriendId: (json['invited_friend_id'] ?? -1) as int,
+      invitedFriendId: HelperTypecast.asInt(json['invited_friend_id'], fallback: -1),
+
+      // invitedFriendId: (json['invited_friend_id'] ?? -1) as int,
     );
   }
 }
