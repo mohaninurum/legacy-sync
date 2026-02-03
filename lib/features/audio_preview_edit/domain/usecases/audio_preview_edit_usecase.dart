@@ -21,7 +21,14 @@ class AudioPreviewEditUseCase {
     );
   }
 
-  ResultFuture<PublishResponse> publishPodcast({required int podcastId}) {
-    return repository.publishPodcast(podcastId: podcastId);
+  ResultFuture<PublishResponse> publishPodcast({
+    required Map<String, String> fields,
+    required List<int>? thumbnailBytes,
+    required String thumbnailFileName,
+    required String thumbnailKey,}) {
+    return repository.publishPodcast(fields: fields,
+      thumbnailBytes: thumbnailBytes,
+      thumbnailFileName: thumbnailFileName,
+      thumbnailKey: thumbnailKey,);
   }
 }

@@ -11,6 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 import 'package:legacy_sync/config/db/shared_preferences.dart';
+import 'package:legacy_sync/core/images/images.dart';
 import 'package:legacy_sync/features/audio_preview_edit/domain/usecases/audio_preview_edit_usecase.dart';
 import 'package:legacy_sync/features/my_podcast/data/podcast_model.dart';
 import 'package:path_provider/path_provider.dart';
@@ -42,6 +43,8 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
   String? _waveLocalPath; // downloaded local path for waveform extraction
   CancelToken? _downloadCancelToken;
 
+  XFile? _pickedCoverFile;
+
   aw.PlayerController get playerController => _waveController;
 
   ja.AudioPlayer get audioController => _player;
@@ -50,15 +53,45 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
   // Public API
   // ---------------------------
 
+  void addCoverXFile(XFile file) {
+    _pickedCoverFile = file;
+    emit(state.copyWith(coverImage: file.path)); // for UI preview
+  }
+
+  Future<void> stopAndReset() async {
+    await _cleanupWaveTempFile();
+
+    await _posSub.cancel();
+    await _playerStateSub.cancel();
+    await _playbackEventSub.cancel();
+
+    // stop players (dispose NOT here)
+    try { await _player.stop(); await _player.seek(Duration.zero);} catch (_) {}
+    try { await _waveController.stopPlayer(); } catch (_) {}
+
+    // DON'T dispose controllers here
+    title.clear();
+    description.clear();
+
+    _pickedCoverFile = null;
+
+    emit(AudioPreviewEditState.initial());
+  }
+
   Future<void> setData({required PodcastModel data}) async {
     final audioPath =
         (data.audioPath ?? '').trim(); // must hold audio_url for drafts
 
     final img = (data.image ?? '').trim();
 
+    final safeCover = (img.startsWith("http://") || img.startsWith("https://"))
+        ? img
+        : Images.podcast_thumbnail;
+
+    print("Image Comes from draft section :: $img");
     emit(
       state.copyWith(
-        coverImage: img.isEmpty ? null : img,
+        coverImage: safeCover,
         title: data.title,
         description: data.description,
         isAudioInitial: false,
@@ -66,8 +99,8 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       ),
     );
 
-    title.text = data.title.toString();
-    description.text = data.description.toString();
+    title.text = (data.title ?? '').toString();
+    description.text = (data.description ?? '').toString();
 
     await loadAudio(audioPath);
     await prepareWaveform(audioPath);
@@ -98,7 +131,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       }
       await _player.load();
 
-      await _player.setLoopMode(ja.LoopMode.one);
+      // await _player.setLoopMode(ja.LoopMode.one);
 
       final duration = dur ?? _player.duration ?? Duration.zero;
 
@@ -178,9 +211,9 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     emit(state.copyWith(trimStart: start, trimEnd: end));
   }
 
-  void addCover(String path) {
-    emit(state.copyWith(coverImage: path));
-  }
+  // void addCover(String path) {
+  //   emit(state.copyWith(coverImage: path));
+  // }
 
   void bookmark() {
     emit(state.copyWith(isBookmark: !(state.isBookmark == true)));
@@ -324,18 +357,18 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
   // Draft upload thumbnail (kept from your code)
   // ---------------------------
 
-  Future<Uint8List?> _getAutoThumbnailBytes() async {
-    final coverPath = state.coverImage;
-    if (coverPath != null &&
-        coverPath.isNotEmpty &&
-        File(coverPath).existsSync()) {
-      final raw = await File(coverPath).readAsBytes();
-      return await _compressImageBytes(raw); // ✅ compress
-      // return await File(coverPath).readAsBytes();
+  Future<Uint8List> getDraftThumbnailBytes() async {
+    Uint8List bytes;
+
+    if (_pickedCoverFile != null) {
+      bytes = await _pickedCoverFile!.readAsBytes();
+    } else {
+      final data = await rootBundle.load('assets/images/podcast_thumbnail.png');
+      bytes = data.buffer.asUint8List();
     }
-    final data = await rootBundle.load('assets/images/podcast_thumbnail.png');
-    final raw = data.buffer.asUint8List();
-    return await _compressImageBytes(raw);
+
+    final compressed = await _compressImageBytes(bytes);
+    return compressed ?? bytes;
   }
 
   Future<Uint8List?> _compressImageBytes(Uint8List bytes) async {
@@ -349,7 +382,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     return Uint8List.fromList(result);
   }
 
-  Future<void> publishPodcast({required int podcastId}) async {
+  Future<void> publishPodcast({required int podcastId, required int durationSeconds}) async {
     emit(
       state.copyWith(
         publishStatus: PublishStatus.loading,
@@ -357,9 +390,24 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       ),
     );
 
+    final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+
+    final fields = <String, String>{
+      "user_id": userId.toString(),
+      "title": title.text.trim(),
+      "description": description.text.trim(),
+      "podcast_id": podcastId.toString(),
+      "duration_seconds": durationSeconds.toString()
+      // backend expects thumb_nail as file, so no need to send "" here
+    };
+
     try {
+      final thumbBytes = await getDraftThumbnailBytes();
       final res = await audioPreviewEditUseCase.publishPodcast(
-        podcastId: podcastId,
+        fields: fields,
+        thumbnailBytes: thumbBytes, // can be null if you want to allow no thumb
+        thumbnailFileName: "thumb_${DateTime.now().millisecondsSinceEpoch}.png",
+        thumbnailKey: "thumb_nail",
       );
 
       res.fold(
@@ -370,6 +418,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
               publishMessage: error.message ?? "Publish failed",
             ),
           );
+          _pickedCoverFile = null;
         },
         (data) {
           emit(
@@ -383,6 +432,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
                   (data.status == true ? "Published" : "Publish failed"),
             ),
           );
+          _pickedCoverFile = null;
         },
       );
     } catch (e) {
@@ -397,7 +447,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
   }
 
   Future<void> saveAsDraft({required String roomId}) async {
-    emit(state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.loading));
+    emit(state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.loading,draftMessage: null));
 
     final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
 
@@ -410,7 +460,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     };
 
     try {
-      final thumbBytes = await _getAutoThumbnailBytes();
+      final thumbBytes = await getDraftThumbnailBytes();
       final res = await audioPreviewEditUseCase.saveAsDraftMultipart(
         fields: fields,
         thumbnailBytes: thumbBytes, // can be null if you want to allow no thumb
@@ -419,15 +469,18 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       );
       res.fold(
         (error) {
-          emit(state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.failure));
+          emit(state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.failure,  draftMessage: error.message ?? "Save as draft failed", ));
         },
         (data) async {
-          emit(state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.success));
+          emit(state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.success, publishMessage:
+          data.message ??
+              (data.status == true ? "Saved" : "Draft failed"),));
+          _pickedCoverFile = null;
         },
       );
     } catch (e) {
       debugPrint("[AudioPreviewEdit] saveAsDraft error: $e");
-      emit(state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.failure));
+      emit(state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.failure, draftMessage: e.toString()));
     }
   }
 
@@ -480,7 +533,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     await _player.dispose();
     _waveController.dispose();
 
-    super.close();
+    return super.close();
   }
 
   // Future<void> audioWavesLoad(String path) async {

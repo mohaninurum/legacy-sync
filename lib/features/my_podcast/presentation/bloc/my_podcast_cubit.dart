@@ -111,9 +111,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
     Utils.showLoader();
     final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
     emit(state.copyWith(isLoading: true));
-    final mypodcast = await _myPodCastUseCase.getMyPodcast(userId);
+    final myPodCast = await _myPodCastUseCase.getMyPodcast(userId);
     String postType = 'Posted';
-    mypodcast.fold(
+    myPodCast.fold(
       (error) {
         print("APP EXCEPTION:: ${error.message}");
 
@@ -124,7 +124,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
           print("DATA ON SUCCESS:: ${result.data}");
           _allPodcasts.clear();
           result.data.forEach((element) {
-            if (element.isPosted) {
+            if (element.isPosted == 1) {
               postType = "Posted";
             } else {
               postType = "Draft";
@@ -132,22 +132,23 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
             _allPodcasts.add(
               PodcastModel(
                 podcastId: element.podcastId,
-                title: element.title,
-                subtitle: element.description ?? '',
-                relationship:
-                    element.members.isNotEmpty
+                title: (element.title == null || element.title!.trim().isEmpty)
+                    ? 'Untitled'
+                    : element.title!.trim(),
+                relationship: element.members.isNotEmpty
                         ? element.members[0].firstName
                         : "",
-                duration: Utils.secondsToHrOrMin(element.durationSeconds),
+                duration: Utils.secondsToHrOrMin(element.durationSeconds ?? 0),
                 image: element.thumbnail,
                 type: postType,
                 author: "",
                 audioPath: element.audioUrl,
                 listenedSec: element.listenedSeconds,
-                totalDurationSec: element.durationSeconds,
+                totalDurationSec: element.durationSeconds ?? 0,
                 description: element.description ?? '',
-                summary:
-                    "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. ",
+                isFavourite: element.isFavourite,
+                // subtitle: element.description ?? '',
+                // summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. ",
               ),
             );
           });
@@ -160,48 +161,72 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       },
     );
 
-    loadTab(tab);
-    fetchFavouritePodcastList();
+    await loadTab(tab);
+    await fetchFavouritePodcastList();
     Utils.closeLoader();
   }
 
   Future<void> fetchFavouritePodcastList() async {
     final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
-    final mypodcast = await _myPodCastUseCase.getFavouritePodcastList(userId);
-    mypodcast.fold(
+    final myPodCast = await _myPodCastUseCase.getFavouritePodcastList(userId);
+
+    myPodCast.fold(
       (error) {
         debugPrint("APP EXCEPTION:: ${error.message}");
-
         emit(state.copyWith(isLoading: false, error: error.message));
       },
-      (result) {
+      (result) async {
         if (result.data != null) {
           debugPrint("DATA ON SUCCESS::Favourite Podcast List ${result.data}");
-          _allPodcasts.removeWhere((p) => p.type == "Favorite");
-          result.data.forEach((element) {
+          _allPodcasts.removeWhere((p) => p.isFavourite == 1);
+          // result.data.forEach((element) {
+          //   final postType = element.isPosted == 1 ? "Posted" : "Draft";
+          //
+          //   _allPodcasts.add(
+          //     PodcastModel(
+          //       podcastId: element.podcastId,
+          //       title: element.title ?? "Untitled",
+          //       relationship: element.members.isNotEmpty
+          //               ? element.members[0].firstName
+          //               : "",
+          //       duration: Utils.secondsToHrOrMin(element.durationSeconds ?? 0),
+          //       image: element.thumbnailUrl,
+          //       type: postType,
+          //       author: "",
+          //       audioPath: element.audioUrl,
+          //       listenedSec: element.listenedSeconds,
+          //       totalDurationSec: element.durationSeconds ?? 0,
+          //       description: element.description ?? '',
+          //       isFavourite: 1,
+          //       // subtitle: element.podcastTopic ?? '',
+          //       // summary:
+          //       //     "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. ",
+          //     ),
+          //   );
+          // });
+          // loadTab(state.selectedTab);
+          for (final element in result.data) {
+            final postType = element.isPosted == 1 ? "Posted" : "Draft";
+
             _allPodcasts.add(
               PodcastModel(
                 podcastId: element.podcastId,
-                title: element.title,
-                subtitle: element.podcastTopic ?? '',
-                relationship:
-                    element.members.isNotEmpty
-                        ? element.members[0].firstName
-                        : "",
-                duration: Utils.secondsToHrOrMin(element.durationSeconds),
-                image: element.thumbnail,
-                type: "Favorite",
+                title: element.title ?? "Untitled",
+                relationship: element.members.isNotEmpty ? element.members[0].firstName : "",
+                duration: Utils.secondsToHrOrMin(element.durationSeconds ?? 0),
+                image: element.thumbnailUrl,
+                type: postType, // keep as Posted/Draft (fine)
                 author: "",
                 audioPath: element.audioUrl,
-                listenedSec: element.durationSeconds,
-                totalDurationSec: element.durationSeconds,
-                description: element.podcastTopic ?? '',
-                summary:
-                    "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. ",
+                listenedSec: element.listenedSeconds,
+                totalDurationSec: element.durationSeconds ?? 0,
+                description: element.description ?? '',
+                isFavourite: 1,
               ),
             );
-          });
-          emit(state.copyWith(isLoading: false));
+          }
+
+          await loadTab(state.selectedTab);
         } else {
           emit(
             state.copyWith(isLoading: false, error: "No profile data found"),
@@ -216,13 +241,23 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       debugPrint("all");
       emit(state.copyWith(podcasts: _allPodcasts, isLoading: false));
     } else {
-      emit(
-        state.copyWith(
-          selectedTab: tab,
-          podcasts: _allPodcasts.where((e) => e.type == tab).toList(),
-          isLoading: false,
-        ),
-      );
+      if(tab == "Favourite") {
+        emit(
+          state.copyWith(
+            selectedTab: tab,
+            podcasts: _allPodcasts.where((e) => e.isFavourite == 1).toList(),
+            isLoading: false,
+          ),
+        );
+      } else {
+        emit(
+          state.copyWith(
+            selectedTab: tab,
+            podcasts: _allPodcasts.where((e) => e.type == tab).toList(),
+            isLoading: false,
+          ),
+        );
+      }
     }
   }
 
@@ -254,7 +289,6 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
             PodcastModel(
               podcastId: element.podcastId,
               title: element.title,
-              subtitle: element.description ?? '',
               relationship:
                   element.members.isNotEmpty
                       ? element.members[0].firstName
@@ -267,8 +301,11 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
               listenedSec: element.listenedSeconds,
               totalDurationSec: element.durationSeconds,
               description: element.description ?? '',
-              summary:
-                  "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. ",
+              //TODO use from api
+              isFavourite: 0
+              // subtitle: element.description ?? '',
+              // summary:
+              //     "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. ",
             ),
           );
         });
@@ -284,38 +321,116 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
 
   Future<void> fetchRecentUserList() async {
     final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+
     emit(state.copyWith(isLoading: true));
-    final result = await _myPodCastUseCase.getRecentFriendList(userId);
-    result.fold(
-      (error) {
+    final res = await _myPodCastUseCase.getRecentFriendList(userId);
+
+    res.fold(
+          (error) {
         debugPrint("APP EXCEPTION:: ${error.message}");
         Utils.closeLoader();
         emit(state.copyWith(isLoading: false, error: error.message));
       },
-      (result) {
+          (result) {
         Utils.closeLoader();
-        debugPrint("DATA ON SUCCESS recent User List:: ${result.data.length}");
+
         recentUserList.clear();
-        result.data.forEach((element) {
+
+        for (final element in result.data) {
+          // created_at => "2026-02-02 09:06:20"
+          final DateTime dt = element.createdAt;
+
+          // call_type => "incoming" / "outgoing"
+          final callTypeStr = (element.callType).toLowerCase().trim();
+          final callType = callTypeStr == "incoming"
+              ? CallType.incoming
+              : CallType.outgoing;
+
+          final missed = element.missedCall == 1;
+
           recentUserList.add(
             RecentUserListModel(
-              relationship: element.firstName,
-              duration: Utils.formatDuration(
-                Duration(
-                  seconds: int.parse(element.durationSeconds.toString()),
-                ),
-              ),
+              podcastUserPK: element.podcastUserPK,
+              friendId: element.friendId,
+              livekitRoomId: element.livekitRoomId,
+              firstName: element.firstName,
+              lastName: element.lastName,
+
+              // keep raw date if you want
+              date: _toApiDate(dt),
+
+              // add these 2
+              dateTime: dt,
+              type: callType,
+              missed: missed,
+
+              // for now placeholder
               image: "assets/images/user_image1.png",
-              type: CallType.incoming,
-              author: "",
-              date: element.createdAt,
+
+              // optional: keep duration for showing 30:00 etc
+              durationSeconds: element.durationSeconds,
             ),
           );
-          print(element.firstName);
-        });
-        emit(state.copyWith(recentUserList: recentUserList, isLoading: false));
+        }
+
+        emit(state.copyWith(recentUserList: List<RecentUserListModel>.from(recentUserList), isLoading: false));
       },
     );
+  }
+
+  String _toApiDate(DateTime dt) {
+    String two(int v) => v.toString().padLeft(2, '0');
+    return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)}';
+  }
+
+
+  // Future<void> fetchRecentUserList() async {
+  //   final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+  //   emit(state.copyWith(isLoading: true));
+  //   final result = await _myPodCastUseCase.getRecentFriendList(userId);
+  //   result.fold(
+  //     (error) {
+  //       debugPrint("APP EXCEPTION:: ${error.message}");
+  //       Utils.closeLoader();
+  //       emit(state.copyWith(isLoading: false, error: error.message));
+  //     },
+  //     (result) {
+  //       Utils.closeLoader();
+  //       debugPrint("DATA ON SUCCESS recent User List:: ${result.data.length}");
+  //       recentUserList.clear();
+  //       result.data.forEach((element) {
+  //         recentUserList.add(
+  //           RecentUserListModel(
+  //             image: "assets/images/user_image1.png",
+  //             type: CallType.incoming,
+  //             firstName: element.firstName,
+  //             friendId: element.friendId,
+  //             lastName: element.lastName,
+  //             livekitRoomId: element.livekitRoomId,
+  //             missed: element.missedCall == 1,
+  //             podcastUserPK: element.podcastUserPK,
+  //             date: Utils.formatDuration(Duration(
+  //               seconds: element.createdAt
+  //             )),
+  //           ),
+  //         );
+  //         print(element.firstName);
+  //       });
+  //       emit(state.copyWith(recentUserList: recentUserList, isLoading: false));
+  //     },
+  //   );
+  // }
+
+  DateTime _parseApiDateTime(String s) {
+    // expects: "yyyy-MM-dd HH:mm:ss"
+    try {
+      final parts = s.split(' ');
+      final d = parts[0].split('-').map(int.parse).toList();
+      final t = parts[1].split(':').map(int.parse).toList();
+      return DateTime(d[0], d[1], d[2], t[0], t[1], t[2]);
+    } catch (_) {
+      return DateTime.now();
+    }
   }
 
   double listeningProgress(int listened, int total) {

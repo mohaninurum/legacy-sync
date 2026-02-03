@@ -129,6 +129,7 @@ class Images {
   static const String icon_4podcast = "assets/images/icon_4podcast.png";
   static const String continue_Listening1 = "assets/images/continue_listening1.png";
   static const String phone_incoming = "assets/icons/phone-incoming.svg";
+  static const String phone_outgoing = "assets/icons/phone_outgoing.svg";
   static const String user_plus = "assets/icons/user-plus.svg";
   static const String microphone = "assets/icons/microphone.svg";
   static const String mic = "assets/icons/mic.png";
@@ -145,7 +146,7 @@ class Images {
   static const String album_pic = "assets/images/album_pic.png";
   static const String next_play = "assets/images/next_play.svg";
   static const String sync = "assets/images/sync.svg";
-
+  static const String podcast_thumbnail = "assets/images/podcast_thumbnail.png";
   ///Icons
   static const String ic_google = "assets/icons/ic_google.png";
   static const String ic_speker_svg = "assets/icons/ic_speker_svg.svg";

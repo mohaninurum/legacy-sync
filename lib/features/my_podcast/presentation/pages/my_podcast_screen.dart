@@ -35,31 +35,54 @@ class MyPodcastScreen extends StatefulWidget {
 }
 
 class _MyPodcastScreenState extends State<MyPodcastScreen> {
-  // bool startMakingPodcast = false;
+  late final PlayPodcastCubit playPodCastCubit;
+  late final MyPodcastCubit myPodCastCubit;
+  late final ProfileCubit profileCubit;
 
   @override
   void initState() {
     super.initState();
-    // if (widget.isStartFirstTime == null) {
-    //   getStartMakingPodcast();
-    // }
+    playPodCastCubit = context.read<PlayPodcastCubit>();
+    myPodCastCubit = context.read<MyPodcastCubit>();
+    profileCubit = context.read<ProfileCubit>();
 
-    context.read<MyPodcastCubit>().fetchMyPodcastTab("Posted");
-    context.read<MyPodcastCubit>().allPodcastsContinueListening();
-    context.read<MyPodcastCubit>().fetchRecentUserList();
-    context.read<ProfileCubit>().loadProfile(context);
+    myPodCastCubit.fetchMyPodcastTab("Posted");
+    myPodCastCubit.allPodcastsContinueListening();
+    myPodCastCubit.fetchRecentUserList();
+    profileCubit.loadProfile(context);
   }
-
-  // getStartMakingPodcast() async {
-  //   startMakingPodcast = await AppPreference().getBool(
-  //     key: AppPreference.start_Making_Podcast,
-  //   );
-  // }
 
   @override
   void deactivate() {
     AudioOverlayManager.hide();
     super.deactivate();
+  }
+
+  String _formatDayLabel(DateTime dt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final thatDay = DateTime(dt.year, dt.month, dt.day);
+
+    final diff = today.difference(thatDay).inDays;
+
+    if (diff == 0) return "Today";
+    if (diff == 1) return "Yesterday";
+
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    return "${dt.day} ${months[dt.month - 1]} ${dt.year}";
   }
 
   @override
@@ -71,15 +94,14 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
       child: PodcastBg(
         isDark: true,
         child: BlocConsumer<MyPodcastCubit, MyPodcastState>(
-          listenWhen: (prev, curr) => prev.createRoomStatus != curr.createRoomStatus,
+          listenWhen:
+              (prev, curr) => prev.createRoomStatus != curr.createRoomStatus,
           listener: (context, state) {
             final messenger = ScaffoldMessenger.of(context);
-            if(state.error.isNotEmpty) {
+            if (state.error.isNotEmpty) {
               messenger
                 ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(content: Text(state.error)),
-                );
+                ..showSnackBar(SnackBar(content: Text(state.error)));
             }
 
             if (state.createRoomStatus == CreateRoomStatus.success) {
@@ -143,42 +165,39 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                   ),
                   const SizedBox(height: 10),
                   BlocBuilder<PlayPodcastCubit, PlayPodcastState>(
-                    builder: (context, state) {
-                      final cubit = context.read<PlayPodcastCubit>();
-                      return state.isOverlayManager
-                          ? Center(
+                    builder: (context, playState) {
+                      final isFavouriteTab = context.read<MyPodcastCubit>().state.selectedTab == "Favourite";
+                      final isFav = (playState.podcast?.isFavourite ?? 0) == 1;
+                      final showOverlay = playState.isOverlayManager && isFavouriteTab && isFav;
+                      if (!showOverlay) return const SizedBox.shrink();
+                          return Center(
                             child: Padding(
                               padding: const EdgeInsets.only(left: 30),
                               child: InkWell(
                                 onTap: () {
-                                  context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
+                                  playPodCastCubit.loadOverlayAudioManager(false);
                                   Navigator.pushNamed(
                                     context,
                                     RoutesName.PLAY_PODCAST,
                                     arguments: {
-                                      "podcast": state.podcast,
-                                      "audioPath":
-                                          "assets/images/test_audio.mp3",
-                                      "isOverlayManager":
-                                          state.isOverlayManager,
+                                      "podcast": playState.podcast,
+                                      "audioPath": playState.podcast?.audioPath ?? "",
+                                      "isOverlayManager": playState.isOverlayManager,
                                       "isContinue": false,
-                                      "isFavorite": true,
                                     },
                                   );
                                 },
                                 child: AudioOverlayWidget(
-                                  title: state.podcast?.title ?? '',
-                                  subtitle:
-                                      "Me • ${Utils.capitalize(state.podcast?.relationship)}",
-                                  imagePath: Images.album_pic,
-                                  isPlaying: state.isPlaying,
-                                  onPlayPause: cubit.playPause,
+                                  title: playState.podcast?.title ?? '',
+                                  subtitle: "Me • ${Utils.capitalize(playState.podcast?.relationship)}",
+                                  imagePath: playState.podcast!.image,
+                                  isPlaying: playState.isPlaying,
+                                  onPlayPause: playPodCastCubit.playPause,
                                   onNext: () {},
                                 ),
                               ),
                             ),
-                          )
-                          : const SizedBox.shrink();
+                          );
                     },
                   ),
                 ],
@@ -314,7 +333,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children:
-              ["Posted", "Draft", "Favorite"]
+              ["Posted", "Draft", "Favourite"]
                   .map(
                     (tab) => Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -348,6 +367,10 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                         selected: state.selectedTab == tab,
                         onSelected: (_) {
                           context.read<MyPodcastCubit>().loadTab(tab);
+                          // // ✅ hide overlay if leaving Favourite tab
+                          // if (tab != "Favourite") {
+                          //   context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
+                          // }
                         },
                       ),
                     ),
@@ -439,17 +462,11 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
     return InkWell(
       onTap: () async {
-        // FilePickerResult? result = await FilePicker.platform.pickFiles();
-        //
-        // if (result != null) {
-        //   File file = File(result.files.single.path!);
-        // } else {
-        //   // User canceled the picker
-        // }
         // AudioOverlayManager.hide();
-
         // context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
-        context.read<MyPodcastCubit>().loadPodcast(data);
+        // context.read<MyPodcastCubit>().loadPodcast(data);
+        context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
+
         print("audio url:${data.title}");
         print("audio url:${data.audioPath}");
         Navigator.pushNamed(
@@ -460,7 +477,6 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             "audioPath": data.audioPath,
             "isOverlayManager": false,
             "isContinue": true,
-            "isFavorite": false,
           },
         );
       },
@@ -580,15 +596,13 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
     return InkWell(
       onTap: () async {
-        context.read<PlayPodcastCubit>().loadOverlayAudioManager(false);
-        context.read<MyPodcastCubit>().loadPodcast(data);
         if (data.type == "Draft") {
           print("Podcast Id :: ${data.podcastId.toString()}");
           Navigator.pushNamed(
             context,
             RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
             arguments: {
-              "podcastModel":data,
+              "podcastModel": data,
               "is_draft": data.audioPath != null ? false : true,
               "participants": data.relationship,
               "roomId": '',
@@ -603,7 +617,6 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
               "audioPath": data.audioPath,
               "isOverlayManager": false,
               "isContinue": false,
-              "isFavorite": data.type == "Favorite" ? true : false,
             },
           ).then((value) {
             context.read<MyPodcastCubit>().allPodcastsContinueListening();
@@ -652,7 +665,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                   isContinueListening
                       ? const SizedBox.shrink()
                       : Text(
-                        data.subtitle,
+                        data.description,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -763,7 +776,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
           context,
           RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
           arguments: {
-            "podcastModel":data,
+            "podcastModel": data,
             "is_draft": data.audioPath != null ? false : true,
             "participants": data.relationship,
             "roomId": '',
@@ -849,6 +862,23 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
   }
 
   Widget recentPodcastUserList(RecentUserListModel data) {
+    final isMissed = data.missed;
+
+    // choose icon based on incoming/outgoing
+    final iconPath =
+        data.type == CallType.incoming
+            ? Images.phone_incoming
+            : Images.phone_outgoing;
+
+    // subtitle: Missed OR duration
+    final subtitle =
+        isMissed
+            ? "Missed"
+            : Utils.formatDuration(Duration(seconds: data.durationSeconds));
+
+    // right text: Today / Yesterday / date
+    final rightText = _formatDayLabel(data.dateTime);
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 10),
       child: Row(
@@ -876,13 +906,10 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 5),
                   child: Text(
-                    Utils.capitalize(data.relationship),
+                    Utils.capitalize(data.firstName),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontSize: 16,
-                      color:
-                          data.type == CallType.Missed
-                              ? AppColors.redColor
-                              : Colors.white,
+                      color: isMissed ? AppColors.redColor : Colors.white,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -890,16 +917,10 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                 const SizedBox(height: 5),
                 Row(
                   children: [
-                    SvgPicture.asset(
-                      Images.phone_incoming,
-                      height: 12,
-                      width: 12,
-                    ),
+                    SvgPicture.asset(iconPath, height: 12, width: 12),
                     const SizedBox(width: 5),
                     Text(
-                      data.type == CallType.Missed
-                          ? CallType.Missed.name
-                          : data.duration,
+                      subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -916,7 +937,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             height: 60,
             child: Center(
               child: Text(
-                Utils.timeAgo(DateTime.parse(data.date)),
+                rightText,
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),

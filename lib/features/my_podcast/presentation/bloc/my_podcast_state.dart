@@ -5,7 +5,6 @@ import '../../data/recent_user_list_model.dart';
 enum CallType {
   incoming,
   outgoing,
-  Missed
 }
 
 enum CreateRoomStatus { initial, loading, success, failure }

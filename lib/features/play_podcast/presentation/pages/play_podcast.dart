@@ -1,3 +1,4 @@
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,11 +8,8 @@ import 'package:legacy_sync/features/play_podcast/presentation/pages/widget/bg_a
 import '../../../../config/routes/routes_name.dart';
 import '../../../../core/colors/colors.dart';
 import '../../../../core/components/comman_components/app_button.dart';
-import '../../../../core/components/comman_components/podcast_bg.dart';
 import '../../../../core/images/images.dart';
 import '../../../../core/utils/utils.dart';
-import '../../../audio_overlay_manager/audio_overlay_manager.dart';
-import '../../../audio_overlay_manager/widgets/audio_overlay_widget.dart';
 import '../../../my_podcast/data/podcast_model.dart';
 import '../../../my_podcast/presentation/bloc/my_podcast_cubit.dart';
 import '../bloc/play_podcast_cubit.dart';
@@ -22,10 +20,14 @@ class PlayPodcast extends StatefulWidget {
   final String audioPath;
   final bool isOverlayManager;
   final bool isContinue;
-  final bool isFavorite;
 
-  const PlayPodcast({Key? key, required this.podcast, required this.audioPath,required this.isOverlayManager,required this.isContinue,required this.isFavorite})
-    : super(key: key);
+  const PlayPodcast({
+    super.key,
+    required this.podcast,
+    required this.audioPath,
+    required this.isOverlayManager,
+    required this.isContinue,
+  });
 
   @override
   State<PlayPodcast> createState() => _PlayPodcastState();
@@ -33,24 +35,43 @@ class PlayPodcast extends StatefulWidget {
 
 class _PlayPodcastState extends State<PlayPodcast> {
   ScrollController scrollController = ScrollController();
+  late final PlayPodcastCubit _cubit;
+  late final MyPodcastCubit _myPodcastCubit;
+
+  Future<void> _handleExit(PlayPodcastState state) async {
+    final isFav = (widget.podcast.isFavourite == 1);
+    if (isFav && state.isPlaying) {
+      _cubit.loadOverlayAudioManager(true);
+    } else {
+      if (state.isPlaying) {
+        _cubit.playPause();
+      }
+      _cubit.saveListenedPodcastTime(widget.podcast.podcastId ?? 0);
+    }
+
+    // then close the screen
+    if (mounted) {
+      Navigator.pop(context);
+    }
+  }
 
   @override
   void initState() {
-    if(widget.isOverlayManager){
-
-    }else{
-      context.read<PlayPodcastCubit>().loadAudio(widget.audioPath,widget.podcast,widget.isContinue);
+    _cubit = context.read<PlayPodcastCubit>();
+    _myPodcastCubit = context.read<MyPodcastCubit>();
+    if (widget.isOverlayManager) {
+    } else {
+      _cubit.loadAudio(widget.audioPath, widget.podcast, widget.isContinue);
     }
-
 
     scrollController.addListener(() {
       print(scrollController.position.pixels);
       if (scrollController.position.pixels >= 50) {
         print("isScrollController::80");
-        context.read<PlayPodcastCubit>().isScrollController(true);
+        _cubit.isScrollController(true);
       } else {
         print("isScrollController::else");
-        context.read<PlayPodcastCubit>().isScrollController(false);
+        _cubit.isScrollController(false);
       }
     });
 
@@ -59,64 +80,90 @@ class _PlayPodcastState extends State<PlayPodcast> {
 
   @override
   void dispose() {
-    context.read<PlayPodcastCubit>().saveListenedPodcastTime(widget.podcast.totalDurationSec,);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<PlayPodcastCubit, PlayPodcastState>(
+    return BlocConsumer<PlayPodcastCubit, PlayPodcastState>(
+      listenWhen:
+          (prev, curr) =>
+              prev.markFavStatus != curr.markFavStatus ||
+              prev.markUnFavStatus != curr.markUnFavStatus,
+      listener: (context, state) {
+        if (state.markFavStatus == MarkFavStatus.success) {
+          BotToast.showText(text: state.markFavMessage ?? "Added To Favourites");
+          _myPodcastCubit.fetchFavouritePodcastList();
+        }
+        if (state.markUnFavStatus == MarkUnFavStatus.success) {
+          BotToast.showText(text: state.markUnFavMessage ??  "Removed from favourites");
+          _myPodcastCubit.fetchFavouritePodcastList();
+        }
+        if (state.markFavStatus == MarkFavStatus.failure) {
+          BotToast.showText(text: state.markFavMessage ?? "Something went wrong");
+        }
+        if (state.markUnFavStatus == MarkUnFavStatus.failure) {
+          BotToast.showText(text: state.markUnFavMessage ??  "Something went wrong");
+        }
+      },
       builder: (context, state) {
         final cubit = context.read<PlayPodcastCubit>();
-        return BgAlbumWidget(
-          isImage: true,
-          url: Images.album_pic,
-          isDark: state.isScroll,
-          child: Scaffold(
-            backgroundColor:
-                state.isScroll
-                    ? AppColors.primaryColorDull
-                    : Colors.transparent,
-            body: SafeArea(
-              child: SingleChildScrollView(
-                controller: scrollController,
-                child: Column(
-                  children: [
-                    _topHeader(state, cubit),
-                    SizedBox(height: 2.height),
-                    state.isScroll
-                        ? albumCover(Images.album_pic)
-                        : const SizedBox.shrink(),
-                    state.isScroll
-                        ? SizedBox(height: 3.height)
-                        : SizedBox(height: 38.height),
-                    albumMetaData(widget.podcast),
-                    SizedBox(height: 1.height),
-                    AudioPlayController(state: state, cubit: cubit),
-                    SizedBox(height: 3.5.height),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 7),
-                      child: _buildCardInfo(
-                        "Description",
-                        widget.podcast.description ?? "",
+        return PopScope(
+          canPop: false,
+          onPopInvoked: (didPop) async {
+            if (didPop) return; // already popped by navigator
+            await _handleExit(state);
+          },
+          child: BgAlbumWidget(
+            isImage: true,
+            url: state.podcast!.image,
+            isDark: state.isScroll,
+            child: Scaffold(
+              backgroundColor:
+                  state.isScroll
+                      ? AppColors.primaryColorDull
+                      : Colors.transparent,
+              body: SafeArea(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: Column(
+                    children: [
+                      _topHeader(state, cubit),
+                      SizedBox(height: 2.height),
+                      state.isScroll
+                          ? albumCover(state.podcast?.image)
+                          : const SizedBox.shrink(),
+                      state.isScroll
+                          ? SizedBox(height: 3.height)
+                          : SizedBox(height: 48.height),
+                      albumMetaData(widget.podcast),
+                      SizedBox(height: 1.height),
+                      AudioPlayController(state: state, cubit: cubit),
+                      SizedBox(height: 3.5.height),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 7),
+                        child: _buildCardInfo(
+                          "Description",
+                          widget.podcast.description ?? "",
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 3.height),
-                    // Padding(
-                    //   padding: const EdgeInsets.symmetric(horizontal: 7),
-                    //   child: _buildCardInfo("Summary", widget.podcast.summary ?? ""),
-                    // ),
-                    // SizedBox(height: 3.height),
-                    // Padding(
-                    //   padding: const EdgeInsets.symmetric(horizontal: 7),
-                    //   child: autoGeneratedTranscript(widget.podcast.summary ?? ""),
-                    // ),
-                    // SizedBox(height: 3.height),
-                  ],
+                      SizedBox(height: 3.height),
+                      // Padding(
+                      //   padding: const EdgeInsets.symmetric(horizontal: 7),
+                      //   child: _buildCardInfo("Summary", widget.podcast.summary ?? ""),
+                      // ),
+                      // SizedBox(height: 3.height),
+                      // Padding(
+                      //   padding: const EdgeInsets.symmetric(horizontal: 7),
+                      //   child: autoGeneratedTranscript(widget.podcast.summary ?? ""),
+                      // ),
+                      // SizedBox(height: 3.height),
+                    ],
+                  ),
                 ),
               ),
+              // bottomNavigationBar: _bottomControls(),
             ),
-            // bottomNavigationBar: _bottomControls(),
           ),
         );
       },
@@ -127,32 +174,8 @@ class _PlayPodcastState extends State<PlayPodcast> {
     Widget buildBackButton() {
       return AppButton(
         padding: const EdgeInsets.all(0),
-        onPressed: () {
-          Navigator.pop(context);
-          if (state.isPlaying&&widget.isFavorite) {
-            // cubit.playPause();
-            // cubit.saveListenedPodcastTime(widget.podcast.podcastId ?? 0);
-          cubit.loadOverlayAudioManager(true);
-          //   AudioOverlayManager.show(
-          //     context: context,
-          //     title: widget.podcast.title ?? '',
-          //     subtitle:
-          //     "Me • ${Utils.capitalize(widget.podcast.relationship)}",
-          //     imagePath: Images.album_pic,
-          //     onPlayPause: () {
-          //       cubit.playPauseOvalayManger();
-          //     },
-          //     onNext: () {
-          //
-          //     },
-          //   );
-          }else{
-          if(state.isPlaying){
-            cubit.playPause();
-          }
-
-            cubit.saveListenedPodcastTime(widget.podcast.podcastId ?? 0);
-          }
+        onPressed: () async {
+          await _handleExit(state);
         },
         child: const Icon(
           Icons.keyboard_arrow_down_rounded,
@@ -181,7 +204,15 @@ class _PlayPodcastState extends State<PlayPodcast> {
             hoverColor: Colors.transparent,
             splashColor: Colors.transparent,
             onTap: () {
-              context.read<PlayPodcastCubit>().bookmark();
+              if (state.isBookmark) {
+                final id = widget.podcast.podcastId ?? 0;
+                if (id == 0) return; // safety
+                _cubit.markUnFavourite(podcastId: id);
+              } else {
+                final id = widget.podcast.podcastId ?? 0;
+                if (id == 0) return; // safety
+                _cubit.markFavourite(podcastId: id);
+              }
             },
             child: Container(
               alignment: Alignment.center,

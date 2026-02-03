@@ -46,6 +46,11 @@ class ApiURL {
   static const String podcast_Save_Listened_PodcastTime = '$baseURL/podcast/save-listened-podcast-time';
   static const String podcast__Listened_list = '$baseURL/podcast/continue-listening-podcast-list/';
   static const String recent_podcast_friend_list = '$baseURL/podcast/recent-podcast-friend-list/';
+  static const String mark_podcast_favourite = '$baseURL/favourite-podcast';
+  static const String mark_podcast_un_favourite = '$baseURL/favourite-podcast/remove_as_favourite';
+
+
+
   static const String favourite_podcast_list = '$baseURL/favourite-podcast/';
   static const String create_new_podcast = '$baseURL/podcast/create-podcast';
 

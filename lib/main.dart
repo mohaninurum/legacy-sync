@@ -190,7 +190,7 @@ void main() async {
         BlocProvider<PodcastCubit>(create: (context) => PodcastCubit()),
         BlocProvider<MyPodcastCubit>(create: (context) => MyPodcastCubit()),
         BlocProvider<PodCastRecordingCubit>(create: (context) => PodCastRecordingCubit()),
-        BlocProvider<AudioPreviewEditCubit>(create: (context) => AudioPreviewEditCubit()),
+        // BlocProvider<AudioPreviewEditCubit>(create: (context) => AudioPreviewEditCubit()),
         BlocProvider<PlayPodcastCubit>(create: (context) => PlayPodcastCubit()),
         BlocProvider<CreateNewPodcastCubit>(create: (context) => CreateNewPodcastCubit()),
         BlocProvider<LiveKitConnectionCubit>(create: (context) => LiveKitConnectionCubit()),

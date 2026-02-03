@@ -49,6 +49,7 @@ class AudioPreviewEditScreen extends StatefulWidget {
 class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
   bool _picking = false;
   bool _hasNavigated = false;
+  late final AudioPreviewEditCubit cubitInstance;
 
   void _safeExitAfterSuccess() {
     if (!mounted || _hasNavigated) return;
@@ -83,10 +84,17 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
 
   @override
   void initState() {
+    cubitInstance = context.read<AudioPreviewEditCubit>();
     if (widget.podcastModel != null) {
-      context.read<AudioPreviewEditCubit>().setData(data: widget.podcastModel!);
+      cubitInstance.setData(data: widget.podcastModel!);
     }
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    // cubitInstance.stopAndReset();
+    super.dispose();
   }
 
   @override
@@ -101,7 +109,6 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
           final allow = await _confirmExitIfNeeded();
           if (allow == true && context.mounted) {
             _safeExitAfterSuccess();
-
             // Navigator.pop(context);
           }
         },
@@ -116,8 +123,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
               listener: (context, state) {
                 if (state.saveAsDraftStatus == SaveAsDraftStatus.success) {
                   BotToast.showText(text: "Draft saved successfully.");
-                  // context.read<MyPodcastCubit>().fetchMyPodcastTab("Draft");
-                  _safeExitAfterSuccess(); // ✅
+                  _safeExitAfterSuccess();
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (!context.mounted) return;
                     context.read<MyPodcastCubit>().fetchMyPodcastTab("Draft");
@@ -126,15 +132,14 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                 } else if (state.saveAsDraftStatus ==
                     SaveAsDraftStatus.failure) {
                   BotToast.showText(
-                    text: "Failed to save draft. Please try again.",
+                    text: state.draftMessage ?? "Failed to save draft. Please try again.",
                   );
                 }
 
                 // Publish
                 if (state.publishStatus == PublishStatus.success) {
                   BotToast.showText(text: "Podcast published successfully.");
-                  // context.read<MyPodcastCubit>().fetchMyPodcastTab("Posted");
-                  _safeExitAfterSuccess(); // ✅
+                  _safeExitAfterSuccess();
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (!context.mounted) return;
                     context.read<MyPodcastCubit>().fetchMyPodcastTab("Posted");
@@ -142,7 +147,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                   // Navigator.pop(context);
                 } else if (state.publishStatus == PublishStatus.failure) {
                   BotToast.showText(
-                    text: "Failed to publish. Please try again.",
+                    text: state.publishMessage ?? "Failed to publish",
                   );
                 }
               },
@@ -400,7 +405,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
     Widget buildBackButton() {
       return AppButton(
         padding: const EdgeInsets.all(0),
-        onPressed: () {
+        onPressed: () async {
           Navigator.pop(context);
         },
         child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 23),
@@ -443,6 +448,8 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
   Widget _bottomControls() {
     return BlocBuilder<AudioPreviewEditCubit, AudioPreviewEditState>(
       builder: (context, state) {
+        final hasTitle = (state.title ?? '').trim().isNotEmpty;
+        final hasDesc  = (state.description ?? '').trim().isNotEmpty;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
@@ -513,12 +520,15 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                       );
                       return;
                     } else if (widget.podcastModel != null) {
-                      print("Comming :: ${widget.podcastModel!.podcastId}");
-                      await context
-                          .read<AudioPreviewEditCubit>()
-                          .publishPodcast(
-                            podcastId: widget.podcastModel!.podcastId,
-                          );
+                      if (hasTitle && hasDesc) {
+                        print("Duration Second sends to publish podcast api : ${state.duration.inSeconds}");
+                        await context.read<AudioPreviewEditCubit>().publishPodcast(
+                          podcastId: widget.podcastModel!.podcastId,
+                          durationSeconds: state.duration.inSeconds,
+                        );
+                      } else {
+                        BotToast.showText(text: "Please fill title, description and cover.");
+                      }
                     } else {
                       BotToast.showText(text: "PodcastId Is Missing");
                     }
@@ -544,7 +554,8 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
             source: ImageSource.gallery,
           );
           if (value != null) {
-            cubit.addCover(value.path);
+            cubit.addCoverXFile(value);
+            // cubit.addCover(value.path);
           }
         } finally {
           _picking = false;
@@ -565,14 +576,9 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                 state.coverImage != null
                     ? ClipRRect(
                       borderRadius: BorderRadius.circular(24),
-                      child: _coverWidget(state.coverImage),
+                      child: _coverWidget(state.coverImage!),
                     )
-                    : SvgPicture.asset(
-                      Images.microphone,
-                      color: AppColors.DartGrey,
-                      height: 55,
-                      width: 55,
-                    ),
+                    : const SizedBox.shrink()
           ),
           const SizedBox(height: 15),
           Text(
@@ -588,44 +594,23 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
     );
   }
 
-  Widget _coverWidget(String? cover) {
-    final v = (cover ?? '').trim();
-    final isNetwork = v.startsWith('http://') || v.startsWith('https://');
-    final isFileUri = v.startsWith('file://');
+  Widget _coverWidget(String cover) {
+    final v = cover.trim();
 
-    if (v.isEmpty) {
-      return SvgPicture.asset(
-        Images.microphone,
-        color: AppColors.DartGrey,
-        height: 55,
-        width: 55,
-      );
-    }
-
-    if (isFileUri) {
-      return Image.file(
-        File(Uri.parse(v).toFilePath()),
-        fit: BoxFit.cover,
-        height: 160,
-        width: 160,
-        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
-      );
-    } else if (isNetwork) {
+    if (v.startsWith('http://') || v.startsWith('https://')) {
       return Image.network(
-        v,
-        fit: BoxFit.cover,
-        height: 160,
-        width: 160,
-        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+          v,
+          fit: BoxFit.cover,
+          height: 160,
+          width: 160,
+          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
       );
     }
-    else {
-      return SvgPicture.asset(
-        Images.microphone,
-        color: AppColors.DartGrey,
-        height: 55,
-        width: 55,
-      );
-    }
+
+    // normal local file path
+    return Image.file(File(v),
+        fit: BoxFit.cover, height: 160, width: 160,
+        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image));
   }
+
 }

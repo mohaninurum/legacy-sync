@@ -125,6 +125,11 @@ PODS:
     - Flutter
   - flutter_foreground_task (0.0.1):
     - Flutter
+  - flutter_image_compress_common (1.0.0):
+    - Flutter
+    - Mantle
+    - SDWebImage
+    - SDWebImageWebPCoder
   - flutter_sound (9.30.0):
     - Flutter
     - flutter_sound_core (= 9.30.0)
@@ -190,10 +195,25 @@ PODS:
   - just_audio (0.0.1):
     - Flutter
     - FlutterMacOS
+  - libwebp (1.5.0):
+    - libwebp/demux (= 1.5.0)
+    - libwebp/mux (= 1.5.0)
+    - libwebp/sharpyuv (= 1.5.0)
+    - libwebp/webp (= 1.5.0)
+  - libwebp/demux (1.5.0):
+    - libwebp/webp
+  - libwebp/mux (1.5.0):
+    - libwebp/demux
+  - libwebp/sharpyuv (1.5.0)
+  - libwebp/webp (1.5.0):
+    - libwebp/sharpyuv
   - livekit_client (2.6.1):
     - Flutter
     - flutter_webrtc
     - WebRTC-SDK (= 137.7151.04)
+  - Mantle (2.2.0):
+    - Mantle/extobjc (= 2.2.0)
+  - Mantle/extobjc (2.2.0)
   - nanopb (3.30910.0):
     - nanopb/decode (= 3.30910.0)
     - nanopb/encode (= 3.30910.0)
@@ -209,6 +229,9 @@ PODS:
   - SDWebImage (5.21.5):
     - SDWebImage/Core (= 5.21.5)
   - SDWebImage/Core (5.21.5)
+  - SDWebImageWebPCoder (0.15.0):
+    - libwebp (~> 1.0)
+    - SDWebImage/Core (~> 5.17)
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -247,6 +270,7 @@ DEPENDENCIES:
   - flutter_callkit_incoming (from `.symlinks/plugins/flutter_callkit_incoming/ios`)
   - flutter_email_sender (from `.symlinks/plugins/flutter_email_sender/ios`)
   - flutter_foreground_task (from `.symlinks/plugins/flutter_foreground_task/ios`)
+  - flutter_image_compress_common (from `.symlinks/plugins/flutter_image_compress_common/ios`)
   - flutter_sound (from `.symlinks/plugins/flutter_sound/ios`)
   - flutter_tts (from `.symlinks/plugins/flutter_tts/ios`)
   - flutter_webrtc (from `.symlinks/plugins/flutter_webrtc/ios`)
@@ -290,10 +314,13 @@ SPEC REPOS:
     - GoogleUtilities
     - GTMAppAuth
     - GTMSessionFetcher
+    - libwebp
+    - Mantle
     - nanopb
     - PromisesObjC
     - RecaptchaInterop
     - SDWebImage
+    - SDWebImageWebPCoder
     - SwiftyGif
     - WebRTC-SDK
 
@@ -328,6 +355,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_email_sender/ios"
   flutter_foreground_task:
     :path: ".symlinks/plugins/flutter_foreground_task/ios"
+  flutter_image_compress_common:
+    :path: ".symlinks/plugins/flutter_image_compress_common/ios"
   flutter_sound:
     :path: ".symlinks/plugins/flutter_sound/ios"
   flutter_tts:
@@ -397,6 +426,7 @@ SPEC CHECKSUMS:
   flutter_callkit_incoming: cb8138af67cda6dd981f7101a5d709003af21502
   flutter_email_sender: aa1e9772696691d02cd91fea829856c11efb8e58
   flutter_foreground_task: a159d2c2173b33699ddb3e6c2a067045d7cebb89
+  flutter_image_compress_common: 1697a328fd72bfb335507c6bca1a65fa5ad87df1
   flutter_sound: d95194f6476c9ad211d22b3a414d852c12c7ca44
   flutter_sound_core: 7f2626d249d3a57bfa6da892ef7e22d234482c1a
   flutter_tts: 35ac3c7d42412733e795ea96ad2d7e05d0a75113
@@ -411,13 +441,16 @@ SPEC CHECKSUMS:
   image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   in_app_review: 7dd1ea365263f834b8464673f9df72c80c17c937
   just_audio: 4e391f57b79cad2b0674030a00453ca5ce817eed
+  libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   livekit_client: ee5503a79b5e1a5cbf6bbf741b4625d2531c8bb9
+  Mantle: c5aa8794a29a022dfbbfc9799af95f477a69b62d
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   SDWebImage: e9c98383c7572d713c1a0d7dd2783b10599b9838
+  SDWebImageWebPCoder: 0e06e365080397465cc73a7a9b472d8a3bd0f377
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418
   speech_to_text: 3b313d98516d3d0406cea424782ec25470c59d19

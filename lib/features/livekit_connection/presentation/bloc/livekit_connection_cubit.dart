@@ -931,7 +931,7 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
   }
 
   Future<void> endCall() async {
-    if(state.recordingStatus != LiveKitRecordingStatus.idle){
+    if(state.recordingStatus == LiveKitRecordingStatus.recording){
       await stopRecording();
     }
     if (state.isHost) {

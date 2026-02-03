@@ -33,14 +33,25 @@ class AudioPreviewEditRepoImpl extends AudioPreviewEditRepositories {
       );
     } on AppException catch (e) {
       return Left(e);
+    } catch (e) {
+      return Left(FetchDataException(e.toString()));
     }
   }
 
   @override
-  ResultFuture<PublishResponse> publishPodcast({required int podcastId}) async {
+  ResultFuture<PublishResponse> publishPodcast({
+    required Map<String, String> fields,
+    required List<int>? thumbnailBytes,
+    required String thumbnailFileName,
+    required String thumbnailKey,}) async {
     try {
-      final res = await _apiServices.getGetApiResponse(
-        "${ApiURL.postPodcast}/${podcastId.toString()}",
+      final res = await _apiServices.getPostUploadMultiPartApiResponse(
+          ApiURL.postPodcast,
+        fields,
+        thumbnailBytes,
+        thumbnailFileName,
+        thumbnailKey,
+        "POST",
       );
 
       return res.fold(

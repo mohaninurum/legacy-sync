@@ -30,7 +30,7 @@ class BgAlbumWidget extends StatelessWidget {
               height: 64.height,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage(url),
+                  image: NetworkImage(url),
                   fit: BoxFit.cover,
                 ),
               ),

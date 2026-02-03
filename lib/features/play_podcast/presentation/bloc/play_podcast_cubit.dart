@@ -1,4 +1,7 @@
+import 'package:bot_toast/bot_toast.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:legacy_sync/features/my_podcast/presentation/bloc/my_podcast_cubit.dart';
 import 'package:legacy_sync/features/play_podcast/presentation/bloc/play_podcast_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -10,7 +13,7 @@ import '../../domain/usecase_play_podcast/usecase_play_podcast.dart';
 
 class PlayPodcastCubit extends Cubit<PlayPodcastState> {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  UsecasePlayPodcast usecasePlayPodcast = UsecasePlayPodcast();
+  UseCasePlayPodcast useCasePlayPodcast = UseCasePlayPodcast();
   PlayPodcastCubit() : super(PlayPodcastState.initial()) {
     _init();
   }
@@ -41,7 +44,8 @@ class PlayPodcastCubit extends Cubit<PlayPodcastState> {
   Future<void> loadAudio(String url, PodcastModel podcast,isContinue) async {
     Utils.showLoader();
     try {
-      emit(state.copyWith(podcast: podcast));
+      emit(state.copyWith(podcast: podcast,
+      isBookmark: podcast.isFavourite == 1));
       await _audioPlayer.setUrl(url);
       if (isContinue) {
         _audioPlayer.seek(Duration(seconds: podcast.listenedSec));
@@ -127,14 +131,6 @@ class PlayPodcastCubit extends Cubit<PlayPodcastState> {
     seek(newPosition > maxDuration ? maxDuration : newPosition);
   }
 
-  void bookmark() {
-    if (state.isBookmark == true) {
-      emit(state.copyWith(isBookmark: false));
-    } else {
-      emit(state.copyWith(isBookmark: true));
-    }
-  }
-
   void isScrollController(bool isScroll) {
     emit(state.copyWith(isScroll: isScroll));
   }
@@ -145,6 +141,46 @@ class PlayPodcastCubit extends Cubit<PlayPodcastState> {
 
   /// continue listing post  //podcast/save-listened-podcast-time
 
+  Future<void> markFavourite({required int podcastId}) async {
+    emit(state.copyWith(markFavStatus: MarkFavStatus.loading));
+    try {
+      final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+      Map<String, dynamic> body = {
+        "user_id": userId,
+        "podcast_id": podcastId,
+      };
+      final response = await useCasePlayPodcast.markFavouritePodcast(body);
+      response.fold((error) {
+        emit(state.copyWith(markFavMessage: error.message ?? "Failed to add favourites", markFavStatus: MarkFavStatus.failure));
+      }, (result) {
+        emit(state.copyWith(isBookmark: true, markFavStatus: MarkFavStatus.success, markFavMessage: result.message));
+      },);
+    } catch (e) {
+      debugPrint("Error :: ${e.toString()}");
+      emit(state.copyWith(markFavMessage: e.toString(), markFavStatus: MarkFavStatus.initial));
+    }
+  }
+
+  Future<void> markUnFavourite({required int podcastId}) async {
+    emit(state.copyWith(markUnFavStatus: MarkUnFavStatus.loading));
+    try {
+      final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+      Map<String, dynamic> body = {
+        "user_id": userId,
+        "podcast_id": podcastId,
+      };
+      final response = await useCasePlayPodcast.markUnFavouritePodcast(body);
+      response.fold((error) {
+        emit(state.copyWith(markUnFavMessage: error.message, markUnFavStatus: MarkUnFavStatus.failure));
+      }, (result) {
+        emit(state.copyWith(markUnFavMessage: result.message, isBookmark: false, markUnFavStatus: MarkUnFavStatus.success));
+      },);
+    } catch (e) {
+      debugPrint("Error :: ${e.toString()}");
+      emit(state.copyWith(markUnFavMessage: e.toString(), markUnFavStatus: MarkUnFavStatus.initial));
+    }
+  }
+
   Future<void> saveListenedPodcastTime(
     int podcastId,
   ) async {
@@ -154,12 +190,9 @@ class PlayPodcastCubit extends Cubit<PlayPodcastState> {
       "podcast_id": podcastId,
       "listened_seconds": state.position.inSeconds,
     };
-    print("save listned Second$body");
     if(state.duration.inSeconds>=8){
-      print("save listned Second$body");
-
-      final mypodcast = await usecasePlayPodcast.saveListenedPodcastTime(body);
-      mypodcast.fold(
+      final myPodCast = await useCasePlayPodcast.saveListenedPodcastTime(body);
+      myPodCast.fold(
         (error) {
           print("APP EXCEPTION:: ${error.message}");
           Utils.closeLoader();
@@ -168,11 +201,7 @@ class PlayPodcastCubit extends Cubit<PlayPodcastState> {
           Utils.closeLoader();
         },
       );
-    }else{
-
     }
-
-
   }
 
   @override

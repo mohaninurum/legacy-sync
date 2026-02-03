@@ -10,5 +10,9 @@ abstract class AudioPreviewEditRepositories {
     required String thumbnailKey,
   });
 
-  ResultFuture<PublishResponse> publishPodcast({required int podcastId});
+  ResultFuture<PublishResponse> publishPodcast({
+    required Map<String, String> fields,
+    required List<int>? thumbnailBytes,
+    required String thumbnailFileName,
+    required String thumbnailKey,});
 }

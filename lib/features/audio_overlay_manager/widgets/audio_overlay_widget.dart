@@ -76,12 +76,19 @@ class AudioOverlayWidget extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: Image.asset(
+                      child: Image.network(
                         imagePath,
-                        width: 40,
-                        height: 40,
                         fit: BoxFit.cover,
+                        height: 40,
+                        width: 40,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
                       ),
+                      // Image.asset(
+                      //   imagePath,
+                      //   width: 40,
+                      //   height: 40,
+                      //   fit: BoxFit.cover,
+                      // ),
                     ),
                     const SizedBox(width: 14),
 

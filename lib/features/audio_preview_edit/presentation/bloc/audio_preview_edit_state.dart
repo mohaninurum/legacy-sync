@@ -16,6 +16,7 @@ class AudioPreviewEditState {
   final String? title;
   final String? description;
   final SaveAsDraftStatus saveAsDraftStatus;
+  final String? draftMessage;
   final bool isBuffering;
   final bool isWaveLoading;
   final double waveDownloadProgress;
@@ -41,6 +42,7 @@ class AudioPreviewEditState {
     required this.title,
     required this.description,
     this.saveAsDraftStatus = SaveAsDraftStatus.initial,
+    this.draftMessage,
     this.isBuffering = false,
     this.isWaveLoading = false,
     this.waveDownloadProgress = 0.0,
@@ -64,6 +66,7 @@ class AudioPreviewEditState {
     title:null,
     description:null,
     saveAsDraftStatus: SaveAsDraftStatus.initial,
+    draftMessage: null,
     isBuffering: false,
     isWaveLoading: false,
     waveDownloadProgress: 0.0,
@@ -87,6 +90,7 @@ class AudioPreviewEditState {
     String? title,
     String? description,
     SaveAsDraftStatus? saveAsDraftStatus,
+    String? draftMessage,
     bool? isBuffering,
     bool? isWaveLoading,
     double? waveDownloadProgress,
@@ -110,6 +114,7 @@ class AudioPreviewEditState {
       title: title ?? this.title,
       description: description ?? this.description,
       saveAsDraftStatus: saveAsDraftStatus ?? this.saveAsDraftStatus,
+      draftMessage: draftMessage ?? this.draftMessage,
       isBuffering: isBuffering ?? this.isBuffering,
       isWaveLoading: isWaveLoading ?? this.isWaveLoading,
       waveDownloadProgress: waveDownloadProgress ?? this.waveDownloadProgress,

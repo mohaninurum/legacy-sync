@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/features/analysis/presentation/pages/analysis_screen.dart';
+import 'package:legacy_sync/features/audio_preview_edit/presentation/bloc/audio_preview_edit_cubit.dart';
 import 'package:legacy_sync/features/auth/presentation/pages/login_screen.dart';
 import 'package:legacy_sync/features/auth/presentation/pages/reset_password_screen.dart';
 import 'package:legacy_sync/features/auth/presentation/pages/signup_screen.dart';
@@ -202,35 +203,35 @@ class Routes {
             ),
           ),
         );
-      // case RoutesName.PODCAST_CONNECTION:
-      //   final args = settings.arguments as Map<String, dynamic>?;
-      //   final roomId = args?['roomId'] as String? ?? '';
-      //   final podcastId = args?['podcastId'] as int? ?? -1;
-      //
-      //   final incomingCall = args!["incoming_call"];
-      //   final userName = args["userName"];
-      //   final userId = args["userId"] as int? ?? -1;
-      //
-      //   print("Routes - Received arguments:");
-      //   print("room Id: $roomId");
-      //   print("podcast Id: $podcastId");
-      //   print("incomingCall : $incomingCall");
-      //   print("userName : $userName");
-      //   print("userId : $userId");
-      //
-      //   return _animatedRouteZoomOut(
-      //     PodcastConnection(
-      //       roomId: roomId,
-      //       podcastId: podcastId,
-      //       incomingCall: incomingCall,
-      //       userName: userName,
-      //       userId: userId,
-      //     ),
-      //   );
+    // case RoutesName.PODCAST_CONNECTION:
+    //   final args = settings.arguments as Map<String, dynamic>?;
+    //   final roomId = args?['roomId'] as String? ?? '';
+    //   final podcastId = args?['podcastId'] as int? ?? -1;
+    //
+    //   final incomingCall = args!["incoming_call"];
+    //   final userName = args["userName"];
+    //   final userId = args["userId"] as int? ?? -1;
+    //
+    //   print("Routes - Received arguments:");
+    //   print("room Id: $roomId");
+    //   print("podcast Id: $podcastId");
+    //   print("incomingCall : $incomingCall");
+    //   print("userName : $userName");
+    //   print("userId : $userId");
+    //
+    //   return _animatedRouteZoomOut(
+    //     PodcastConnection(
+    //       roomId: roomId,
+    //       podcastId: podcastId,
+    //       incomingCall: incomingCall,
+    //       userName: userName,
+    //       userId: userId,
+    //     ),
+    //   );
 
       case RoutesName.MY_PODCAST_SCREEN:
-        // final data = settings.arguments as Map?;
-        // final incomingCall = data!["isStartFirstTime"];
+      // final data = settings.arguments as Map?;
+      // final incomingCall = data!["isStartFirstTime"];
         return _animatedRouteRightToLeft(
           const MyPodcastScreen(),
         );
@@ -252,33 +253,36 @@ class Routes {
         final roomId = data?["roomId"] ?? '';
 
         return _animatedRouteDownToUp(
-          AudioPreviewEditScreen(
-            podcastModel: podcastModel,
-            isDraft: isDraft,
-            participants: participants,
-            roomId: roomId,
+          BlocProvider(
+            create: (context) => AudioPreviewEditCubit(),
+            child: AudioPreviewEditScreen(
+              podcastModel: podcastModel,
+              isDraft: isDraft,
+              participants: participants,
+              roomId: roomId,
+            ),
           ),
         );
 
-      // case RoutesName.INCOMING_CALL_FULL_SCREEN:
-      //   return _animatedRouteDownToUp(const IncomingCallFullScreen());
+    // case RoutesName.INCOMING_CALL_FULL_SCREEN:
+    //   return _animatedRouteDownToUp(const IncomingCallFullScreen());
 
       case RoutesName.INCOMING_CALL_FULL_SCREEN:
         final raw = settings.arguments as Map<dynamic, dynamic>? ?? {};
 
         final incomingCall =
             raw["incoming_call"] == true ||
-            raw["incoming_call"]?.toString() == "true";
+                raw["incoming_call"]?.toString() == "true";
         final roomId = (raw["room_id"] ?? raw["roomId"] ?? "").toString();
         final callerUserId =
-            (raw["user_id"] ?? raw["callerUserId"] ?? "").toString();
+        (raw["user_id"] ?? raw["callerUserId"] ?? "").toString();
         final callerUserName =
-            (raw["user_name"] ?? raw["callerUserName"] ?? "").toString();
+        (raw["user_name"] ?? raw["callerUserName"] ?? "").toString();
         final callerProfileImage =
-            (raw["profile_image"] ?? raw["callerProfileImage"] ?? "")
-                .toString();
+        (raw["profile_image"] ?? raw["callerProfileImage"] ?? "")
+            .toString();
         final notificationStatus =
-            (raw["notification_status"] ?? "").toString();
+        (raw["notification_status"] ?? "").toString();
 
         return _animatedRouteDownToUp(
           IncomingCallFullScreen(
@@ -297,14 +301,12 @@ class Routes {
         final audioPath = data["audioPath"];
         final isOverlayManager = data["isOverlayManager"];
         final isContinue = data["isContinue"];
-        final isFavorite = data["isFavorite"];
         return _animatedRouteDownToUp(
           PlayPodcast(
             podcast: podcast,
             audioPath: audioPath,
             isOverlayManager: isOverlayManager,
             isContinue: isContinue,
-            isFavorite: isFavorite,
           ),
         );
       case RoutesName.transcript_description:
