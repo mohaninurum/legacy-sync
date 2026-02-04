@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:legacy_sync/features/home/data/model/friends_list_model.dart';
+import 'package:legacy_sync/features/livekit_connection/data/model/navigation_model.dart';
 import 'package:legacy_sync/features/livekit_connection/data/model/podcast_topics_model.dart';
 import 'package:legacy_sync/features/livekit_connection/presentation/widgets/participant_info.dart';
 import 'package:livekit_client/livekit_client.dart';
@@ -7,7 +8,7 @@ import 'package:livekit_client/livekit_client.dart';
 enum LiveKitRecordingStatus { idle, recording, paused, completed }
 
 // enum TopicCategory { family, relationship, Shuffle }
-enum TopicCategory {Shuffle, Beginnings, Bonds, Becoming, Hopes, Remembrance}
+enum TopicCategory { Shuffle, Beginnings, Bonds, Becoming, Hopes, Remembrance }
 
 enum CallStatus { idle, calling, connected, disconnected }
 
@@ -16,6 +17,11 @@ enum InviteStatus { idle, sending, success, failure }
 enum LiveKitStatus { initial, connecting, connected, failure }
 
 class LiveKitConnectionState extends Equatable {
+  final LiveKitNavEvent navEvent;
+  final bool everRecorded;
+
+  final bool showCallOverlay;
+
   final List<ParticipantTrack> participantTracks;
   final bool isStartingRecording;
   final InviteStatus inviteStatus;
@@ -61,8 +67,11 @@ class LiveKitConnectionState extends Equatable {
   final String? myUserName;
   final bool consentGiven;
 
-
   const LiveKitConnectionState({
+    this.everRecorded = false,
+    this.navEvent = LiveKitNavEvent.none,
+    this.showCallOverlay = false,
+
     this.isStartingRecording = false,
     this.myUserId,
     this.myUserName,
@@ -102,7 +111,15 @@ class LiveKitConnectionState extends Equatable {
     this.consentGiven = false,
   });
 
+  factory LiveKitConnectionState.initial() => const LiveKitConnectionState();
+
+
   LiveKitConnectionState copyWith({
+    bool? everRecorded,
+    LiveKitNavEvent? navEvent,
+
+    bool? showCallOverlay,
+
     bool? isStartingRecording,
     int? myUserId,
     String? myUserName,
@@ -146,9 +163,13 @@ class LiveKitConnectionState extends Equatable {
     // In state:
     bool? isHost,
     bool? consentGiven,
-
   }) {
     return LiveKitConnectionState(
+      everRecorded: everRecorded ?? this.everRecorded,
+
+      navEvent: navEvent ?? this.navEvent,
+
+      showCallOverlay: showCallOverlay ?? this.showCallOverlay,
       isStartingRecording: isStartingRecording ?? this.isStartingRecording,
       myUserId: myUserId ?? this.myUserId,
       myUserName: myUserName ?? this.myUserName,
@@ -186,7 +207,6 @@ class LiveKitConnectionState extends Equatable {
           showPlayAudioManuallyDialog ?? this.showPlayAudioManuallyDialog,
       needsPublishConfirm: needsPublishConfirm ?? this.needsPublishConfirm,
 
-
       isHost: isHost ?? this.isHost,
       consentGiven: consentGiven ?? this.consentGiven,
     );
@@ -194,6 +214,9 @@ class LiveKitConnectionState extends Equatable {
 
   @override
   List<Object?> get props => [
+    everRecorded,
+    navEvent,
+    showCallOverlay,
     isStartingRecording,
     myUserId,
     myUserName,

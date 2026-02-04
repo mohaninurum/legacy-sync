@@ -4,8 +4,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:legacy_sync/config/db/shared_preferences.dart';
+import 'package:legacy_sync/config/network/api_host.dart';
 import 'package:legacy_sync/core/utils/utils.dart';
 import 'package:legacy_sync/features/home/data/model/friends_list_model.dart';
+import 'package:legacy_sync/features/livekit_connection/data/model/navigation_model.dart';
 import 'package:legacy_sync/features/livekit_connection/data/model/podcast_topics_model.dart';
 import 'package:legacy_sync/features/livekit_connection/domain/usecases/livekit_connection_usecases.dart';
 import 'package:legacy_sync/features/livekit_connection/presentation/widgets/participant_info.dart';
@@ -20,13 +22,10 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
   Timer? _timer;
   Timer? _speakerSortTimer;
   Timer? _remoteTimer;
-  static const String livekitUrl = "wss://lagecy-87n09bcj.livekit.cloud";
 
   Room? _room;
   EventsListener<RoomEvent>? _listener;
-
   List<FriendsDataList> users = const [];
-  // List<PodcastTopicsModel> topicsList = [];
 
   LiveKitConnectionCubit() : super(const LiveKitConnectionState());
 
@@ -60,9 +59,9 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
         );
       });
     }
-    _safeEmit(state.copyWith(recordingStatus: recordStatus, duration: duration));
-
-    // emit(state.copyWith(recordingStatus: recordStatus, duration: duration));
+    _safeEmit(
+      state.copyWith(recordingStatus: recordStatus, duration: duration),
+    );
   }
 
   void _startSortLoop() {
@@ -86,6 +85,9 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
         roomId: roomId,
         myUserId: userId,
         myUserName: userName,
+        recordingStatus: LiveKitRecordingStatus.idle,
+        duration: Duration.zero,
+        everRecorded: false,
       ),
     );
 
@@ -130,7 +132,7 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       emit(state.copyWith(message: "Connecting to room..."));
 
       await room.connect(
-        livekitUrl,
+        ApiURL.livekitUrl,
         token,
         fastConnectOptions: FastConnectOptions(
           microphone: TrackOption(track: audioTrack),
@@ -199,7 +201,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     listener
       ..on<RoomDisconnectedEvent>((event) {
         unawaited(disconnect());
-        // emit(state.copyWith(callStatus: CallStatus.disconnected));
       })
       ..on<ParticipantEvent>((event) {
         sortParticipants();
@@ -384,21 +385,7 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
 
     if (isClosed) return;
 
-    _safeEmit(
-      state.copyWith(
-        callStatus: CallStatus.disconnected,
-        room: null,
-        listener: null,
-        participantTracks: const [],
-        needsPublishConfirm: false,
-        showRecordingStatusDialog: null,
-        activeRecording: null,
-        dataReceivedText: null,
-        showPlayAudioManuallyDialog: null,
-        myUserId: null,
-        myUserName: null,
-      ),
-    );
+    _safeEmit(LiveKitConnectionState.initial());
   }
 
   Future<void> _checkMicPermission() async {
@@ -546,62 +533,34 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
         if (res.data != null) {
           final incoming = res.data; // List<PodcastTopic>
 
-          final List<PodcastTopicsModel> built = incoming.map((element) {
-            final TopicCategory category;
-            switch (element.topicType) {
-              case 1:
-                category = TopicCategory.Beginnings;
-                break;
-              case 2:
-                category = TopicCategory.Bonds;
-                break;
-              case 3:
-                category = TopicCategory.Becoming;
-                break;
-              case 4:
-                category = TopicCategory.Hopes;
-                break;
-              case 5:
-              default:
-                category = TopicCategory.Remembrance;
-            }
+          final List<PodcastTopicsModel> built =
+              incoming.map((element) {
+                final TopicCategory category;
+                switch (element.topicType) {
+                  case 1:
+                    category = TopicCategory.Beginnings;
+                    break;
+                  case 2:
+                    category = TopicCategory.Bonds;
+                    break;
+                  case 3:
+                    category = TopicCategory.Becoming;
+                    break;
+                  case 4:
+                    category = TopicCategory.Hopes;
+                    break;
+                  case 5:
+                  default:
+                    category = TopicCategory.Remembrance;
+                }
 
-            return PodcastTopicsModel(
-              id: element.id.toString(),
-              title: element.topic,
-              description: element.topic,
-              category: category,
-            );
-          }).toList();
-
-          // debugPrint("DATA ON SUCCESS:: ${res.data}");
-          // topicsList.clear();
-          // res.data.forEach((element) {
-          //   if (element.topicType == 1) {
-          //     category = TopicCategory.Beginnings;
-          //   } else if(element.topicType == 2) {
-          //     category = TopicCategory.Bonds;
-          //   } else if(element.topicType == 3) {
-          //     category = TopicCategory.Becoming;
-          //   } else if(element.topicType == 4) {
-          //     category = TopicCategory.Hopes;
-          //   } else if(element.topicType == 5) {
-          //     category = TopicCategory.Remembrance;
-          //   } else {
-          //     category = TopicCategory.Remembrance;
-          //   }
-          //
-          //   topicsList.add(
-          //     PodcastTopicsModel(
-          //       title: element.topic,
-          //       description: element.topic,
-          //       id: element.id.toString(),
-          //       category: category,
-          //     ),
-          //   );
-          // });
-          // emit(state.copyWith(isLoading: false));
-          // ✅ Optional: remove duplicates by ID (backend sometimes sends dupes)
+                return PodcastTopicsModel(
+                  id: element.id.toString(),
+                  title: element.topic,
+                  description: element.topic,
+                  category: category,
+                );
+              }).toList();
           final uniqueById = <String, PodcastTopicsModel>{};
           for (final t in built) {
             uniqueById[t.id] = t;
@@ -612,15 +571,17 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
 
           const defaultCategory = TopicCategory.Beginnings;
           final filtered =
-          uniqueList.where((t) => t.category == defaultCategory).toList();
+              uniqueList.where((t) => t.category == defaultCategory).toList();
 
-          emit(state.copyWith(
-            isLoading: false,
-            allTopics: uniqueList,
-            filteredTopics: filtered,
-            selectedCategory: defaultCategory,
-            currentTopicIndex: 0,
-          ));
+          emit(
+            state.copyWith(
+              isLoading: false,
+              allTopics: uniqueList,
+              filteredTopics: filtered,
+              selectedCategory: defaultCategory,
+              currentTopicIndex: 0,
+            ),
+          );
         } else {
           emit(
             state.copyWith(isLoading: false, error: "No profile data found"),
@@ -628,7 +589,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
         }
       },
     );
-    // loadTopics();
   }
 
   void resetInviteStatus() {
@@ -686,12 +646,8 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
         );
       },
       (result) {
-        // addParticipant(friend);
-
         final updated = Set<int>.from(state.invitedFriendIds);
         updated.add(friend.userIdPK!); // ✅ store invited friend id
-        // updated.add(result.invitedFriendId); // ✅ store invited friend id
-
         emit(
           state.copyWith(
             inviteStatus: InviteStatus.success,
@@ -704,21 +660,21 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     );
   }
 
-  void addParticipant(FriendsDataList user) {
-    emit(
-      state.copyWith(
-        callStatus: CallStatus.connected,
-        participants: [...state.participants, user],
-      ),
-    );
-  }
+  // void addParticipant(FriendsDataList user) {
+  //   emit(
+  //     state.copyWith(
+  //       callStatus: CallStatus.connected,
+  //       participants: [...state.participants, user],
+  //     ),
+  //   );
+  // }
 
   void getInviteUse() {
     emit(state.copyWith(inviteUserList: users));
   }
 
   Future<void> startRecording() async {
-    try{
+    try {
       if (!state.isHost) return;
       if (state.isStartingRecording) return; // prevent double taps
       if (state.recordingStatus != LiveKitRecordingStatus.idle) return;
@@ -726,30 +682,30 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       final rid = state.roomId;
       if (uid == null || rid == null) return;
 
-      emit(state.copyWith(
-        isStartingRecording: true,
-        error: null,
-      ));
+      emit(state.copyWith(isStartingRecording: true, error: null));
 
       // call backend first
       final res = await liveKitUseCase.startRecording(userId: uid, roomId: rid);
 
       res.fold(
-            (error) {
-          emit(state.copyWith(
-            recordingStatus: LiveKitRecordingStatus.idle,
-            error: error.message,
-            isStartingRecording: false,
-          ));
-          // emit(
-          //   state.copyWith(
-          //     inviteStatus: InviteStatus.failure,
-          //     inviteMessage: error.message ?? "Start recording failed",
-          //   ),
-          // );
+        (error) {
+          emit(
+            state.copyWith(
+              recordingStatus: LiveKitRecordingStatus.idle,
+              error: error.message,
+              isStartingRecording: false,
+            ),
+          );
         },
-            (data) async {
-          emit(state.copyWith(recordingStatus: LiveKitRecordingStatus.recording, isStartingRecording: false,));
+        (data) async {
+          emit(
+            state.copyWith(
+              recordingStatus: LiveKitRecordingStatus.recording,
+              isStartingRecording: false,
+              everRecorded: true,
+              error: null,
+            ),
+          );
           _startTimer();
           await _broadcastRecordingState();
         },
@@ -757,7 +713,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     } catch (e) {
       emit(state.copyWith(isStartingRecording: false, error: e.toString()));
     }
-
   }
 
   void pauseRecording() {
@@ -784,18 +739,13 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       if (isClosed) return;
 
       res.fold(
-            (error) {
+        (error) {
           if (isClosed) return;
 
           // keep status same, just show error
-          _safeEmit(
-            state.copyWith(
-              error: error.message,
-            ),
-          );
-          // emit(state.copyWith(recordingStatus: LiveKitRecordingStatus.recording, error: error.message));
+          _safeEmit(state.copyWith(error: error.message));
         },
-            (data) async {
+        (data) async {
           if (isClosed) return;
 
           _timer?.cancel();
@@ -809,8 +759,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
               error: null,
             ),
           );
-
-          // emit(state.copyWith(recordingStatus: LiveKitRecordingStatus.completed));
           await _broadcastRecordingState();
         },
       );
@@ -841,10 +789,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       _safeEmit(
         state.copyWith(duration: state.duration + const Duration(seconds: 1)),
       );
-
-      // emit(
-      //   state.copyWith(duration: state.duration + const Duration(seconds: 1)),
-      // );
     });
   }
 
@@ -930,14 +874,50 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     emit(newState);
   }
 
+  void clearNavEvent() => emit(state.copyWith(navEvent: LiveKitNavEvent.none));
+
   Future<void> endCall() async {
-    if(state.recordingStatus == LiveKitRecordingStatus.recording){
+    // capture BEFORE disconnect clears state
+    final wasHost = state.isHost;
+    final roomId = state.roomId;
+    final participants = List<FriendsDataList>.from(state.participants);
+    final shouldGoPreview = wasHost && state.everRecorded;
+
+    print(
+      "endCall: wasHost=$wasHost everRecorded=${state.everRecorded} recordingStatus=${state.recordingStatus}",
+    );
+    print("endCall: shouldGoPreview=$shouldGoPreview");
+
+    if (state.recordingStatus == LiveKitRecordingStatus.recording ||
+        state.recordingStatus == LiveKitRecordingStatus.paused) {
       await stopRecording();
     }
-    if (state.isHost) {
+    if (wasHost) {
       await _broadcastCallEnd();
     }
     await disconnect(); // important
+
+    // decide navigation exactly like your RoomPage listener
+    if (shouldGoPreview) {
+      emit(
+        state.copyWith(
+          navEvent: LiveKitNavEvent(
+            "AudioPreviewEditScreen",
+            arguments: {
+              "podcastModel": null,
+              "is_draft": true,
+              "participants":
+              participants.length - 1 == 1 ? participants[1].firstName : "",
+              "roomId": roomId,
+            },
+          ),
+        ),
+      );
+    } else {
+      emit(state.copyWith(
+        navEvent: const LiveKitNavEvent("MyPodcastScreen"),
+      ),);
+    }
   }
 
   Future<void> _broadcastRecordingState() async {
@@ -969,6 +949,10 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       await room.localParticipant?.publishData(bytes, reliable: true);
     } catch (_) {}
   }
+
+  void showOverlay() => emit(state.copyWith(showCallOverlay: true));
+
+  void hideOverlay() => emit(state.copyWith(showCallOverlay: false));
 
   @override
   Future<void> close() async {

@@ -28,6 +28,8 @@ import 'package:legacy_sync/features/create_new_podcast/presentation/bloc/create
 import 'package:legacy_sync/features/favorite_memories/presentation/bloc/favorite_memories_bloc/favorite_memories_cubit.dart';
 import 'package:legacy_sync/features/list_of_module/list_of_module.dart';
 import 'package:legacy_sync/features/livekit_connection/presentation/bloc/livekit_connection_cubit.dart';
+import 'package:legacy_sync/features/livekit_connection/presentation/bloc/livekit_connection_state.dart';
+import 'package:legacy_sync/features/ongoing_call_overlay/on_going_call_overlay.dart';
 import 'package:legacy_sync/features/question/presentation/bloc/question_bloc/question_cubit.dart';
 import 'package:legacy_sync/features/onboarding/presentation/bloc/onboarding_cubit.dart';
 import 'package:legacy_sync/features/social_proof/presentation/bloc/social_proof_bloc/choose_your_goals_cubit.dart';
@@ -74,9 +76,10 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
   final roomId = (data['room_id'] ?? '').toString();
   if (roomId.isEmpty) return;
 
-  final callId = (data['callId']?.toString().isNotEmpty == true)
-      ? message.data['callId'].toString()
-      : DateTime.now().millisecondsSinceEpoch.toString();
+  final callId =
+      (data['callId']?.toString().isNotEmpty == true)
+          ? message.data['callId'].toString()
+          : DateTime.now().millisecondsSinceEpoch.toString();
 
   final params = CallKitParams(
     id: callId,
@@ -96,13 +99,10 @@ Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
       isCustomNotification: false,
       ringtonePath: 'system_ringtone_default',
     ),
-    ios: const IOSParams(
-      handleType: 'generic',
-    ),
+    ios: const IOSParams(handleType: 'generic'),
   );
   await FlutterCallkitIncoming.showCallkitIncoming(params);
 }
-
 
 void _listenCallKitEvents() {
   FlutterCallkitIncoming.onEvent.listen((event) async {
@@ -118,7 +118,8 @@ void _listenCallKitEvents() {
           "user_id": (extra['user_id'] ?? "").toString(),
           "user_name": (extra['user_name'] ?? "").toString(),
           "profile_image": (extra['profile_image'] ?? "").toString(),
-          "notification_status": (extra['notification_status'] ?? "").toString(),
+          "notification_status":
+              (extra['notification_status'] ?? "").toString(),
         };
 
         final prefs = await SharedPreferences.getInstance();
@@ -157,45 +158,68 @@ void main() async {
   FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
   _listenCallKitEvents();
   FirebaseMessaging.instance.getToken().then((value) {
-    debugPrint("fcm:-$value" );
-  },);
+    debugPrint("fcm:-$value");
+  });
 
   runApp(
     MultiBlocProvider(
       providers: [
         BlocProvider<LoginCubit>(create: (context) => LoginCubit()),
         BlocProvider<SocialLoginCubit>(create: (context) => SocialLoginCubit()),
-        BlocProvider<SignUpCubit>(create: ( context) => SignUpCubit()),
-        BlocProvider<ResetPasswordCubit>(create: ( context) => ResetPasswordCubit()),
-        BlocProvider<VerificationCodeCubit>(create: ( context) => VerificationCodeCubit()),
-        BlocProvider<QuestionCubit>(create: ( context) => QuestionCubit()),
-        BlocProvider<CardCubit>(create: ( context) => CardCubit()),
-        BlocProvider<AnalysisCubit>(create: ( context) => AnalysisCubit()),
-        BlocProvider<AnalysisCompleteCubit>(create: (context) => AnalysisCompleteCubit()),
-        BlocProvider<OnboardingCubit>(create: ( context) => OnboardingCubit()),
+        BlocProvider<SignUpCubit>(create: (context) => SignUpCubit()),
+        BlocProvider<ResetPasswordCubit>(
+          create: (context) => ResetPasswordCubit(),
+        ),
+        BlocProvider<VerificationCodeCubit>(
+          create: (context) => VerificationCodeCubit(),
+        ),
+        BlocProvider<QuestionCubit>(create: (context) => QuestionCubit()),
+        BlocProvider<CardCubit>(create: (context) => CardCubit()),
+        BlocProvider<AnalysisCubit>(create: (context) => AnalysisCubit()),
+        BlocProvider<AnalysisCompleteCubit>(
+          create: (context) => AnalysisCompleteCubit(),
+        ),
+        BlocProvider<OnboardingCubit>(create: (context) => OnboardingCubit()),
         BlocProvider<CredibilityCubit>(create: (context) => CredibilityCubit()),
-        BlocProvider<ChooseYourGoalsCubit>(create: ( context) => ChooseYourGoalsCubit()),
-        BlocProvider<RatingCubit>(create: ( context) => RatingCubit()),
-        BlocProvider<PostPaywallCubit>(create: ( context) => PostPaywallCubit()),
-        BlocProvider<ListOfModuleCubit>(create: ( context) => ListOfModuleCubit()),
-        BlocProvider<FavoriteMemoriesCubit>(create: (context) => FavoriteMemoriesCubit()),
-        BlocProvider<AnswerCubit>(create: ( context) => AnswerCubit()),
-        BlocProvider<LegacyWrappedCubit>(create: ( context) => LegacyWrappedCubit()),
-        BlocProvider<SettingsCubit>(create: ( context) => SettingsCubit()),
-        BlocProvider<PaywallCubit>(create: ( context) => PaywallCubit()),
+        BlocProvider<ChooseYourGoalsCubit>(
+          create: (context) => ChooseYourGoalsCubit(),
+        ),
+        BlocProvider<RatingCubit>(create: (context) => RatingCubit()),
+        BlocProvider<PostPaywallCubit>(create: (context) => PostPaywallCubit()),
+        BlocProvider<ListOfModuleCubit>(
+          create: (context) => ListOfModuleCubit(),
+        ),
+        BlocProvider<FavoriteMemoriesCubit>(
+          create: (context) => FavoriteMemoriesCubit(),
+        ),
+        BlocProvider<AnswerCubit>(create: (context) => AnswerCubit()),
+        BlocProvider<LegacyWrappedCubit>(
+          create: (context) => LegacyWrappedCubit(),
+        ),
+        BlocProvider<SettingsCubit>(create: (context) => SettingsCubit()),
+        BlocProvider<PaywallCubit>(create: (context) => PaywallCubit()),
         BlocProvider<ProfileCubit>(create: (context) => ProfileCubit()),
         BlocProvider<HomeCubit>(create: (context) => HomeCubit()),
-        BlocProvider<FriendsProfileCubit>(create: (context) => FriendsProfileCubit()),
-        BlocProvider<EmailVerificationCubit>(create: (context) => EmailVerificationCubit()),
+        BlocProvider<FriendsProfileCubit>(
+          create: (context) => FriendsProfileCubit(),
+        ),
+        BlocProvider<EmailVerificationCubit>(
+          create: (context) => EmailVerificationCubit(),
+        ),
         BlocProvider<PodcastCubit>(create: (context) => PodcastCubit()),
         BlocProvider<MyPodcastCubit>(create: (context) => MyPodcastCubit()),
-        BlocProvider<PodCastRecordingCubit>(create: (context) => PodCastRecordingCubit()),
-        // BlocProvider<AudioPreviewEditCubit>(create: (context) => AudioPreviewEditCubit()),
+        BlocProvider<PodCastRecordingCubit>(
+          create: (context) => PodCastRecordingCubit(),
+        ),
         BlocProvider<PlayPodcastCubit>(create: (context) => PlayPodcastCubit()),
-        BlocProvider<CreateNewPodcastCubit>(create: (context) => CreateNewPodcastCubit()),
-        BlocProvider<LiveKitConnectionCubit>(create: (context) => LiveKitConnectionCubit()),
+        BlocProvider<CreateNewPodcastCubit>(
+          create: (context) => CreateNewPodcastCubit(),
+        ),
+        BlocProvider<LiveKitConnectionCubit>(
+          create: (context) => LiveKitConnectionCubit(),
+        ),
       ],
-      child:  MyApp(authToken:authToken,result:result),
+      child: MyApp(authToken: authToken, result: result),
     ),
   );
 }
@@ -203,47 +227,73 @@ void main() async {
 Future<Map<String, dynamic>> setup() async {
   await AppPreference().init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  String authToken =  await AppPreference().get(key: AppPreference.KEY_USER_TOKEN);
-  final result =  await AppPreference().getBool(key: AppPreference.KEY_SURVEY_SUBMITTED);
+  String authToken = await AppPreference().get(
+    key: AppPreference.KEY_USER_TOKEN,
+  );
+  final result = await AppPreference().getBool(
+    key: AppPreference.KEY_SURVEY_SUBMITTED,
+  );
   final dir = await getApplicationDocumentsDirectory();
   await migrateCachedVideoDataToSharedPreferences();
 
   AppService.cachePath = "${dir.path}/dio_cache";
-  if(authToken.isNotEmpty){
+  if (authToken.isNotEmpty) {
     ApiURL.authToken = authToken;
     AppService.initializeUserData();
   }
 
   print("isLoggedIn: $authToken");
 
-  return {"authToken":authToken,"result":result};
+  return {"authToken": authToken, "result": result};
 }
 
 class MyApp extends StatelessWidget {
   String authToken;
   bool result;
-  MyApp({super.key,required this.authToken,required this.result});
+
+  MyApp({super.key, required this.authToken, required this.result});
 
   @override
   Widget build(BuildContext context) {
     AppSizes().init(context);
     final botToastBuilder = BotToastInit();
     return MaterialApp(
-
       builder: (context, child) {
         child = botToastBuilder(context, child);
-        return Stack(
-          children: [
-            child,
-            TipDialogContainer(),
-          ],
+        return BlocListener<LiveKitConnectionCubit, LiveKitConnectionState>(
+          listenWhen: (p, c) => p.navEvent != c.navEvent && !c.navEvent.isNone,
+          listener: (context, state) {
+            final nav = state.navEvent;
+            final navKey = Utils.navigatorKey.currentState;
+
+            // clear FIRST so it won't repeat
+            context.read<LiveKitConnectionCubit>().clearNavEvent();
+
+            if (navKey == null) return;
+
+            if (nav.route == "AudioPreviewEditScreen") {
+              navKey.pushNamed(
+                RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
+                arguments: nav.arguments,
+              );
+            } else {
+              // replace stack to avoid back weirdness
+              navKey.pushNamedAndRemoveUntil(
+                RoutesName.MY_PODCAST_SCREEN,
+                (r) => false,
+              );
+            }
+          },
+          child: Stack(
+            children: [child, TipDialogContainer(), const OngoingCallOverlay()],
+          ),
         );
       },
       navigatorObservers: [BotToastNavigatorObserver()],
       navigatorKey: Utils.navigatorKey,
       debugShowCheckedModeBanner: false,
       title: AppStrings.appTitle,
-      initialRoute:getInitialRoute(),
+      initialRoute: getInitialRoute(),
       onGenerateRoute: Routes.generateRoutes,
       themeMode: ThemeMode.dark,
       theme: AppTheme.lightTheme,
@@ -252,15 +302,15 @@ class MyApp extends StatelessWidget {
   }
 
   String getInitialRoute() {
-    if(authToken.isNotEmpty){
+    if (authToken.isNotEmpty) {
       ApiURL.authToken = authToken;
       AppService.initializeUserData();
-      if(result){
+      if (result) {
         return RoutesName.HOME_SCREEN;
-      }else{
+      } else {
         return RoutesName.QUESTION_SCREEN;
       }
-    }else{
+    } else {
       return RoutesName.SPLASH_SCREEN;
     }
   }

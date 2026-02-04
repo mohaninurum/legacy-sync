@@ -61,4 +61,6 @@ class ApiURL {
 
   static const String savePodcast_AsDraft = "$baseURL/podcast/save-draft-podcast";
   static const String postPodcast = "$baseURL/podcast/post-podcast";
+  static const String livekitUrl = "wss://lagecy-87n09bcj.livekit.cloud";
+
 }

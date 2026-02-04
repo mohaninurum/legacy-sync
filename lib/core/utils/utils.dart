@@ -616,6 +616,4 @@ class Utils {
       return input;
     }
   }
-
-
 }

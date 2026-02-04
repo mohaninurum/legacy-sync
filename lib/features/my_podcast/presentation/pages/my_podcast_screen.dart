@@ -306,7 +306,12 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
     return AppButton(
       padding: const EdgeInsets.all(0),
       onPressed: () async {
-        Navigator.pushNamed(context, RoutesName.HOME_SCREEN);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          RoutesName.HOME_SCREEN,
+              (route) => false,
+        );
+        // Navigator.pushNamed(context, RoutesName.HOME_SCREEN);
       },
       child: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
     );

@@ -28,7 +28,6 @@ import 'package:legacy_sync/features/livekit_connection/presentation/widgets/joi
 import 'package:legacy_sync/features/livekit_connection/presentation/widgets/record_button.dart';
 import 'package:livekit_client/livekit_client.dart';
 import '../../../home/presentation/bloc/home_bloc/home_cubit.dart';
-import '../widgets/controls.dart';
 import '../widgets/participant.dart';
 
 class RoomPage extends StatefulWidget {
@@ -56,20 +55,35 @@ class _RoomPageState extends State<RoomPage> {
   @override
   void initState() {
     super.initState();
-
     _lkCubit = context.read<LiveKitConnectionCubit>();
     _homeCubit = context.read<HomeCubit>();
 
+    // If already connected to same room, do nothing
+    final s = _lkCubit.state;
+    final alreadyInSameRoom =
+        s.callStatus == CallStatus.connected && s.roomId == widget.roomId;
+
+    if (!alreadyInSameRoom) {
+      _lkCubit.setHost(!widget.incomingCall);
+      _lkCubit.connect(
+        roomId: widget.roomId,
+        userName: widget.userName,
+        userId: widget.userId,
+      );
+    } else {
+      // just ensure host flag is correct for UI
+      _lkCubit.setHost(!widget.incomingCall);
+    }
+
     _lkCubit.getInviteUse();
     _lkCubit.fetchPodcastTopics();
-    // lk.addSelfParticipant(widget.incomingCall);
     _homeCubit.getFriendsList();
-    _lkCubit.setHost(!widget.incomingCall);
-    _lkCubit.connect(
-      roomId: widget.roomId,
-      userName: widget.userName,
-      userId: widget.userId,
-    );
+    // _lkCubit.setHost(!widget.incomingCall);
+    // _lkCubit.connect(
+    //   roomId: widget.roomId,
+    //   userName: widget.userName,
+    //   userId: widget.userId,
+    // );
 
     if (widget.incomingCall) {
       Future.delayed(const Duration(seconds: 2), () {
@@ -88,12 +102,7 @@ class _RoomPageState extends State<RoomPage> {
   @override
   void dispose() {
     onWindowShouldClose = null;
-    _lkCubit.disconnect();
     super.dispose();
-    // always dispose listener
-    // widget.room.removeListener(_onRoomDidUpdate);
-    // unawaited(_disposeRoomAsync());
-    // LiveKitConnectionCubit.stopRecording();
   }
 
   @override
@@ -180,105 +189,53 @@ class _RoomPageState extends State<RoomPage> {
                 SnackBar(content: Text(state.error ?? "Something went wrong")),
               );
           }
-
-          // // Recording status dialog
-          // if (state.showRecordingStatusDialog == true) {
-          //   cubit.clearUiEvents(); // clear FIRST to avoid repeated re-entry
-          //   WidgetsBinding.instance.addPostFrameCallback((_) async {
-          //     final result = await context.showRecordingStatusChangedDialog();
-          //     if (!context.mounted) return;
-          //     if (result == true) {
-          //       await cubit.enableMic();
-          //     }
-          //   });
-          // }
         },
         builder: (context, state) {
-          return Scaffold(
-            backgroundColor: Colors.transparent,
-            bottomNavigationBar: _bottomCallControls(state.isHost),
-            body: SafeArea(
-              child: Column(
-                children: [
-                  _topHeader(state),
-                  SizedBox(height: 1.3.height),
-                  _topicCard(context, state),
+          return PopScope(
+            canPop: true,
+            onPopInvoked: (didPop) {
+              if (didPop) _lkCubit.showOverlay();
+            },
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              bottomNavigationBar: _bottomCallControls(state.isHost),
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    _topHeader(state),
+                    SizedBox(height: 1.3.height),
+                    _topicCard(context, state),
 
-                  Column(
-                    children: [
-                      _participantsGrid(state, context),
-                      SizedBox(height: 1.height),
-                      if (state.recordingStatus ==
-                              LiveKitRecordingStatus.recording ||
-                          state.recordingStatus ==
-                              LiveKitRecordingStatus.paused)
-                        const AudioWaveDesign(),
+                    Column(
+                      children: [
+                        _participantsGrid(state, context),
+                        SizedBox(height: 1.height),
+                        if (state.recordingStatus ==
+                                LiveKitRecordingStatus.recording ||
+                            state.recordingStatus ==
+                                LiveKitRecordingStatus.paused)
+                          const AudioWaveDesign(),
+                      ],
+                    ),
+                    if (!state.isHost && state.consentGiven != true) ...[
+                      const SizedBox.shrink(),
+                    ] else if (state.isHost) ...[
+                      _recordingSection(state, context), // host controls
+                    ] else ...[
+                      _inviteeRecordingView(state),
                     ],
-                  ),
-
-                  // else
-                  //   Column(
-                  //     children: [
-                  //       _participantsGrid(state, context),
-                  //       SizedBox(height: 1.height),
-                  //       if (state.recordingStatus ==
-                  //               LiveKitRecordingStatus.recording ||
-                  //           state.recordingStatus ==
-                  //               LiveKitRecordingStatus.paused)
-                  //         const AudioWaveDesign(),
-                  //     ],
-                  //   ),
-                  // if (state.recordingStatus == LiveKitRecordingStatus.idle)
-                  //   InkWell(
-                  //     highlightColor: Colors.transparent,
-                  //     hoverColor: Colors.transparent,
-                  //     splashColor: Colors.transparent,
-                  //     onTap: () {
-                  //       Navigator.pushNamed(
-                  //         context,
-                  //         RoutesName.INCOMING_CALL_FULL_SCREEN,
-                  //       );
-                  //     },
-                  //     child: const Text(
-                  //       "Incoming call Screen test for click here",
-                  //     ),
-                  //   ),
-                  // if (state.recordingStatus == LiveKitRecordingStatus.idle)
-                  //   SizedBox(height: 1.3.height),
-                  // if (!widget.incomingCall)
-                  //   _recordingSection(state, context)
-                  // else if (state.recordingStatus ==
-                  //         LiveKitRecordingStatus.recording ||
-                  //     state.recordingStatus == LiveKitRecordingStatus.paused)
-                  //   _incomingCallRecordingSection(state, context)
-                  // else
-                  //   incomingRecordingCard(state),
-                  if (!state.isHost && state.consentGiven != true) ...[
-                    const SizedBox.shrink(),
-                  ] else if (state.isHost) ...[
-                    _recordingSection(state, context), // host controls
-                  ] else ...[
-                    _inviteeRecordingView(state),
+                    SizedBox(height: 5.height),
+                    Expanded(
+                      child:
+                          state.participantTracks.isNotEmpty
+                              ? ParticipantWidget.widgetFor(
+                                state.participantTracks.first,
+                                showStatsLayer: true,
+                              )
+                              : const SizedBox.shrink(),
+                    ),
                   ],
-                  SizedBox(height: 5.height),
-                  Expanded(
-                    child:
-                        state.participantTracks.isNotEmpty
-                            ? ParticipantWidget.widgetFor(
-                              state.participantTracks.first,
-                              showStatsLayer: true,
-                            )
-                            : const SizedBox.shrink(),
-                  ),
-                  // if (state.room?.localParticipant != null)
-                  //   SafeArea(
-                  //     top: false,
-                  //     child: ControlsWidget(
-                  //       state.room!,
-                  //       state.room!.localParticipant!,
-                  //     ),
-                  //   ),
-                ],
+                ),
               ),
             ),
           );
@@ -435,47 +392,6 @@ class _RoomPageState extends State<RoomPage> {
                         ),
                       ),
                     ),
-                    // Row(
-                    //   children: [
-                    //     // Expanded(
-                    //     //   child: TextButton(
-                    //     //     onPressed: () async {
-                    //     //       Navigator.of(dialogCtx).pop();
-                    //     //
-                    //     //       await liveKitCubit.disconnect();
-                    //     //
-                    //     //       if (!roomPageContext.mounted) return;
-                    //     //
-                    //     //       if (Navigator.of(roomPageContext).canPop()) {
-                    //     //         Navigator.of(roomPageContext).pop();
-                    //     //       } else {
-                    //     //         Navigator.pushReplacementNamed(
-                    //     //           roomPageContext,
-                    //     //           RoutesName.MY_PODCAST_SCREEN,
-                    //     //           arguments: {"isStartFirstTime": true},
-                    //     //         );
-                    //     //       }
-                    //     //     },
-                    //     //     child: Text(
-                    //     //       "Decline",
-                    //     //       style: GoogleFonts.poppins(
-                    //     //         color: AppColors.light_pink_Text_Color,
-                    //     //         fontSize: 14,
-                    //     //         fontWeight: FontWeight.w600,
-                    //     //       ),
-                    //     //     ),
-                    //     //   ),
-                    //     // ),
-                    //     // Container(
-                    //     //   color: AppColors.whiteColor,
-                    //     //   height: 21,
-                    //     //   width: 2,
-                    //     // ),
-                    //     Expanded(
-                    //       child:
-                    //     ),
-                    //   ],
-                    // ),
                   ],
                 ),
               );
@@ -489,47 +405,71 @@ class _RoomPageState extends State<RoomPage> {
   Widget _bottomCallControls(bool isHost) {
     return BlocConsumer<LiveKitConnectionCubit, LiveKitConnectionState>(
       listener: (context, state) {
-        if (state.callStatus != CallStatus.disconnected) return;
-        if (state.callStatus == CallStatus.disconnected &&
-            state.isHost &&
-            state.recordingStatus != LiveKitRecordingStatus.idle) {
-          Navigator.pushReplacementNamed(
-            context,
-            RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
-            arguments: {
-              "podcastModel": null,
-              "is_draft": true,
-              "participants":
-                  state.participants.length - 1 == 1
-                      ? state.participants[1].firstName
-                      : "",
-              "roomId": widget.roomId,
-              // state.participants,
-            },
-          );
-        } else if (state.callStatus == CallStatus.disconnected &&
-            state.isHost &&
-            state.recordingStatus == LiveKitRecordingStatus.idle) {
-          if (Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          } else {
+        // if (state.callStatus != CallStatus.disconnected) return;
+        // if (state.callStatus == CallStatus.disconnected &&
+        //     state.isHost &&
+        //     state.recordingStatus != LiveKitRecordingStatus.idle) {
+        //   Navigator.pushReplacementNamed(
+        //     context,
+        //     RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
+        //     arguments: {
+        //       "podcastModel": null,
+        //       "is_draft": true,
+        //       "participants":
+        //           state.participants.length - 1 == 1
+        //               ? state.participants[1].firstName
+        //               : "",
+        //       "roomId": widget.roomId,
+        //       // state.participants,
+        //     },
+        //   );
+        // }
+        // else if (state.callStatus == CallStatus.disconnected && state.recordingStatus == LiveKitRecordingStatus.idle) {
+        //   if (Navigator.of(context).canPop()) {
+        //     Navigator.of(context).pop();
+        //   } else {
+        //     Navigator.pushReplacementNamed(
+        //       context,
+        //       RoutesName.MY_PODCAST_SCREEN,
+        //     );
+        //   }
+        // }
+        // else if (state.callStatus == CallStatus.disconnected && !state.isHost) {
+        //   if (Navigator.of(context).canPop()) {
+        //     Navigator.of(context).pop();
+        //   } else {
+        //     Navigator.pushReplacementNamed(
+        //       context,
+        //       RoutesName.MY_PODCAST_SCREEN,
+        //     );
+        //   }
+        // }
+        final nav = state.navEvent;
+        print("NAV EVENT => ${state.navEvent.route}  args=${state.navEvent?.arguments}");
+
+        if (!nav.isNone) {
+          _lkCubit.clearNavEvent(); // clear first to prevent double trigger
+
+          if (nav.route == "AudioPreviewEditScreen") {
             Navigator.pushReplacementNamed(
               context,
-              RoutesName.MY_PODCAST_SCREEN,
+              RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
+              arguments: nav.arguments,
             );
+          } else if (nav.route == "MyPodcastScreen") {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              Navigator.pushReplacementNamed(
+                context,
+                RoutesName.MY_PODCAST_SCREEN,
+              );
+            }
           }
-        } else if (state.callStatus == CallStatus.disconnected &&
-            !state.isHost) {
-          if (Navigator.of(context).canPop()) {
-            Navigator.of(context).pop();
-          } else {
-            Navigator.pushReplacementNamed(
-              context,
-              RoutesName.MY_PODCAST_SCREEN,
-            );
-          }
+          return;
         }
       },
+
       builder: (context, state) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 17),
@@ -635,70 +575,6 @@ class _RoomPageState extends State<RoomPage> {
       ),
     );
   }
-
-  // Widget _incomingCallRecordingSection(
-  //   LiveKitConnectionState state,
-  //   BuildContext context,
-  // ) {
-  //   if (state.recordingStatus == LiveKitRecordingStatus.completed) {
-  //     return _doneRecordingCard(state);
-  //   }
-  //
-  //   if (state.recordingStatus == LiveKitRecordingStatus.recording ||
-  //       state.recordingStatus == LiveKitRecordingStatus.paused) {
-  //     return Padding(
-  //       padding: const EdgeInsets.symmetric(horizontal: 20),
-  //       child: Column(
-  //         children: [
-  //           SizedBox(height: 1.5.height),
-  //           Row(
-  //             mainAxisAlignment: MainAxisAlignment.center,
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               Column(
-  //                 children: [
-  //                   Text(
-  //                     "Recording Time :",
-  //                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-  //                       fontSize: 12,
-  //                       fontWeight: FontWeight.w700,
-  //                       fontStyle: FontStyle.italic,
-  //                       color: AppColors.dart_grey,
-  //                     ),
-  //                   ),
-  //                   SizedBox(height: 1.height),
-  //                   Text(
-  //                     Utils.formatDuration(state.duration),
-  //                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-  //                       fontSize: 20,
-  //                       fontWeight: FontWeight.w700,
-  //                     ),
-  //                   ),
-  //                   SizedBox(height: 1.height),
-  //                   nowRecordingCard(state),
-  //                 ],
-  //               ),
-  //             ],
-  //           ),
-  //         ],
-  //       ),
-  //     );
-  //   }
-  //
-  //   return Column(
-  //     children: [
-  //       MicButton(
-  //         label: "Record",
-  //         icon: Images.mic,
-  //         isRounded: false,
-  //         isRedColor: true,
-  //         onPressed: () {
-  //           context.read<LiveKitConnectionCubit>().startRecording();
-  //         },
-  //       ),
-  //     ],
-  //   );
-  // }
 
   Widget nowRecordingCard(LiveKitConnectionState state) {
     return GestureDetector(
@@ -991,23 +867,15 @@ class _RoomPageState extends State<RoomPage> {
 
   Widget _participantsGrid(LiveKitConnectionState state, BuildContext context) {
     final participants = state.participants;
-
-    // const int maxItems = 4;
-    //
-    // final int participantCount = state.participants.length.clamp(0, maxItems);
-
-    // show "Invite" tile only when host and less than 2 users
     final showInviteTile =
         state.isHost == true && !widget.incomingCall && participants.length < 2;
-    // final bool showInvite =
-    //     !widget.incomingCall && state.participants.length < 2;
 
     Widget tile0 =
         participants.isNotEmpty
             ? _userCard(state, participants[0], 0)
             : const SizedBox.shrink();
-
     Widget tile1;
+
     if (participants.length > 1) {
       tile1 = _userCard(state, participants[1], 1);
     } else if (showInviteTile) {
@@ -1030,76 +898,6 @@ class _RoomPageState extends State<RoomPage> {
         children: [tile0, tile1],
       ),
     );
-    // // Build exactly 2 slots
-    // final tiles = <Widget>[];
-    //
-    // if (participants.isNotEmpty) {
-    //   tiles.add(_userCard(participants[0], 0, participants.length));
-    // } else {
-    //   tiles.add(const SizedBox.shrink());
-    // }
-    //
-    // if (participants.length > 1) {
-    //   tiles.add(_userCard(participants[1], 1, participants.length));
-    // } else if (showInviteTile) {
-    //   tiles.add(
-    //     GestureDetector(
-    //       onTap: () => showInviteDialog(context),
-    //       child: _inviteCard(),
-    //     ),
-    //   );
-    // } else {
-    //   tiles.add(const SizedBox.shrink());
-    // }
-    //
-    // return Padding(
-    //   padding: const EdgeInsets.all(16),
-    //   child: GridView.builder(
-    //     shrinkWrap: true,
-    //     physics: const NeverScrollableScrollPhysics(),
-    //     itemCount: 2, // ✅ always 2 slots
-    //     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-    //       crossAxisCount: 2,
-    //       crossAxisSpacing: 17,
-    //       mainAxisSpacing: 17,
-    //     ),
-    //     itemBuilder: (_, i) => tiles[i],
-    //   ),
-    // );
-    // final plusUser = state.participants.length;
-    //
-    // final int itemCount = participantCount + (showInviteTile ? 1 : 0);
-    //
-    // return Padding(
-    //   padding: const EdgeInsets.all(16),
-    //   child: GridView.builder(
-    //     shrinkWrap: true,
-    //     physics: const NeverScrollableScrollPhysics(),
-    //     itemCount: itemCount,
-    //     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-    //       crossAxisCount: 2,
-    //       crossAxisSpacing: 17,
-    //       mainAxisSpacing: 17,
-    //     ),
-    //     itemBuilder: (_, i) {
-    //       if (i < participantCount) {
-    //         return _userCard(state.participants[i], i, plusUser);
-    //       }
-    //
-    //       if (showInvite && i == participantCount) {
-    //         return GestureDetector(
-    //           onTap: () {
-    //             showInviteDialog(context);
-    //           },
-    //           child:
-    //               widget.incomingCall ? const SizedBox.shrink() : _inviteCard(),
-    //         );
-    //       }
-    //
-    //       return const SizedBox.shrink();
-    //     },
-    //   ),
-    // );
   }
 
   Widget _inviteCard() {
@@ -1211,12 +1009,9 @@ class _RoomPageState extends State<RoomPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     YouAudioWave(
-                      useName: user.firstName?.trim()
-                          .split(RegExp(r'[ _]+'))
-                          .first,
+                      useName:
+                          user.firstName?.trim().split(RegExp(r'[ _]+')).first,
                     ),
-                    // YouAudioWave(useName: user.firstName),
-                    // if (index == 1 && plusUser >= 3) plushUser(plusUser),
                   ],
                 ),
               ),
@@ -1248,23 +1043,21 @@ class _RoomPageState extends State<RoomPage> {
               ),
             ),
           ),
-
       ],
     );
   }
 
   void _openParticipantsSheet(LiveKitConnectionState state) {
     showModalBottomSheet(
-
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      barrierColor: Colors.transparent, // we handle dim ourselves
+      barrierColor: Colors.transparent,
 
+      // we handle dim ourselves
       builder: (_) => ParticipantsSheet(participants: state.participants),
     );
   }
-
 
   Widget plushUser(plusUser) {
     return Container(
@@ -1309,7 +1102,8 @@ class _RoomPageState extends State<RoomPage> {
       return AppButton(
         padding: const EdgeInsets.all(0),
         onPressed: () {
-          // Navigator.pop(context);
+          _lkCubit.showOverlay();
+          Navigator.of(context).pop();
         },
         child: const Icon(
           Icons.keyboard_arrow_down_outlined,
@@ -1353,12 +1147,6 @@ class _RoomPageState extends State<RoomPage> {
               const SizedBox(height: 8),
               Text(
                 "You, $otherName",
-
-                // "${state.myUserName},${widget.incomingCall
-                //     ? "you"
-                //     : state.participants.length - 1 == 1
-                //     ? state.participants[1].firstName
-                //     : ""} ",
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -1371,7 +1159,6 @@ class _RoomPageState extends State<RoomPage> {
             hoverColor: Colors.transparent,
             splashColor: Colors.transparent,
             onTap: () {
-              print("Add Button Clicked");
               showInviteDialog(context);
             },
             child: SvgPicture.asset(Images.user_plus, width: 24, height: 24),
@@ -1593,241 +1380,229 @@ class _RoomPageState extends State<RoomPage> {
   }
 
   void showInviteDialog(BuildContext context) {
-    final homeCubit = context.read<HomeCubit>();
-    final liveKitCubit = context.read<LiveKitConnectionCubit>();
-
     // If your cubit has a method to fetch friends, call it here
-    if ((homeCubit.state.friendsList ?? []).isEmpty) {
-      homeCubit.getFriendsList(); // <- replace with your actual method name
+    if ((_homeCubit.state.friendsList ?? []).isEmpty) {
+      _homeCubit.getFriendsList(); // <- replace with your actual method name
     }
 
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
-        return MultiBlocProvider(
-          providers: [
-            BlocProvider.value(value: homeCubit),
-            BlocProvider.value(value: liveKitCubit),
-          ],
-          child: Dialog(
-            backgroundColor: AppColors.dart_purple_Color,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: BlocBuilder<HomeCubit, HomeState>(
-              builder: (context, homeState) {
-                final friends = homeState.friendsList ?? [];
-                if (friends.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text("Not Friend Found"),
-                  );
-                }
+        return Dialog(
+          backgroundColor: AppColors.dart_purple_Color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: BlocBuilder<HomeCubit, HomeState>(
+            builder: (context, homeState) {
+              final friends = homeState.friendsList ?? [];
+              if (friends.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text("Not Friend Found"),
+                );
+              }
 
-                return BlocBuilder<
-                  LiveKitConnectionCubit,
-                  LiveKitConnectionState
-                >(
-                  builder: (context, lkState) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 8,
-                            ),
-                            child: Row(
-                              children: [
-                                GestureDetector(
-                                  onTap: () => Navigator.pop(context),
-                                  child: const Icon(
-                                    Icons.close,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                                const SizedBox(width: 15),
-                                Expanded(
-                                  child: Text(
-                                    "Invite friend to podcast",
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium?.copyWith(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+              return BlocBuilder<
+                LiveKitConnectionCubit,
+                LiveKitConnectionState
+              >(
+                builder: (context, lkState) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
                           ),
-
-                          const SizedBox(height: 12),
-
-                          Flexible(
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: friends.length,
-                              itemBuilder: (_, i) {
-                                final user = friends[i];
-                                final id = user.userIdPK;
-                                final isInvited =
-                                    id != null &&
-                                    lkState.invitedFriendIds.contains(id);
-
-                                final isSending =
-                                    lkState.inviteStatus ==
-                                        InviteStatus.sending &&
-                                    lkState.invitingFriendId == id;
-
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 6,
+                          child: Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                              const SizedBox(width: 15),
+                              Expanded(
+                                child: Text(
+                                  "Invite friend to podcast",
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodyMedium?.copyWith(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
                                   ),
-                                  child: Row(
-                                    children: [
-                                      user.profileImage != null
-                                          ? ClipOval(
-                                            child: Image.network(
-                                              user.profileImage!,
-                                              width: 50,
-                                              height: 50,
-                                              fit: BoxFit.cover,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
 
-                                              // // 🔄 Loading state
-                                              // loadingBuilder: (
-                                              //     context,
-                                              //     child,
-                                              //     loadingProgress,
-                                              //     ) {
-                                              //   if (loadingProgress == null)
-                                              //     return child;
-                                              //
-                                              //   return const SizedBox(
-                                              //     width: 50,
-                                              //     height: 50,
-                                              //     child: Center(
-                                              //       child:
-                                              //       CupertinoActivityIndicator(),
-                                              //     ),
-                                              //   );
-                                              // },
-                                              errorBuilder:
-                                                  (_, __, ___) =>
-                                                      const SizedBox(
-                                                        width: 50,
-                                                        height: 50,
-                                                        child: Icon(
-                                                          Icons.person,
-                                                          color: Colors.white54,
-                                                        ),
-                                                      ),
-                                            ),
-                                          )
-                                          : ClipOval(
-                                            child: Container(
-                                              width: 50,
-                                              height: 50,
-                                              decoration: const BoxDecoration(
-                                                color: Colors.deepOrangeAccent,
-                                              ),
-                                              alignment: Alignment.center,
-                                              child: Text(
-                                                (user.firstName?.isNotEmpty ==
-                                                        true)
-                                                    ? user.firstName![0]
-                                                        .toUpperCase()
-                                                    : "",
-                                                style: const TextStyle(
-                                                  color: Colors.white,
+                        const SizedBox(height: 12),
+
+                        Flexible(
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: friends.length,
+                            itemBuilder: (_, i) {
+                              final user = friends[i];
+                              final id = user.userIdPK;
+                              final isInvited =
+                                  id != null &&
+                                  lkState.invitedFriendIds.contains(id);
+
+                              final isSending =
+                                  lkState.inviteStatus ==
+                                      InviteStatus.sending &&
+                                  lkState.invitingFriendId == id;
+
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 6,
+                                ),
+                                child: Row(
+                                  children: [
+                                    user.profileImage != null
+                                        ? ClipOval(
+                                          child: Image.network(
+                                            user.profileImage!,
+                                            width: 50,
+                                            height: 50,
+                                            fit: BoxFit.cover,
+                                            loadingBuilder: (
+                                              context,
+                                              child,
+                                              loadingProgress,
+                                            ) {
+                                              if (loadingProgress == null) {
+                                                return child;
+                                              }
+                                              return const SizedBox(
+                                                width: 50,
+                                                height: 50,
+                                                child: Center(
+                                                  child:
+                                                      CupertinoActivityIndicator(),
                                                 ),
+                                              );
+                                            },
+                                            errorBuilder:
+                                                (_, __, ___) => const SizedBox(
+                                                  width: 50,
+                                                  height: 50,
+                                                  child: Icon(
+                                                    Icons.person,
+                                                    color: Colors.white54,
+                                                  ),
+                                                ),
+                                          ),
+                                        )
+                                        : ClipOval(
+                                          child: Container(
+                                            width: 50,
+                                            height: 50,
+                                            decoration: const BoxDecoration(
+                                              color: Colors.deepOrangeAccent,
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              (user.firstName?.isNotEmpty ==
+                                                      true)
+                                                  ? user.firstName![0]
+                                                      .toUpperCase()
+                                                  : "",
+                                              style: const TextStyle(
+                                                color: Colors.white,
                                               ),
                                             ),
                                           ),
+                                        ),
 
-                                      const SizedBox(width: 12),
+                                    const SizedBox(width: 12),
 
-                                      Expanded(
-                                        child: Text(
-                                          user.firstName ?? '',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodyMedium?.copyWith(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                    Expanded(
+                                      child: Text(
+                                        user.firstName ?? '',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium?.copyWith(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
+                                    ),
 
-                                      if (isInvited)
-                                        Text(
-                                          "Invited",
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodyMedium?.copyWith(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.white54,
-                                          ),
-                                        )
-                                      else if (isSending)
-                                        const SizedBox(
-                                          width: 22,
-                                          height: 22,
-                                          child: CupertinoActivityIndicator(),
-                                        )
-                                      else
-                                        GestureDetector(
-                                          onTap: () async {
-                                            final cubit =
-                                                context
-                                                    .read<
-                                                      LiveKitConnectionCubit
-                                                    >();
-                                            Navigator.pop(context);
-                                            await cubit.inviteFriend(user);
-                                          },
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SvgPicture.asset(
-                                                Images.plus,
-                                                width: 16,
-                                                height: 16,
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                "Invite",
-                                                style: Theme.of(
-                                                  context,
-                                                ).textTheme.bodyMedium?.copyWith(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w700,
-                                                  color:
-                                                      AppColors
-                                                          .light_pink_Text_Color,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                    if (isInvited)
+                                      Text(
+                                        "Invited",
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium?.copyWith(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white54,
                                         ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
+                                      )
+                                    else if (isSending)
+                                      const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CupertinoActivityIndicator(),
+                                      )
+                                    else
+                                      GestureDetector(
+                                        onTap: () async {
+                                          final cubit =
+                                              context
+                                                  .read<
+                                                    LiveKitConnectionCubit
+                                                  >();
+                                          Navigator.pop(context);
+                                          await cubit.inviteFriend(user);
+                                        },
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            SvgPicture.asset(
+                                              Images.plus,
+                                              width: 16,
+                                              height: 16,
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              "Invite",
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.bodyMedium?.copyWith(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w700,
+                                                color:
+                                                    AppColors
+                                                        .light_pink_Text_Color,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
           ),
         );
       },
