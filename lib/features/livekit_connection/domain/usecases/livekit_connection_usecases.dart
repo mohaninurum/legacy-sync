@@ -1,4 +1,5 @@
 import 'package:legacy_sync/config/network/network_api_service.dart';
+import 'package:legacy_sync/features/livekit_connection/data/model/cancel_invite_response.dart';
 import 'package:legacy_sync/features/livekit_connection/data/model/invite_friend_response_model.dart';
 import 'package:legacy_sync/features/livekit_connection/data/model/podcast_topics_model.dart';
 import 'package:legacy_sync/features/livekit_connection/data/repositories/livekit_connection_repository_impl.dart';
@@ -10,6 +11,18 @@ class LiveKitConnectionUseCases {
 
   ResultFuture<PodcastTopicResponse> getPodcastTopic(int userId) async {
     return await repository.getPodcastTopic(userId);
+  }
+
+  ResultFuture<CancelInviteResponse> cancelInviteToPodcast({
+    required int userId,
+    required int friendId,
+    required String roomId,
+  }) async {
+    return repository.cancelInviteToPodcast(
+      userId: userId,
+      friendId: friendId,
+      roomId: roomId,
+    );
   }
 
   ResultFuture<String> fetchParticipantToken({
@@ -41,9 +54,9 @@ class LiveKitConnectionUseCases {
     return repository.startRecording(userId: userId, roomId: roomId);
   }
 
-  ResultFuture<Map<String,dynamic>> stopRecording({
+  ResultFuture<Map<String, dynamic>> stopRecording({
     required String roomId,
-}) async {
+  }) async {
     return repository.stopRecording(roomId: roomId);
   }
 }

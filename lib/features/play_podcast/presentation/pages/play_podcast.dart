@@ -80,6 +80,7 @@ class _PlayPodcastState extends State<PlayPodcast> {
 
   @override
   void dispose() {
+    _cubit.resetPlayer();
     super.dispose();
   }
 
@@ -94,10 +95,14 @@ class _PlayPodcastState extends State<PlayPodcast> {
         if (state.markFavStatus == MarkFavStatus.success) {
           BotToast.showText(text: state.markFavMessage ?? "Added To Favourites");
           _myPodcastCubit.fetchFavouritePodcastList();
+          _myPodcastCubit.allPodcastsContinueListening();
+          _myPodcastCubit.fetchMyPodcastTab("Posted");
         }
         if (state.markUnFavStatus == MarkUnFavStatus.success) {
           BotToast.showText(text: state.markUnFavMessage ??  "Removed from favourites");
           _myPodcastCubit.fetchFavouritePodcastList();
+          _myPodcastCubit.allPodcastsContinueListening();
+          _myPodcastCubit.fetchMyPodcastTab("Posted");
         }
         if (state.markFavStatus == MarkFavStatus.failure) {
           BotToast.showText(text: state.markFavMessage ?? "Something went wrong");

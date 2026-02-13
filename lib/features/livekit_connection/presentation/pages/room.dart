@@ -15,7 +15,7 @@ import 'package:legacy_sync/core/components/comman_components/podcast_bg.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/core/images/images.dart';
 import 'package:legacy_sync/core/strings/strings.dart';
-import 'package:legacy_sync/core/utils/utils.dart' show Utils;
+import 'package:legacy_sync/core/utils/utils.dart' show Utils, SoundFx;
 import 'package:legacy_sync/features/home/data/model/friends_list_model.dart';
 import 'package:legacy_sync/features/home/presentation/bloc/home_state/home_state.dart';
 import 'package:legacy_sync/features/livekit_connection/presentation/bloc/livekit_connection_cubit.dart';
@@ -55,8 +55,11 @@ class _RoomPageState extends State<RoomPage> {
   @override
   void initState() {
     super.initState();
+    SoundFx.init();
     _lkCubit = context.read<LiveKitConnectionCubit>();
     _homeCubit = context.read<HomeCubit>();
+
+    _lkCubit.hideOverlay();
 
     // If already connected to same room, do nothing
     final s = _lkCubit.state;
@@ -111,7 +114,32 @@ class _RoomPageState extends State<RoomPage> {
       isDark: true,
       child: BlocConsumer<LiveKitConnectionCubit, LiveKitConnectionState>(
         listener: (context, state) async {
-          // final cubit = context.read<LiveKitConnectionCubit>();
+          final nav = state.navEvent;
+          print("NAV EVENT => ${state.navEvent.route}  args=${state.navEvent
+              ?.arguments}");
+
+          if (!nav.isNone) {
+            _lkCubit.clearNavEvent(); // clear first to prevent double trigger
+
+            if (nav.route == "AudioPreviewEditScreen") {
+              Navigator.pushReplacementNamed(
+                context,
+                RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
+                arguments: nav.arguments,
+              );
+            } else if (nav.route == "MyPodcastScreen") {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else {
+                Navigator.pushReplacementNamed(
+                  context,
+                  RoutesName.MY_PODCAST_SCREEN,
+                );
+              }
+            }
+            return;
+          }
+
           final messenger = ScaffoldMessenger.of(context);
 
           switch (state.inviteStatus) {
@@ -203,6 +231,44 @@ class _RoomPageState extends State<RoomPage> {
                 child: Column(
                   children: [
                     _topHeader(state),
+                    if (state.netStatus == NetStatus.reconnecting || state.netStatus == NetStatus.offline)
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CupertinoActivityIndicator(),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                state.netMessage ?? "Reconnecting...",
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                // user chooses to leave
+                                await context.read<LiveKitConnectionCubit>().disconnect();
+                                if (!context.mounted) return;
+                                Navigator.pushReplacementNamed(context, RoutesName.MY_PODCAST_SCREEN);
+                              },
+                              child: const Text("Leave"),
+                            )
+                          ],
+                        ),
+                      ),
+
                     SizedBox(height: 1.3.height),
                     _topicCard(context, state),
 
@@ -211,7 +277,7 @@ class _RoomPageState extends State<RoomPage> {
                         _participantsGrid(state, context),
                         SizedBox(height: 1.height),
                         if (state.recordingStatus ==
-                                LiveKitRecordingStatus.recording ||
+                            LiveKitRecordingStatus.recording ||
                             state.recordingStatus ==
                                 LiveKitRecordingStatus.paused)
                           const AudioWaveDesign(),
@@ -219,20 +285,22 @@ class _RoomPageState extends State<RoomPage> {
                     ),
                     if (!state.isHost && state.consentGiven != true) ...[
                       const SizedBox.shrink(),
-                    ] else if (state.isHost) ...[
-                      _recordingSection(state, context), // host controls
-                    ] else ...[
-                      _inviteeRecordingView(state),
-                    ],
+                    ] else
+                      if (state.isHost) ...[
+                        _recordingSection(state, context), // host controls
+                      ] else
+                        ...[
+                          _inviteeRecordingView(state),
+                        ],
                     SizedBox(height: 5.height),
                     Expanded(
                       child:
-                          state.participantTracks.isNotEmpty
-                              ? ParticipantWidget.widgetFor(
-                                state.participantTracks.first,
-                                showStatsLayer: true,
-                              )
-                              : const SizedBox.shrink(),
+                      state.participantTracks.isNotEmpty
+                          ? ParticipantWidget.widgetFor(
+                        state.participantTracks.first,
+                        showStatsLayer: true,
+                      )
+                          : const SizedBox.shrink(),
                     ),
                   ],
                 ),
@@ -259,7 +327,11 @@ class _RoomPageState extends State<RoomPage> {
             const SizedBox(height: 10),
             Text(
               "Recording Time :",
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme
+                  .of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 fontStyle: FontStyle.italic,
@@ -269,7 +341,11 @@ class _RoomPageState extends State<RoomPage> {
             const SizedBox(height: 8),
             Text(
               Utils.formatDurationHours(state.duration),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme
+                  .of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
               ),
@@ -312,7 +388,11 @@ class _RoomPageState extends State<RoomPage> {
           const SizedBox(width: 10),
           Text(
             text,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: Theme
+                .of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(
               color: AppColors.blackColor,
               fontSize: 12,
               fontWeight: FontWeight.w700,
@@ -336,7 +416,7 @@ class _RoomPageState extends State<RoomPage> {
           child: BlocBuilder<LiveKitConnectionCubit, LiveKitConnectionState>(
             builder: (context, state) {
               final liveKitCubit =
-                  roomPageContext.read<LiveKitConnectionCubit>();
+              roomPageContext.read<LiveKitConnectionCubit>();
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Column(
@@ -354,9 +434,13 @@ class _RoomPageState extends State<RoomPage> {
                             child: Text(
                               textAlign: TextAlign.center,
                               AppStrings.invitedIncomingCallPodcast,
-                              style: Theme.of(
+                              style: Theme
+                                  .of(
                                 context,
-                              ).textTheme.bodyMedium?.copyWith(
+                              )
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -371,7 +455,11 @@ class _RoomPageState extends State<RoomPage> {
                       child: Text(
                         textAlign: TextAlign.center,
                         AppStrings.invitedIncomingCallDescription,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
                         ),
@@ -403,73 +491,7 @@ class _RoomPageState extends State<RoomPage> {
   }
 
   Widget _bottomCallControls(bool isHost) {
-    return BlocConsumer<LiveKitConnectionCubit, LiveKitConnectionState>(
-      listener: (context, state) {
-        // if (state.callStatus != CallStatus.disconnected) return;
-        // if (state.callStatus == CallStatus.disconnected &&
-        //     state.isHost &&
-        //     state.recordingStatus != LiveKitRecordingStatus.idle) {
-        //   Navigator.pushReplacementNamed(
-        //     context,
-        //     RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
-        //     arguments: {
-        //       "podcastModel": null,
-        //       "is_draft": true,
-        //       "participants":
-        //           state.participants.length - 1 == 1
-        //               ? state.participants[1].firstName
-        //               : "",
-        //       "roomId": widget.roomId,
-        //       // state.participants,
-        //     },
-        //   );
-        // }
-        // else if (state.callStatus == CallStatus.disconnected && state.recordingStatus == LiveKitRecordingStatus.idle) {
-        //   if (Navigator.of(context).canPop()) {
-        //     Navigator.of(context).pop();
-        //   } else {
-        //     Navigator.pushReplacementNamed(
-        //       context,
-        //       RoutesName.MY_PODCAST_SCREEN,
-        //     );
-        //   }
-        // }
-        // else if (state.callStatus == CallStatus.disconnected && !state.isHost) {
-        //   if (Navigator.of(context).canPop()) {
-        //     Navigator.of(context).pop();
-        //   } else {
-        //     Navigator.pushReplacementNamed(
-        //       context,
-        //       RoutesName.MY_PODCAST_SCREEN,
-        //     );
-        //   }
-        // }
-        final nav = state.navEvent;
-        print("NAV EVENT => ${state.navEvent.route}  args=${state.navEvent?.arguments}");
-
-        if (!nav.isNone) {
-          _lkCubit.clearNavEvent(); // clear first to prevent double trigger
-
-          if (nav.route == "AudioPreviewEditScreen") {
-            Navigator.pushReplacementNamed(
-              context,
-              RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
-              arguments: nav.arguments,
-            );
-          } else if (nav.route == "MyPodcastScreen") {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            } else {
-              Navigator.pushReplacementNamed(
-                context,
-                RoutesName.MY_PODCAST_SCREEN,
-              );
-            }
-          }
-          return;
-        }
-      },
-
+    return BlocBuilder<LiveKitConnectionCubit, LiveKitConnectionState>(
       builder: (context, state) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 17),
@@ -510,8 +532,7 @@ class _RoomPageState extends State<RoomPage> {
     );
   }
 
-  Widget _circleBtn(
-    IconData icon, {
+  Widget _circleBtn(IconData icon, {
     Color? color,
     bool isDisable = false,
     bool isRed = false,
@@ -532,11 +553,11 @@ class _RoomPageState extends State<RoomPage> {
         child: Icon(
           icon,
           color:
-              isDisable
-                  ? isRed
-                      ? Colors.white
-                      : Colors.black
-                  : Colors.white,
+          isDisable
+              ? isRed
+              ? Colors.white
+              : Colors.black
+              : Colors.white,
         ),
       ),
     );
@@ -544,7 +565,10 @@ class _RoomPageState extends State<RoomPage> {
 
   Widget incomingRecordingCard(LiveKitConnectionState state) {
     return Container(
-      width: MediaQuery.of(context).size.width,
+      width: MediaQuery
+          .of(context)
+          .size
+          .width,
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -557,7 +581,11 @@ class _RoomPageState extends State<RoomPage> {
         children: [
           Text(
             "Recording Not Started!",
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: Theme
+                .of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
@@ -565,7 +593,11 @@ class _RoomPageState extends State<RoomPage> {
           SizedBox(height: 1.height),
           Text(
             "The host hasn’t started recording this podcast yet.\n You’ll be included automatically once recording begins.\n Please stay in the room.",
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: Theme
+                .of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -628,10 +660,10 @@ class _RoomPageState extends State<RoomPage> {
                       width: 6,
                       decoration: BoxDecoration(
                         color:
-                            state.recordingStatus ==
-                                    LiveKitRecordingStatus.paused
-                                ? AppColors.yellow
-                                : AppColors.redColor,
+                        state.recordingStatus ==
+                            LiveKitRecordingStatus.paused
+                            ? AppColors.yellow
+                            : AppColors.redColor,
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
@@ -642,7 +674,11 @@ class _RoomPageState extends State<RoomPage> {
                         state.recordingStatus == LiveKitRecordingStatus.paused
                             ? "Recording paused"
                             : "Now Recording",
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(
                           color: AppColors.blackColor,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -684,28 +720,37 @@ class _RoomPageState extends State<RoomPage> {
                   isRounded: true,
                   isRedColor: false,
                   icon:
-                      state.recordingStatus == LiveKitRecordingStatus.paused
-                          ? Images.microphone
-                          : Images.pause,
+                  state.recordingStatus == LiveKitRecordingStatus.paused
+                      ? Images.microphone
+                      : Images.pause,
                   label:
-                      state.recordingStatus == LiveKitRecordingStatus.paused
-                          ? "Resume Recording"
-                          : "Pause Recording",
+                  state.recordingStatus == LiveKitRecordingStatus.paused
+                      ? "Resume Recording"
+                      : "Pause Recording",
                   onPressed: () {
-                    state.recordingStatus == LiveKitRecordingStatus.paused
-                        ? context
-                            .read<LiveKitConnectionCubit>()
-                            .resumeRecording()
-                        : context
-                            .read<LiveKitConnectionCubit>()
-                            .pauseRecording();
+                    if (state.recordingStatus ==
+                        LiveKitRecordingStatus.paused) {
+                      // SoundFx.recordStart();
+                      context
+                          .read<LiveKitConnectionCubit>()
+                          .resumeRecording();
+                    } else {
+                      // SoundFx.recordStart();
+                      context
+                          .read<LiveKitConnectionCubit>()
+                          .pauseRecording();
+                    }
                   },
                 ),
                 Column(
                   children: [
                     Text(
                       "Recording Time :",
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: Theme
+                          .of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         fontStyle: FontStyle.italic,
@@ -715,7 +760,11 @@ class _RoomPageState extends State<RoomPage> {
                     const SizedBox(height: 8),
                     Text(
                       Utils.formatDurationHours(state.duration),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: Theme
+                          .of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                       ),
@@ -757,6 +806,7 @@ class _RoomPageState extends State<RoomPage> {
 
               /// 🌟 SHADOWS (OUTER + INNER)
               boxShadow: const [
+
                 /// INNER WHITE SHADOW
                 BoxShadow(
                   color: Color.fromRGBO(255, 255, 255, 0.30),
@@ -791,7 +841,10 @@ class _RoomPageState extends State<RoomPage> {
             isRounded: false,
             isRedColor: true,
             onPressed: () {
-              context.read<LiveKitConnectionCubit>().startRecording();
+              if (!state.isStartingRecording) {
+                SoundFx.recordStart();
+                context.read<LiveKitConnectionCubit>().startRecording();
+              }
             },
           ),
       ],
@@ -803,7 +856,10 @@ class _RoomPageState extends State<RoomPage> {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Container(
-          width: MediaQuery.of(context).size.width,
+          width: MediaQuery
+              .of(context)
+              .size
+              .width,
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -816,7 +872,11 @@ class _RoomPageState extends State<RoomPage> {
             children: [
               Text(
                 "Congratulations!",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: Theme
+                    .of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
@@ -824,7 +884,11 @@ class _RoomPageState extends State<RoomPage> {
               SizedBox(height: 1.height),
               Text(
                 "You’ve completed your podcast recording.",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: Theme
+                    .of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
@@ -832,27 +896,43 @@ class _RoomPageState extends State<RoomPage> {
               ),
               SizedBox(height: 1.height),
               Text(
-                "Duration: ${Utils.formatDurationFromString(state.duration.toString())}",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                "Duration: ${Utils.formatDurationFromString(
+                    state.duration.toString())}",
+                style: Theme
+                    .of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               SizedBox(height: 1.height),
               Text(
-                "Topics: Growth, Friendship",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                "Topic covered: ${state.selectedCategory}",
+                style: Theme
+                    .of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               SizedBox(height: 1.height),
               SizedBox(
-                width: MediaQuery.of(context).size.width,
+                width: MediaQuery
+                    .of(context)
+                    .size
+                    .width,
                 child: Text(
                   textAlign: TextAlign.start,
                   "You can preview and manage this session after you leave the room. Take a moment to relax, your thoughts are safely saved.",
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: Theme
+                      .of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -871,9 +951,9 @@ class _RoomPageState extends State<RoomPage> {
         state.isHost == true && !widget.incomingCall && participants.length < 2;
 
     Widget tile0 =
-        participants.isNotEmpty
-            ? _userCard(state, participants[0], 0)
-            : const SizedBox.shrink();
+    participants.isNotEmpty
+        ? _userCard(state, participants[0], 0)
+        : const SizedBox.shrink();
     Widget tile1;
 
     if (participants.length > 1) {
@@ -918,7 +998,11 @@ class _RoomPageState extends State<RoomPage> {
           const SizedBox(height: 8),
           Text(
             "Invite People",
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: Theme
+                .of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(
               color: AppColors.blackColor,
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -929,11 +1013,9 @@ class _RoomPageState extends State<RoomPage> {
     );
   }
 
-  Widget _userCard(
-    LiveKitConnectionState state,
-    FriendsDataList user,
-    int index,
-  ) {
+  Widget _userCard(LiveKitConnectionState state,
+      FriendsDataList user,
+      int index,) {
     final total = state.participants.length;
     final extraCount = total - 2;
 
@@ -956,49 +1038,47 @@ class _RoomPageState extends State<RoomPage> {
                 child: Stack(
                   children: [
                     user.profileImage != null &&
-                            user.profileImage.toString().endsWith('/null') ==
-                                false
+                        user.profileImage.toString().endsWith('/null') ==
+                            false
                         ? Positioned(
-                          bottom: -20,
-                          left: 0,
-                          right: 0,
-                          child: Transform.scale(
-                            scale: 1.5,
-                            child: ClipOval(
-                              child: Image.network(
-                                user.profileImage!,
-                                fit: BoxFit.cover,
-                                // 🔄 Loading state
-                                loadingBuilder: (
-                                  context,
-                                  child,
-                                  loadingProgress,
-                                ) {
-                                  if (loadingProgress == null) return child;
-                                  return const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: Center(
-                                      child: CupertinoActivityIndicator(),
-                                    ),
-                                  );
-                                },
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.person,
-                                    color: Colors.grey,
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        )
-                        : ClipOval(
-                          child: Text(
-                            (user.firstName ?? "").toUpperCase(),
-                            style: const TextStyle(fontSize: 22),
+                      bottom: -20,
+                      left: 0,
+                      right: 0,
+                      child: Transform.scale(
+                        scale: 1.5,
+                        child: ClipOval(
+                          child: Image.network(
+                            user.profileImage!,
+                            fit: BoxFit.cover,
+                            // 🔄 Loading state
+                            loadingBuilder: (context,
+                                child,
+                                loadingProgress,) {
+                              if (loadingProgress == null) return child;
+                              return const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: Center(
+                                  child: CupertinoActivityIndicator(),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.person,
+                                color: Colors.grey,
+                              );
+                            },
                           ),
                         ),
+                      ),
+                    )
+                        : ClipOval(
+                      child: Text(
+                        (user.firstName ?? "").toUpperCase(),
+                        style: const TextStyle(fontSize: 22),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1010,7 +1090,10 @@ class _RoomPageState extends State<RoomPage> {
                   children: [
                     YouAudioWave(
                       useName:
-                          user.firstName?.trim().split(RegExp(r'[ _]+')).first,
+                      user.firstName
+                          ?.trim()
+                          .split(RegExp(r'[ _]+'))
+                          .first,
                     ),
                   ],
                 ),
@@ -1034,7 +1117,11 @@ class _RoomPageState extends State<RoomPage> {
                 ),
                 child: Text(
                   "$extraCount+",
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: Theme
+                      .of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.whiteColor,
@@ -1070,7 +1157,11 @@ class _RoomPageState extends State<RoomPage> {
       ),
       child: Text(
         "$plusUser+",
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        style: Theme
+            .of(context)
+            .textTheme
+            .bodySmall
+            ?.copyWith(
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
@@ -1082,7 +1173,7 @@ class _RoomPageState extends State<RoomPage> {
     String title = "Recording Not Started Yet";
     Color color = Colors.white;
     final other = state.participants.firstWhere(
-      (p) => p.userIdPK != state.myUserId,
+          (p) => p.userIdPK != state.myUserId,
       orElse: () => FriendsDataList(firstName: ""),
     );
     final otherName = other.firstName ?? "";
@@ -1136,7 +1227,11 @@ class _RoomPageState extends State<RoomPage> {
                   const SizedBox(width: 10),
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: Theme
+                        .of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: color,
@@ -1147,7 +1242,11 @@ class _RoomPageState extends State<RoomPage> {
               const SizedBox(height: 8),
               Text(
                 "You, $otherName",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: Theme
+                    .of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -1189,12 +1288,17 @@ class _RoomPageState extends State<RoomPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+
           /// 🔹 TOP CHIPS
           Row(
             children: [
               Text(
                 "Topics :",
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: Theme
+                    .of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1206,6 +1310,7 @@ class _RoomPageState extends State<RoomPage> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
+
                       /// SHUFFLE
                       GestureDetector(
                         onTap: () {
@@ -1217,7 +1322,7 @@ class _RoomPageState extends State<RoomPage> {
                           icon: Icons.shuffle,
                           label: "Shuffle",
                           selected:
-                              state.selectedCategory == TopicCategory.Shuffle,
+                          state.selectedCategory == TopicCategory.Shuffle,
                         ),
                       ),
 
@@ -1231,7 +1336,7 @@ class _RoomPageState extends State<RoomPage> {
                         child: _topicChip(
                           label: "Beginnings",
                           selected:
-                              state.selectedCategory ==
+                          state.selectedCategory ==
                               TopicCategory.Beginnings,
                         ),
                       ),
@@ -1246,7 +1351,7 @@ class _RoomPageState extends State<RoomPage> {
                         child: _topicChip(
                           label: "Bonds",
                           selected:
-                              state.selectedCategory == TopicCategory.Bonds,
+                          state.selectedCategory == TopicCategory.Bonds,
                         ),
                       ),
 
@@ -1260,7 +1365,7 @@ class _RoomPageState extends State<RoomPage> {
                         child: _topicChip(
                           label: "Becoming",
                           selected:
-                              state.selectedCategory == TopicCategory.Becoming,
+                          state.selectedCategory == TopicCategory.Becoming,
                         ),
                       ),
 
@@ -1274,7 +1379,7 @@ class _RoomPageState extends State<RoomPage> {
                         child: _topicChip(
                           label: "Hopes",
                           selected:
-                              state.selectedCategory == TopicCategory.Hopes,
+                          state.selectedCategory == TopicCategory.Hopes,
                         ),
                       ),
 
@@ -1288,7 +1393,7 @@ class _RoomPageState extends State<RoomPage> {
                         child: _topicChip(
                           label: "Remembrance",
                           selected:
-                              state.selectedCategory ==
+                          state.selectedCategory ==
                               TopicCategory.Remembrance,
                         ),
                       ),
@@ -1306,7 +1411,11 @@ class _RoomPageState extends State<RoomPage> {
             child: Text(
               topic.description,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme
+                  .of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),
@@ -1332,7 +1441,7 @@ class _RoomPageState extends State<RoomPage> {
               Expanded(
                 child: CustomButton(
                   enable:
-                      state.currentTopicIndex < state.filteredTopics.length - 1,
+                  state.currentTopicIndex < state.filteredTopics.length - 1,
                   btnText: "Next",
                   height: 48,
                   onPressed: () {
@@ -1369,7 +1478,11 @@ class _RoomPageState extends State<RoomPage> {
           ],
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: Theme
+                .of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -1405,8 +1518,8 @@ class _RoomPageState extends State<RoomPage> {
               }
 
               return BlocBuilder<
-                LiveKitConnectionCubit,
-                LiveKitConnectionState
+                  LiveKitConnectionCubit,
+                  LiveKitConnectionState
               >(
                 builder: (context, lkState) {
                   return Padding(
@@ -1432,9 +1545,13 @@ class _RoomPageState extends State<RoomPage> {
                               Expanded(
                                 child: Text(
                                   "Invite friend to podcast",
-                                  style: Theme.of(
+                                  style: Theme
+                                      .of(
                                     context,
-                                  ).textTheme.bodyMedium?.copyWith(
+                                  )
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -1455,12 +1572,12 @@ class _RoomPageState extends State<RoomPage> {
                               final id = user.userIdPK;
                               final isInvited =
                                   id != null &&
-                                  lkState.invitedFriendIds.contains(id);
+                                      lkState.invitedFriendIds.contains(id);
 
                               final isSending =
                                   lkState.inviteStatus ==
                                       InviteStatus.sending &&
-                                  lkState.invitingFriendId == id;
+                                      lkState.invitingFriendId == id;
 
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
@@ -1471,68 +1588,71 @@ class _RoomPageState extends State<RoomPage> {
                                   children: [
                                     user.profileImage != null
                                         ? ClipOval(
-                                          child: Image.network(
-                                            user.profileImage!,
+                                      child: Image.network(
+                                        user.profileImage!,
+                                        width: 50,
+                                        height: 50,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder: (context,
+                                            child,
+                                            loadingProgress,) {
+                                          if (loadingProgress == null) {
+                                            return child;
+                                          }
+                                          return const SizedBox(
                                             width: 50,
                                             height: 50,
-                                            fit: BoxFit.cover,
-                                            loadingBuilder: (
-                                              context,
-                                              child,
-                                              loadingProgress,
-                                            ) {
-                                              if (loadingProgress == null) {
-                                                return child;
-                                              }
-                                              return const SizedBox(
-                                                width: 50,
-                                                height: 50,
-                                                child: Center(
-                                                  child:
-                                                      CupertinoActivityIndicator(),
-                                                ),
-                                              );
-                                            },
-                                            errorBuilder:
-                                                (_, __, ___) => const SizedBox(
-                                                  width: 50,
-                                                  height: 50,
-                                                  child: Icon(
-                                                    Icons.person,
-                                                    color: Colors.white54,
-                                                  ),
-                                                ),
-                                          ),
-                                        )
-                                        : ClipOval(
-                                          child: Container(
-                                            width: 50,
-                                            height: 50,
-                                            decoration: const BoxDecoration(
-                                              color: Colors.deepOrangeAccent,
+                                            child: Center(
+                                              child:
+                                              CupertinoActivityIndicator(),
                                             ),
-                                            alignment: Alignment.center,
-                                            child: Text(
-                                              (user.firstName?.isNotEmpty ==
-                                                      true)
-                                                  ? user.firstName![0]
-                                                      .toUpperCase()
-                                                  : "",
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                              ),
-                                            ),
+                                          );
+                                        },
+                                        errorBuilder:
+                                            (_, __, ___) =>
+                                        const SizedBox(
+                                          width: 50,
+                                          height: 50,
+                                          child: Icon(
+                                            Icons.person,
+                                            color: Colors.white54,
                                           ),
                                         ),
+                                      ),
+                                    )
+                                        : ClipOval(
+                                      child: Container(
+                                        width: 50,
+                                        height: 50,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.deepOrangeAccent,
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          (user.firstName?.isNotEmpty ==
+                                              true)
+                                              ? user.firstName![0]
+                                              .toUpperCase()
+                                              : "",
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
 
                                     const SizedBox(width: 12),
 
                                     Expanded(
                                       child: Text(
                                         user.firstName ?? '',
-                                        style: Theme.of(
+                                        style: Theme
+                                            .of(
                                           context,
-                                        ).textTheme.bodyMedium?.copyWith(
+                                        )
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -1542,55 +1662,64 @@ class _RoomPageState extends State<RoomPage> {
                                     if (isInvited)
                                       Text(
                                         "Invited",
-                                        style: Theme.of(
+                                        style: Theme
+                                            .of(
                                           context,
-                                        ).textTheme.bodyMedium?.copyWith(
+                                        )
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700,
                                           color: Colors.white54,
                                         ),
                                       )
-                                    else if (isSending)
-                                      const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CupertinoActivityIndicator(),
-                                      )
                                     else
-                                      GestureDetector(
-                                        onTap: () async {
-                                          final cubit =
-                                              context
-                                                  .read<
-                                                    LiveKitConnectionCubit
-                                                  >();
-                                          Navigator.pop(context);
-                                          await cubit.inviteFriend(user);
-                                        },
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            SvgPicture.asset(
-                                              Images.plus,
-                                              width: 16,
-                                              height: 16,
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              "Invite",
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.bodyMedium?.copyWith(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w700,
-                                                color:
-                                                    AppColors
-                                                        .light_pink_Text_Color,
+                                      if (isSending)
+                                        const SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CupertinoActivityIndicator(),
+                                        )
+                                      else
+                                        GestureDetector(
+                                          onTap: () async {
+                                            final cubit =
+                                            context
+                                                .read<
+                                                LiveKitConnectionCubit
+                                            >();
+                                            Navigator.pop(context);
+                                            await cubit.inviteFriend(user);
+                                          },
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              SvgPicture.asset(
+                                                Images.plus,
+                                                width: 16,
+                                                height: 16,
                                               ),
-                                            ),
-                                          ],
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                "Invite",
+                                                style: Theme
+                                                    .of(
+                                                  context,
+                                                )
+                                                    .textTheme
+                                                    .bodyMedium
+                                                    ?.copyWith(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700,
+                                                  color:
+                                                  AppColors
+                                                      .light_pink_Text_Color,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
                                   ],
                                 ),
                               );

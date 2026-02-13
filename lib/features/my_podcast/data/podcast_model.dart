@@ -11,6 +11,7 @@ class PodcastModel {
   final String description;
   final String?  audioPath;
   final int isFavourite;
+  final String topicType;
   // final String subtitle;
   // final String summary;
 
@@ -28,6 +29,7 @@ class PodcastModel {
     required this.description,
     this.audioPath,
     required this.isFavourite,
+    required this.topicType,
     // required this.subtitle,
     // required this.summary
   });
@@ -73,6 +75,7 @@ class PodcastData {
   final int listenedSeconds;
   final int isFavourite; // 0/1
   final List<Member> members;
+  final String topicType;
 
   PodcastData({
     required this.podcastId,
@@ -92,6 +95,7 @@ class PodcastData {
     required this.listenedSeconds,
     required this.isFavourite,
     required this.members,
+    required this.topicType,
   });
 
   bool get posted => isPosted == 1;
@@ -121,6 +125,7 @@ class PodcastData {
       members: (json['members'] as List<dynamic>? ?? [])
           .map((e) => Member.fromJson(e as Map<String, dynamic>))
           .toList(),
+      topicType: (json['topic_type'] as String?) ?? '',
     );
   }
 }

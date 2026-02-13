@@ -22,6 +22,7 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
   Timer? _timer;
   Timer? _speakerSortTimer;
   Timer? _remoteTimer;
+  Timer? _netFallbackTimer;
 
   Room? _room;
   EventsListener<RoomEvent>? _listener;
@@ -78,10 +79,15 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
   }) async {
     if (state.status == LiveKitStatus.connecting) return;
 
+    final shuffled = List<PodcastTopicsModel>.from(state.allTopics)..shuffle();
+
     emit(
       state.copyWith(
+        showCallOverlay: false,
         status: LiveKitStatus.connecting,
         message: "Requesting microphone permission...",
+        filteredTopics: shuffled,
+        currentTopicIndex: 0,
         roomId: roomId,
         myUserId: userId,
         myUserName: userName,
@@ -197,10 +203,49 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     } catch (_) {}
   }
 
+  Future<void> _handleNetworkDisconnectFallback() async {
+    _netFallbackTimer?.cancel();
+
+    // wait 10-15 sec to see if it reconnects
+    _netFallbackTimer = Timer(const Duration(seconds: 12), () async {
+      if (isClosed) return;
+
+      // if still offline or not connected -> exit cleanly
+      final room = _room;
+      final stillBad = room == null || state.netStatus != NetStatus.online;
+
+      if (stillBad) {
+        // invitee should go back; host too depending on your product
+        await disconnect();
+
+        if (isClosed) return;
+        emit(
+          LiveKitConnectionState.initial().copyWith(
+            callStatus: CallStatus.disconnected,
+            navEvent: const LiveKitNavEvent("MyPodcastScreen"),
+          ),
+        );
+      }
+    });
+  }
+
   void _bindRoomEvents(Room room, EventsListener<RoomEvent> listener) {
     listener
-      ..on<RoomDisconnectedEvent>((event) {
-        unawaited(disconnect());
+      ..on<RoomDisconnectedEvent>((event) async {
+        // If user intentionally ended call, ignore
+        if (state.callStatus == CallStatus.disconnected) return;
+
+        _timer?.cancel();
+        _remoteTimer?.cancel();
+
+        // network drop/disconnect
+        _safeEmit(state.copyWith(
+          netStatus: NetStatus.offline,
+          netMessage: "Connection lost. Trying to recover...",
+        ));
+
+        // If you want to AUTO EXIT after some time:
+        await _handleNetworkDisconnectFallback();
       })
       ..on<ParticipantEvent>((event) {
         sortParticipants();
@@ -220,11 +265,31 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
         );
       })
       ..on<RoomAttemptReconnectEvent>((event) {
-        print(
-          'Attempting to reconnect ${event.attempt}/${event.maxAttemptsRetry}, '
-          '(${event.nextRetryDelaysInMs}ms delay until next attempt)',
-        );
+        _safeEmit(state.copyWith(
+          netStatus: NetStatus.reconnecting,
+          netMessage: "Reconnecting... (${event.attempt}/${event.maxAttemptsRetry})",
+          reconnectAttempt: event.attempt,
+        ));
       })
+
+      ..on<RoomReconnectedEvent>((event) {
+        // Back online
+        _safeEmit(state.copyWith(
+          netStatus: NetStatus.online,
+          netMessage: null,
+          reconnectAttempt: 0,
+        ));
+
+        if (state.isHost && state.recordingStatus == LiveKitRecordingStatus.recording) {
+          _startTimer();
+        }
+
+        // if host: re-broadcast state so invitee gets it again after reconnect
+        if (state.isHost) {
+          unawaited(_broadcastRecordingState());
+        }
+      })
+
       ..on<LocalTrackSubscribedEvent>((event) {
         print('Local track subscribed: ${event.trackSid}');
       })
@@ -276,18 +341,15 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
           }
           // ✅ call ended by other user
           if (map["type"] == "call_end") {
-            // Prevent repeated actions
             if (state.isHost) return;
-
-            if (state.callStatus == CallStatus.disconnected) return;
-
-            // This will trigger your UI listener navigation (pop/replace)
-            await disconnect();
+            await handleRemoteCallEnd();
+            // if (state.callStatus == CallStatus.disconnected) return;
+            //
+            // // This will trigger your UI listener navigation (pop/replace)
+            // await disconnect();
             return;
           }
-        } catch (_) {
-          // Not JSON, ignore or keep your existing dataReceivedText flow if needed
-        }
+        } catch (_) {}
 
         // If you still want your old "showDataReceivedDialog"
         emit(state.copyWith(dataReceivedText: decoded));
@@ -329,6 +391,24 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       });
   }
 
+  Future<void> handleRemoteCallEnd() async {
+    if (state.callStatus == CallStatus.disconnected) return;
+
+    // await _cleanupRoomOnly();
+
+    // fully cleanup + reset
+    await disconnect(); // this emits initial()
+
+
+    if (isClosed) return;
+
+    emit(LiveKitConnectionState.initial().copyWith(
+      callStatus: CallStatus.disconnected,
+      navEvent: const LiveKitNavEvent("MyPodcastScreen"),
+    ));
+  }
+
+
   int currentCountFromRoom() {
     final room = _room;
     if (room == null) return 0;
@@ -364,17 +444,17 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     print('e2ee state: $e2eeState');
   }
 
-  Future<void> disconnect() async {
+  Future<void> _cleanupRoomOnly() async {
     _timer?.cancel();
     _timer = null;
     _remoteTimer?.cancel();
     _remoteTimer = null;
     _speakerSortTimer?.cancel();
     _speakerSortTimer = null;
+    _netFallbackTimer?.cancel();
+    _netFallbackTimer = null;
 
-    try {
-      await _listener?.dispose();
-    } catch (_) {}
+    try { await _listener?.dispose(); } catch (_) {}
     _listener = null;
 
     try {
@@ -382,9 +462,12 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       await _room?.dispose();
     } catch (_) {}
     _room = null;
+  }
 
+
+  Future<void> disconnect() async {
+    await _cleanupRoomOnly();
     if (isClosed) return;
-
     _safeEmit(LiveKitConnectionState.initial());
   }
 
@@ -876,25 +959,67 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
 
   void clearNavEvent() => emit(state.copyWith(navEvent: LiveKitNavEvent.none));
 
+  Future<void> _cancelPendingInvites({
+    required int userId,
+    required String roomId,
+    required List<FriendsDataList> participants,
+  }) async {
+    // cancel invites for everyone except current user
+    final futures = <Future>[];
+
+    for (final p in participants) {
+      final friendId = int.tryParse(p.userIdPK.toString()); // adjust if your model differs
+      if (friendId == null) continue;
+      if (friendId == userId) continue;
+
+      futures.add(
+        liveKitUseCase.cancelInviteToPodcast(
+          userId: userId,
+          friendId: friendId,
+          roomId: roomId,
+        ).then((either) {
+          // Don’t block endCall navigation if cancel fails.
+          // You can log if you want:
+          // either.fold((l) => debugPrint("cancelInvite failed: $l"), (r) => null);
+        }),
+      );
+    }
+
+    await Future.wait(futures);
+  }
+
+
   Future<void> endCall() async {
-    // capture BEFORE disconnect clears state
     final wasHost = state.isHost;
     final roomId = state.roomId;
+    final selectedTopicCategory = state.selectedCategory;
+    final filteredTopics = state.filteredTopics;
+
     final participants = List<FriendsDataList>.from(state.participants);
     final shouldGoPreview = wasHost && state.everRecorded;
 
-    print(
-      "endCall: wasHost=$wasHost everRecorded=${state.everRecorded} recordingStatus=${state.recordingStatus}",
-    );
-    print("endCall: shouldGoPreview=$shouldGoPreview");
+
+    // ✅ you need your current user id
+    final int userId = state.myUserId ?? 0;
 
     if (state.recordingStatus == LiveKitRecordingStatus.recording ||
         state.recordingStatus == LiveKitRecordingStatus.paused) {
       await stopRecording();
     }
+
+    if (wasHost) {
+      await _cancelPendingInvites(
+        userId: userId,
+        roomId: roomId ??  '',
+        participants: participants,
+      );
+    }
+
     if (wasHost) {
       await _broadcastCallEnd();
     }
+
+
     await disconnect(); // important
 
     // decide navigation exactly like your RoomPage listener
@@ -906,9 +1031,10 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
             arguments: {
               "podcastModel": null,
               "is_draft": true,
-              "participants":
-              participants.length - 1 == 1 ? participants[1].firstName : "",
+              "participants": participants.length - 1 == 1 ? participants[1].firstName : "",
               "roomId": roomId,
+              "selectedTopicCategory" : selectedTopicCategory.name.toString(),
+              "filteredTopics" : filteredTopics,
             },
           ),
         ),

@@ -3,10 +3,11 @@ import 'package:legacy_sync/features/play_podcast/data/model/mark_un_favourite_r
 
 import '../../../../config/network/network_api_service.dart';
 import '../../data/repositories/play_podcast_repo_impl.dart';
+import '../repositories/repositories_play_podcast.dart';
 
 
 class UseCasePlayPodcast {
-  final PlayPodcastRepoImpl repository = PlayPodcastRepoImpl();
+  final RepositoriesPlayPodcast repository = PlayPodcastRepoImpl();
 
   ResultFuture<Map<String,dynamic>> saveListenedPodcastTime(Map<String, dynamic> body) async {
     return await repository.saveListenedPodcastTime(body);

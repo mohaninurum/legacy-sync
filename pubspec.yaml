@@ -129,6 +129,7 @@ flutter:
      - assets/images/
      - assets/icons/
      - assets/lottie/
+     - assets/sounds/start_recording.mp3
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

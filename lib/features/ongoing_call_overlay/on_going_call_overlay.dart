@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:legacy_sync/config/routes/routes_name.dart';
+import 'package:legacy_sync/core/navigation/route_observer.dart';
 import 'package:legacy_sync/core/utils/utils.dart';
 import 'package:legacy_sync/features/home/data/model/friends_list_model.dart';
 import 'package:legacy_sync/features/livekit_connection/presentation/bloc/livekit_connection_cubit.dart';
@@ -69,64 +70,82 @@ class _OngoingCallOverlayState extends State<OngoingCallOverlay> {
   Widget build(BuildContext context) {
     _ensureInitialPos(context);
 
-    return BlocBuilder<LiveKitConnectionCubit, LiveKitConnectionState>(
-      buildWhen:
-          (p, c) =>
-              p.callStatus != c.callStatus ||
+    return ValueListenableBuilder(
+        valueListenable: AppRouteTracker.currentRoute,
+      builder: (_, routeName, __) {
+        const blockedRoutes = {
+          RoutesName.ROOM_PAGE,
+          RoutesName.INCOMING_CALL_FULL_SCREEN,
+        };
+
+        if (routeName != null && blockedRoutes.contains(routeName)) {
+          return const SizedBox.shrink();
+        }
+
+        return  BlocBuilder<LiveKitConnectionCubit, LiveKitConnectionState>(
+          buildWhen:
+              (p, c) =>
+          p.callStatus != c.callStatus ||
               p.showCallOverlay != c.showCallOverlay ||
               p.participants != c.participants ||
               p.roomId != c.roomId ||
               p.isMic != c.isMic ||
               p.isSpeaker != c.isSpeaker,
-      builder: (context, state) {
-        final visible =
-            state.callStatus == CallStatus.connected && state.showCallOverlay;
+          builder: (context, state) {
 
-        if (!visible) return const SizedBox.shrink();
+            if (state.showCallOverlay != true) return const SizedBox.shrink();
 
-        final other = state.participants.firstWhere(
-          (p) => p.userIdPK != state.myUserId,
-          orElse: () => FriendsDataList(firstName: ""),
-        );
+            final visible =
+                state.callStatus == CallStatus.connected && state.showCallOverlay;
 
-        return Positioned(
-          left: _pos.dx,
-          top: _pos.dy,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onPanStart: (_) {},
-            onPanUpdate: (d) {
-              setState(() {
-                _pos = _clampToScreen(context, _pos + d.delta);
-              });
-            },
-            onPanEnd: (_) {
-              setState(() {
-                _pos = _snapToEdge(context, _pos);
-              });
-            },
-            child: _OverlayCard(
-              name: other.firstName ?? '',
-              onTap: () {
-                context.read<LiveKitConnectionCubit>().hideOverlay();
-                Utils.navigatorKey.currentState?.pushNamed(
-                  RoutesName.ROOM_PAGE,
-                  arguments: {
-                    "roomId": state.roomId ?? "",
-                    "incoming_call": !state.isHost,
-                    "userName": state.myUserName ?? "",
-                    "userId": state.myUserId ?? -1,
+            if (!visible) return const SizedBox.shrink();
+
+            final other = state.participants.firstWhere(
+                  (p) => p.userIdPK != state.myUserId,
+              orElse: () => FriendsDataList(firstName: ""),
+            );
+
+            return Positioned(
+              left: _pos.dx,
+              top: _pos.dy,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanStart: (_) {},
+                onPanUpdate: (d) {
+                  setState(() {
+                    _pos = _clampToScreen(context, _pos + d.delta);
+                  });
+                },
+                onPanEnd: (_) {
+                  setState(() {
+                    _pos = _snapToEdge(context, _pos);
+                  });
+                },
+                child: _OverlayCard(
+                  name: other.firstName ?? '',
+                  onTap: () {
+                    context.read<LiveKitConnectionCubit>().hideOverlay();
+                    Utils.navigatorKey.currentState?.pushNamed(
+                      RoutesName.ROOM_PAGE,
+                      arguments: {
+                        "roomId": state.roomId ?? "",
+                        "incoming_call": !state.isHost,
+                        "userName": state.myUserName ?? "",
+                        "userId": state.myUserId ?? -1,
+                      },
+                    );
                   },
-                );
-              },
-              state: state,
-              onEnd: () async {
-                await context.read<LiveKitConnectionCubit>().endCall();
-              },
-            ),
-          ),
+                  state: state,
+                  onEnd: () async {
+                    await context.read<LiveKitConnectionCubit>().endCall();
+                  },
+                ),
+              ),
+            );
+          },
         );
       },
+
     );
   }
 }

@@ -50,6 +50,7 @@ class FavouritePodcast {
   final int listenedSeconds;
 
   final List<Member> members;
+  final String topicType;
 
   FavouritePodcast({
     required this.favouritePodcastId,
@@ -67,6 +68,7 @@ class FavouritePodcast {
     required this.durationSeconds,
     required this.listenedSeconds,
     required this.members,
+    required this.topicType,
   });
 
   factory FavouritePodcast.fromJson(Map<String, dynamic> json) {
@@ -96,6 +98,8 @@ class FavouritePodcast {
           .map((e) => Member.fromJson(Map<String, dynamic>.from(e)))
           .toList()
           : <Member>[],
+
+      topicType: HelperTypecast.asString(json['topic_type']),
     );
   }
 

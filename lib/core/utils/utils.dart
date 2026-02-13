@@ -12,6 +12,37 @@ import 'package:legacy_sync/features/auth/presentation/bloc/auth_bloc/verificati
 import 'package:legacy_sync/features/auth/presentation/bloc/auth_state/verification_code_state.dart';
 import 'package:vibration/vibration.dart';
 
+import 'package:audioplayers/audioplayers.dart';
+
+class SoundFx {
+  static final AudioPlayer _p = AudioPlayer()
+    ..setReleaseMode(ReleaseMode.stop);
+
+  static bool _ready = false;
+
+  static Future<void> init() async {
+    if (_ready) return;
+    try {
+      await _p.setSource(AssetSource('sounds/start_recording.mp3'));
+      _ready = true;
+    } catch (_) {}
+  }
+
+  static Future<void> recordStart() async {
+    print("Recording audio called");
+    try {
+      await _p.stop();
+      await _p.play(AssetSource('sounds/start_recording.mp3'), volume: 1.0);
+    } catch (e) {
+      print("Error Playing Audio when start recording ${e.toString()}");
+    }
+  }
+
+  static Future<void> dispose() async {
+    try { await _p.dispose(); } catch (_) {}
+  }
+}
+
 class Utils {
   static GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -531,6 +562,7 @@ class Utils {
       return Colors.grey;
     }
   }
+
 
   static String capitalize(String? value) {
     if (value == null || value.isEmpty) return '';

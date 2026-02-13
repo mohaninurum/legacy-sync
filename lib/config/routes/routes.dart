@@ -214,6 +214,8 @@ class Routes {
         final isDraft = data?["is_draft"];
         final participants = data?["participants"];
         final roomId = data?["roomId"] ?? '';
+        final selectedTopicCategory = data?["selectedTopicCategory"];
+        final filteredTopics = data?["filteredTopics"];
 
         return _animatedRouteDownToUp(
           BlocProvider(
@@ -223,6 +225,7 @@ class Routes {
               isDraft: isDraft,
               participants: participants,
               roomId: roomId,
+              selectedTopicCategory: selectedTopicCategory,
             ),
           ),
         );

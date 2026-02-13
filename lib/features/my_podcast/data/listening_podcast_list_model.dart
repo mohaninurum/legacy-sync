@@ -36,6 +36,8 @@ class Podcast {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final List<Member> members;
+  final String topicType;
+  final int isFavourite;
 
   Podcast({
     required this.podcastId,
@@ -52,6 +54,8 @@ class Podcast {
     required this.createdAt,
     required this.updatedAt,
     required this.members,
+    required this.topicType,
+    required this.isFavourite,
   });
 
   factory Podcast.fromJson(Map<String, dynamic> json) {
@@ -77,6 +81,8 @@ class Podcast {
           ?.map((e) => Member.fromJson(e))
           .toList() ??
           [],
+      topicType: json['topic_type'] ?? '',
+      isFavourite: json['is_favourite'] ?? 0,
     );
   }
 

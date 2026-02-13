@@ -1,5 +1,7 @@
 enum SaveAsDraftStatus { initial, loading, success, failure }
 enum PublishStatus { initial, loading, success, failure }
+enum MarkFavStatus {initial, loading, success, failure}
+enum MarkUnFavStatus {initial, loading, success, failure}
 
 class AudioPreviewEditState {
   final bool isPlaying;
@@ -23,6 +25,10 @@ class AudioPreviewEditState {
   final String? errorMessage;
   final PublishStatus publishStatus;
   final String? publishMessage;
+  final MarkFavStatus? markFavStatus;
+  final String? markFavMessage;
+  final MarkUnFavStatus? markUnFavStatus;
+  final String? markUnFavMessage;
 
 
 
@@ -49,6 +55,10 @@ class AudioPreviewEditState {
     this.errorMessage,
     this.publishStatus = PublishStatus.initial,
     this.publishMessage,
+    required this.markFavStatus,
+    required this.markFavMessage,
+    required this.markUnFavStatus,
+    required this.markUnFavMessage,
   });
 
   factory AudioPreviewEditState.initial() => AudioPreviewEditState(
@@ -73,6 +83,10 @@ class AudioPreviewEditState {
     errorMessage: null,
     publishStatus: PublishStatus.initial,
     publishMessage: null,
+    markFavStatus: MarkFavStatus.initial,
+    markFavMessage: null,
+    markUnFavStatus: MarkUnFavStatus.initial,
+    markUnFavMessage: null,
   );
 
   AudioPreviewEditState copyWith({
@@ -97,6 +111,10 @@ class AudioPreviewEditState {
     String? errorMessage,
     PublishStatus? publishStatus,
     String? publishMessage,
+    MarkFavStatus? markFavStatus,
+    String? markFavMessage,
+    MarkUnFavStatus? markUnFavStatus,
+    String? markUnFavMessage,
 
   }) {
     return AudioPreviewEditState(
@@ -121,6 +139,10 @@ class AudioPreviewEditState {
       errorMessage: errorMessage ?? this.errorMessage,
       publishStatus: publishStatus ?? this.publishStatus,
       publishMessage: publishMessage ?? this.publishMessage,
+      markFavStatus:markFavStatus ?? this.markFavStatus,
+      markFavMessage:markFavMessage ?? this.markFavMessage,
+      markUnFavStatus:markUnFavStatus ?? this.markUnFavStatus,
+      markUnFavMessage:markUnFavMessage ?? this.markUnFavMessage,
     );
   }
 }

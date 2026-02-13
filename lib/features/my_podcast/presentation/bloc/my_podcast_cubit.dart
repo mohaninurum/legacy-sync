@@ -112,11 +112,9 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
     final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
     emit(state.copyWith(isLoading: true));
     final myPodCast = await _myPodCastUseCase.getMyPodcast(userId);
-    String postType = 'Posted';
     myPodCast.fold(
       (error) {
         print("APP EXCEPTION:: ${error.message}");
-
         emit(state.copyWith(isLoading: false, error: error.message));
       },
       (result) {
@@ -124,11 +122,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
           print("DATA ON SUCCESS:: ${result.data}");
           _allPodcasts.clear();
           result.data.forEach((element) {
-            if (element.isPosted == 1) {
-              postType = "Posted";
-            } else {
-              postType = "Draft";
-            }
+            final postType = element.isPosted == 1 ? "Posted" : "Draft";
             _allPodcasts.add(
               PodcastModel(
                 podcastId: element.podcastId,
@@ -147,8 +141,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
                 totalDurationSec: element.durationSeconds ?? 0,
                 description: element.description ?? '',
                 isFavourite: element.isFavourite,
-                // subtitle: element.description ?? '',
-                // summary: "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. ",
+                topicType: element.topicType,
               ),
             );
           });
@@ -222,6 +215,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
                 totalDurationSec: element.durationSeconds ?? 0,
                 description: element.description ?? '',
                 isFavourite: 1,
+                topicType: element.topicType,
               ),
             );
           }
@@ -301,11 +295,8 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
               listenedSec: element.listenedSeconds,
               totalDurationSec: element.durationSeconds,
               description: element.description ?? '',
-              //TODO use from api
-              isFavourite: 0
-              // subtitle: element.description ?? '',
-              // summary:
-              //     "Lorem ipsum dolor sit amet consectetur. Ullamcorper ac nunc justo neque sit mi quis congue hendrerit. Vulputate malesuada blandit integer enim. Magna duis neque sollicitudin feugiat aliquam diam at feugiat lacus. Integer nullam sociis eget mauris sed sodales at. ",
+              isFavourite: element.isFavourite,
+              topicType: element.topicType,
             ),
           );
         });

@@ -6,6 +6,8 @@ import 'package:legacy_sync/config/network/network_api_service.dart';
 import 'package:legacy_sync/features/audio_preview_edit/data/model/publish_response.dart';
 import 'package:legacy_sync/features/audio_preview_edit/data/model/save_as_draft.dart';
 import 'package:legacy_sync/features/audio_preview_edit/domain/repositories/audio_preview_edit_repositories.dart';
+import 'package:legacy_sync/features/play_podcast/data/model/mark_favourite_response.dart';
+import 'package:legacy_sync/features/play_podcast/data/model/mark_un_favourite_response.dart';
 
 class AudioPreviewEditRepoImpl extends AudioPreviewEditRepositories {
   static final BaseApiServices _apiServices = NetworkApiService();
@@ -62,6 +64,42 @@ class AudioPreviewEditRepoImpl extends AudioPreviewEditRepositories {
       return Left(e);
     } catch (e) {
       return Left(FetchDataException(e.toString()));
+    }
+  }
+
+  @override
+  ResultFuture<MarkFavouriteResponse> markFavouritePodcast(
+      Map<String, dynamic> body,
+      ) async {
+    try {
+      final res = await _apiServices.getPostApiResponse(
+        ApiURL.mark_podcast_favourite,
+        body,
+      );
+      return res.fold(
+            (error) => Left(error),
+            (data) => Right(MarkFavouriteResponse.fromJson(data)),
+      );
+    } on AppException catch (e) {
+      return Left(e);
+    }
+  }
+
+  @override
+  ResultFuture<MarkUnFavouriteResponse> markUnFavouritePodcast(
+      Map<String, dynamic> body,
+      ) async {
+    try {
+      final res = await _apiServices.getPostApiResponse(
+        ApiURL.mark_podcast_un_favourite,
+        body,
+      );
+      return res.fold(
+            (error) => Left(error),
+            (data) => Right(MarkUnFavouriteResponse.fromJson(data)),
+      );
+    } on AppException catch (e) {
+      return Left(e);
     }
   }
 }

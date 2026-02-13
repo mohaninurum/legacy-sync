@@ -16,7 +16,14 @@ enum InviteStatus { idle, sending, success, failure }
 
 enum LiveKitStatus { initial, connecting, connected, failure }
 
+enum NetStatus { online, reconnecting, offline }
+
 class LiveKitConnectionState extends Equatable {
+
+  final NetStatus netStatus;
+  final String? netMessage;
+  final int reconnectAttempt; // optional
+
   final LiveKitNavEvent navEvent;
   final bool everRecorded;
 
@@ -34,7 +41,7 @@ class LiveKitConnectionState extends Equatable {
   final List<PodcastTopicsModel> allTopics;
   final Duration duration;
   final List<PodcastTopicsModel> filteredTopics;
-  final TopicCategory? selectedCategory;
+  final TopicCategory selectedCategory;
   final CallStatus? callStatus;
 
   final bool? isSpeaker;
@@ -68,6 +75,10 @@ class LiveKitConnectionState extends Equatable {
   final bool consentGiven;
 
   const LiveKitConnectionState({
+    this.netStatus = NetStatus.online,
+    this.netMessage,
+    this.reconnectAttempt = 0,
+
     this.everRecorded = false,
     this.navEvent = LiveKitNavEvent.none,
     this.showCallOverlay = false,
@@ -87,7 +98,7 @@ class LiveKitConnectionState extends Equatable {
     this.allTopics = const [],
     this.duration = Duration.zero,
     this.filteredTopics = const [],
-    this.selectedCategory,
+    this.selectedCategory = TopicCategory.Shuffle,
     this.callStatus = CallStatus.idle,
     this.isSpeaker = true,
     this.isMic = true,
@@ -115,6 +126,10 @@ class LiveKitConnectionState extends Equatable {
 
 
   LiveKitConnectionState copyWith({
+    NetStatus? netStatus,
+    String? netMessage,
+    int? reconnectAttempt, // optional
+
     bool? everRecorded,
     LiveKitNavEvent? navEvent,
 

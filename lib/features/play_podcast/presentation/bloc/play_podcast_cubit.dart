@@ -139,6 +139,9 @@ class PlayPodcastCubit extends Cubit<PlayPodcastState> {
     emit(state.copyWith(isOverlayManager: value));
   }
 
+  void resetPlayer() {
+    emit(PlayPodcastState.initial());
+  }
   /// continue listing post  //podcast/save-listened-podcast-time
 
   Future<void> markFavourite({required int podcastId}) async {

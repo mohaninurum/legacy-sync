@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:legacy_sync/core/colors/colors.dart';
 import 'package:legacy_sync/features/home/data/model/friends_list_model.dart';
+import 'package:legacy_sync/features/livekit_connection/data/model/podcast_topics_model.dart';
+import 'package:legacy_sync/features/livekit_connection/presentation/bloc/livekit_connection_state.dart';
 
 import '../../../../core/components/comman_components/custom_text_field.dart';
 import '../../../../core/strings/strings.dart';
@@ -10,59 +12,52 @@ import '../bloc/audio_preview_edit_state.dart';
 
 class AudioMetaWidget extends StatelessWidget {
   final AudioPreviewEditState state;
+
   // final List<FriendsDataList> participants;
   final String participants;
-   const AudioMetaWidget({super.key, required this.state,required this.participants});
+  final String selectedTopicCategory;
 
-
-
-
+  const AudioMetaWidget({
+    super.key,
+    required this.state,
+    required this.participants,
+    required this.selectedTopicCategory,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return  Padding(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 24),
 
-          _SectionTitle("Title",context),
+          _SectionTitle("Title*", context),
           const SizedBox(height: 8),
-          _buildLoginForm(context,true),
-          const SizedBox(height: 6),
-          _HelperText("Auto-saved as Untitled Recording Oct 31, 2025",context),
+          _buildLoginForm(context, true),
 
           const SizedBox(height: 20),
 
-          _SectionTitle("Description",context),
+          _SectionTitle("Description", context),
           const SizedBox(height: 8),
-          _buildLoginForm(context,false),
-          const SizedBox(height: 6),
-          _HelperText("Auto-saved using audio transcription",context),
+          _buildLoginForm(context, false),
 
           const SizedBox(height: 24),
-
-          _SectionTitle("Collaborator",context),
+          _SectionTitle("Collaborator", context),
           const SizedBox(height: 12),
-          // if (participants.isEmpty)
-          //   _HelperText("No collaborators added", context)
-          // else
-          //   Wrap(
-          //     spacing: 12,
-          //     runSpacing: 12,
-          //     children: participants
-          //         .map((u) => collaboratorTile(collaborators: u, context: context))
-          //         .toList(),
-          //   ),
-          collaboratorTile(name:   participants,context: context),
+          if (participants.isEmpty)
+            _HelperText("No collaborators added", context)
+          else
+            collaboratorTile(name: participants, context: context),
+
           const SizedBox(height: 12),
 
           const SizedBox(height: 28),
 
-          _SectionTitle("Topics covered during recording",context),
+          _SectionTitle("Topics covered during recording", context),
           const SizedBox(height: 12),
-          _TopicsRow(topics: ["Relationship", "Friendship", "Work"],context: context),
+          _TopicChip(label: selectedTopicCategory, context: context),
 
           const SizedBox(height: 40),
         ],
@@ -70,7 +65,7 @@ class AudioMetaWidget extends StatelessWidget {
     );
   }
 
-  Widget _SectionTitle(String text,context) {
+  Widget _SectionTitle(String text, context) {
     return Text(
       text,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -80,7 +75,7 @@ class AudioMetaWidget extends StatelessWidget {
     );
   }
 
-  Widget _HelperText(String text,context) {
+  Widget _HelperText(String text, context) {
     return Text(
       text,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -132,15 +127,16 @@ class AudioMetaWidget extends StatelessWidget {
     // );
   }
 
-  Widget _TopicsRow({required List<String> topics,context}) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: topics.map((e) => _TopicChip(label: e,context: context)).toList(),
-    );
-  }
+  // Widget _TopicsRow({required topic, context}) {
+  //   return Wrap(
+  //     spacing: 10,
+  //     runSpacing: 10,
+  //     children:
+  //         topics.map((e) => _TopicChip(label: e, context: context)).toList(),
+  //   );
+  // }
 
-  Widget _TopicChip({required String label,context}) {
+  Widget _TopicChip({required String label, context}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
@@ -159,29 +155,26 @@ class AudioMetaWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildLoginForm(BuildContext context,bool type) {
+  Widget _buildLoginForm(BuildContext context, bool type) {
     return Column(
       children: [
-        if(type)
-        CustomTextField(
-          bgColor: AppColors.bg_container,
-          hintText: "Add Title",
-          controller:  context.read<AudioPreviewEditCubit>().title,
-          keyboardType: TextInputType.text,
-          onChanged: (value) {
-          },
-        )
-     else
-        CustomTextField(
-          maxLines: 4,
-          bgColor: AppColors.bg_container,
-          hintText: "Add Description ",
-          controller:  context.read<AudioPreviewEditCubit>().description,
-          keyboardType: TextInputType.multiline,
-          onChanged: (value) {
-
-          },
-        ),
+        if (type)
+          CustomTextField(
+            bgColor: AppColors.bg_container,
+            hintText: "Add Title",
+            controller: context.read<AudioPreviewEditCubit>().title,
+            keyboardType: TextInputType.text,
+            onChanged: (value) {},
+          )
+        else
+          CustomTextField(
+            maxLines: 4,
+            bgColor: AppColors.bg_container,
+            hintText: "Add Description ",
+            controller: context.read<AudioPreviewEditCubit>().description,
+            keyboardType: TextInputType.multiline,
+            onChanged: (value) {},
+          ),
       ],
     );
   }

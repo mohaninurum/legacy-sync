@@ -1,11 +1,3 @@
-// class LiveKitNavEvent {
-//   final String screenName;
-//   final Map<String, dynamic>? arguments;
-//
-//   const LiveKitNavEvent(this.screenName, {this.arguments});
-// }
-
-
 import 'package:equatable/equatable.dart';
 
 class LiveKitNavEvent extends Equatable {

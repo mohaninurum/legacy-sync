@@ -5,6 +5,7 @@ import 'package:legacy_sync/config/network/api_host.dart';
 import 'package:legacy_sync/config/network/app_exceptions.dart';
 import 'package:legacy_sync/config/network/base_api_service.dart';
 import 'package:legacy_sync/config/network/network_api_service.dart';
+import 'package:legacy_sync/features/livekit_connection/data/model/cancel_invite_response.dart';
 import 'package:legacy_sync/features/livekit_connection/data/model/invite_friend_response_model.dart';
 import 'package:legacy_sync/features/livekit_connection/data/model/podcast_topics_model.dart';
 import 'package:legacy_sync/features/livekit_connection/domain/repositories/livekit_connection_repository.dart';
@@ -46,6 +47,50 @@ class LiveKitConnectionRepositoryImpl extends LiveKitConnectionRepositories {
     }
   }
 
+  @override
+  ResultFuture<CancelInviteResponse> cancelInviteToPodcast({
+    required int userId,
+    required int friendId,
+    required String roomId,
+  }) async {
+    try {
+      final body = {
+        "user_id": userId,
+        "friend_id": friendId,
+        "room_id": roomId,
+      };
+
+      final res = await _apiServices.getPostApiResponseNoAuth(
+        ApiURL.cancelInviteToPodcast,
+        body,
+      );
+
+      return res.fold(
+            (error) => Left(error),
+            (data) {
+          if (data is! Map<String, dynamic>) {
+            return const Left(FetchDataException("Invalid cancel-invite response"));
+          }
+
+          final parsed = CancelInviteResponse.fromJson(data);
+
+          if (parsed.status != true) {
+            return Left(
+              FetchDataException(
+                parsed.message.isNotEmpty ? parsed.message : "Cancel invite failed",
+              ),
+            );
+          }
+
+          return Right(parsed);
+        },
+      );
+    } on AppException catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(FetchDataException(e.toString()));
+    }
+  }
 
 
   @override

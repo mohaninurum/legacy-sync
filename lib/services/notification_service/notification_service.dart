@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_callkit_incoming/entities/android_params.dart';
 import 'package:flutter_callkit_incoming/entities/call_kit_params.dart';
@@ -7,24 +9,74 @@ import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/core/utils/utils.dart';
 
 class NotificationService {
+  static bool _initialized = false;
 
   static bool _isIncomingCall(Map<String, dynamic> data) {
     final roomId = (data['room_id'] ?? '').toString();
     if (roomId.isEmpty) return false;
 
-    // if you want to enforce status:
-    // return (data['notification_status']?.toString() == '100');
-
     return true;
   }
 
   static Future<void> init() async {
+    if (_initialized) return;
+    _initialized = true;
+
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
     await messaging.requestPermission(alert: true, sound: true, badge: true);
 
+    // iOS: show notifications while app in foreground (optional but good)
+    await messaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    // ✅ Wait for APNS token on iOS (prevents apns-token-not-set later)
+    await _waitForApnsToken();
+
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpened);
+  }
+
+  /// ✅ Call this from AppService to safely read token without crashing on iOS
+  static Future<String?> getFcmTokenSafely() async {
+    final messaging = FirebaseMessaging.instance;
+
+    if (Platform.isIOS) {
+      await _waitForApnsToken();
+    }
+
+    try {
+      return await messaging.getToken();
+    } catch (e) {
+      // This catches [firebase_messaging/apns-token-not-set] and any other errors
+      // so your login flow won't break.
+      // ignore: avoid_print
+      print("[FCM] getToken failed: $e");
+      return null;
+    }
+  }
+
+  static Future<void> _waitForApnsToken() async {
+    if (!Platform.isIOS) return;
+
+    final messaging = FirebaseMessaging.instance;
+
+    // Try multiple times, APNS can be delayed right after app launch / hot restart.
+    for (int i = 0; i < 10; i++) {
+      final apns = await messaging.getAPNSToken();
+      if (apns != null && apns.isNotEmpty) {
+        // ignore: avoid_print
+        print("[APNS] token ready: $apns");
+        return;
+      }
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    // ignore: avoid_print
+    print("[APNS] token still not available (will retry later when needed)");
   }
 
 
@@ -40,19 +92,11 @@ class NotificationService {
       "notification_status": (message.data['notification_status'] ?? "").toString(),
     };
 
-    // Avoid opening multiple times if same call spams
-    // Optional: store last room_id/callId check here
-
     Utils.navigatorKey.currentState?.pushNamed(
       RoutesName.INCOMING_CALL_FULL_SCREEN,
       arguments: args,
     );
-    // if (_isIncomingCall(message.data)) {
-    //   await _showCall(message.data);
-    // }
-    // if (message.data['type'] == 'incoming_call') {
-    //   await _showCall(message.data);
-    // }
+
     print("Notification title: ${message.notification?.title}");
     print("Notification body: ${message.notification?.body}");
     print("Notification data : ${message.data}");
@@ -60,9 +104,6 @@ class NotificationService {
 
   static Future<void> _onMessageOpened(RemoteMessage message) async {
     print("onMessageOpened");
-    // if (_isIncomingCall(message.data)) {
-    //   await _showCall(message.data);
-    // }
     if (!_isIncomingCall(message.data)) return;
 
     final args = {
@@ -79,11 +120,6 @@ class NotificationService {
           (r) => false,
       arguments: args,
     );
-
-    // Utils.navigatorKey.currentState?.pushNamed(
-    //   RoutesName.INCOMING_CALL_FULL_SCREEN,
-    //   arguments: args,
-    // );
   }
 
   static Future<void> _showCall(Map<String, dynamic> data) async {

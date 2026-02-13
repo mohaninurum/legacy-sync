@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:legacy_sync/config/network/api_host.dart';
 import 'package:legacy_sync/features/auth/domain/usecases/auth_usecase.dart';
+import 'package:legacy_sync/services/notification_service/notification_service.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../config/db/shared_preferences.dart';
@@ -94,7 +95,8 @@ class AppService {
         return;
       }
 
-      final fcm = await FirebaseMessaging.instance.getToken();
+      // final fcm = await FirebaseMessaging.instance.getToken();
+      final fcm = await NotificationService.getFcmTokenSafely();
       if (fcm == null || fcm.isEmpty) {
         debugPrint("[FCM] Skipped: FCM token is null");
         return;
@@ -128,7 +130,6 @@ class AppService {
           );
         },
       );
-      // await AppPreference().set(key: AppPreference.KEY_FCM_TOKEN, value: fcm);
     } catch (e, s) {
       debugPrint("[FCM] ❌ Exception while updating token");
       debugPrint(e.toString());

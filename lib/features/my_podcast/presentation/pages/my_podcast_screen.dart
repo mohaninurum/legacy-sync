@@ -611,6 +611,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
               "is_draft": data.audioPath != null ? false : true,
               "participants": data.relationship,
               "roomId": '',
+              "selectedTopicCategory" : data.topicType,
             },
           );
         } else {
@@ -785,6 +786,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             "is_draft": data.audioPath != null ? false : true,
             "participants": data.relationship,
             "roomId": '',
+            "selectedTopicCategory" : data.topicType,
           },
         );
       },

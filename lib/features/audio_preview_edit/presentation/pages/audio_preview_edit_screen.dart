@@ -13,6 +13,8 @@ import 'package:legacy_sync/core/components/comman_components/custom_button_comm
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/features/audio_preview_edit/presentation/widgets/audio_meta_widget.dart';
 import 'package:legacy_sync/features/home/data/model/friends_list_model.dart';
+import 'package:legacy_sync/features/livekit_connection/data/model/podcast_topics_model.dart';
+import 'package:legacy_sync/features/livekit_connection/presentation/bloc/livekit_connection_state.dart';
 import 'package:legacy_sync/features/livekit_connection/presentation/utils/exts.dart';
 import 'package:legacy_sync/features/my_podcast/presentation/bloc/my_podcast_cubit.dart';
 
@@ -31,7 +33,7 @@ class AudioPreviewEditScreen extends StatefulWidget {
   final PodcastModel? podcastModel;
   final bool isDraft;
   final String participants;
-
+  final String selectedTopicCategory;
   // final List<FriendsDataList>? participants;
 
   const AudioPreviewEditScreen({
@@ -40,6 +42,7 @@ class AudioPreviewEditScreen extends StatefulWidget {
     this.podcastModel,
     required this.isDraft,
     required this.participants,
+    required this.selectedTopicCategory,
   });
 
   @override
@@ -49,7 +52,10 @@ class AudioPreviewEditScreen extends StatefulWidget {
 class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
   bool _picking = false;
   bool _hasNavigated = false;
-  late final AudioPreviewEditCubit cubitInstance;
+  late final AudioPreviewEditCubit audioPreviewEditCubit;
+  late final MyPodcastCubit _myPodcastCubit;
+  bool _publishDialogShown = false;
+
 
   void _safeExitAfterSuccess() {
     if (!mounted || _hasNavigated) return;
@@ -84,9 +90,12 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
 
   @override
   void initState() {
-    cubitInstance = context.read<AudioPreviewEditCubit>();
+    _publishDialogShown = false;
+    audioPreviewEditCubit = context.read<AudioPreviewEditCubit>();
+    _myPodcastCubit = context.read<MyPodcastCubit>();
+    audioPreviewEditCubit.setRoomId(widget.roomId);
     if (widget.podcastModel != null) {
-      cubitInstance.setData(data: widget.podcastModel!);
+      audioPreviewEditCubit.setData(data: widget.podcastModel!);
     }
     super.initState();
   }
@@ -118,9 +127,27 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
             child: BlocConsumer<AudioPreviewEditCubit, AudioPreviewEditState>(
               listenWhen:
                   (p, c) =>
-                      p.saveAsDraftStatus != c.saveAsDraftStatus ||
-                      p.publishStatus != c.publishStatus,
+                      p.saveAsDraftStatus != c.saveAsDraftStatus || p.publishStatus != c.publishStatus ||
+                p.markFavStatus != c.markFavStatus || p.markUnFavStatus != c.markUnFavStatus,
               listener: (context, state) {
+                if (state.markFavStatus == MarkFavStatus.success) {
+                  BotToast.showText(text: state.markFavMessage ?? "Added To Favourites");
+                  _myPodcastCubit.fetchFavouritePodcastList();
+                  _myPodcastCubit.allPodcastsContinueListening();
+                  _myPodcastCubit.fetchMyPodcastTab("Posted");
+                }
+                if (state.markUnFavStatus == MarkUnFavStatus.success) {
+                  BotToast.showText(text: state.markUnFavMessage ??  "Removed from favourites");
+                  _myPodcastCubit.fetchFavouritePodcastList();
+                  _myPodcastCubit.allPodcastsContinueListening();
+                  _myPodcastCubit.fetchMyPodcastTab("Posted");
+                }
+                if (state.markFavStatus == MarkFavStatus.failure) {
+                  BotToast.showText(text: state.markFavMessage ?? "Something went wrong");
+                }
+                if (state.markUnFavStatus == MarkUnFavStatus.failure) {
+                  BotToast.showText(text: state.markUnFavMessage ??  "Something went wrong");
+                }
                 if (state.saveAsDraftStatus == SaveAsDraftStatus.success) {
                   BotToast.showText(text: "Draft saved successfully.");
                   _safeExitAfterSuccess();
@@ -139,13 +166,28 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                 // Publish
                 if (state.publishStatus == PublishStatus.success) {
                   BotToast.showText(text: "Podcast published successfully.");
-                  _safeExitAfterSuccess();
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!context.mounted) return;
-                    context.read<MyPodcastCubit>().fetchMyPodcastTab("Posted");
+                  if (_publishDialogShown) return;
+                  _publishDialogShown = true;
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) async {
+                    if (!mounted) return;
+
+                    final ok = await context.showPodcastPublishedDialog(); // your custom dialog
+                    if (!mounted) return;
+
+                    if (ok == true) {
+                      _safeExitAfterSuccess();
+
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!context.mounted) return;
+                        context.read<MyPodcastCubit>().fetchMyPodcastTab("Posted");
+                        context.read<MyPodcastCubit>().allPodcastsContinueListening();
+                        context.read<MyPodcastCubit>().fetchFavouritePodcastList();
+                      });
+                    }
                   });
-                  // Navigator.pop(context);
                 } else if (state.publishStatus == PublishStatus.failure) {
+                  _publishDialogShown = false;
                   BotToast.showText(
                     text: state.publishMessage ?? "Failed to publish",
                   );
@@ -253,7 +295,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                     ? widget.podcastModel!.audioPath.toString()
                     : '',
           ),
-          AudioMetaWidget(state: state, participants: widget.participants),
+          AudioMetaWidget(state: state, participants: widget.participants,selectedTopicCategory: widget.selectedTopicCategory),
         ],
       ),
     );
@@ -270,7 +312,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
           ),
           const SizedBox(height: 6),
           processingNoticeCard(context: context),
-          AudioMetaWidget(state: state, participants: widget.participants),
+          AudioMetaWidget(state: state, participants: widget.participants,selectedTopicCategory: widget.selectedTopicCategory),
         ],
       ),
     );
@@ -322,9 +364,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "We’re processing your podcast recording in the background. This usually takes $minMinutes–$maxMinutes minutes. You can save it as a Draft for now. Once processing is complete, the Save button will be enabled so you can publish your podcast.",
-                  // "It can take $minMinutes–$maxMinutes minutes before it’s ready. "
-                  // "Once processing is complete, you’ll be able to save it.",
+                  "Your podcast is processing in the background. This usually takes 10 to 15 minutes. You can save it as a draft while we finish. Once processing is complete, you’ll be able to add a title, description, and publish.\n\nPublished episodes are only visible to participants from this recording session.",
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontSize: 13,
                     height: 1.35,
@@ -421,7 +461,15 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
           const SizedBox(),
           InkWell(
             onTap: () {
-              context.read<AudioPreviewEditCubit>().bookmark();
+              if (state.isBookmark) {
+                final id = widget.podcastModel?.podcastId ?? 0;
+                if (id == 0) return; // safety
+                audioPreviewEditCubit.markUnFavourite(podcastId: id);
+              } else {
+                final id = widget.podcastModel?.podcastId ?? 0;
+                if (id == 0) return; // safety
+                audioPreviewEditCubit.markFavourite(podcastId: id);
+              }
             },
             child: Container(
               alignment: Alignment.center,
@@ -479,12 +527,17 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                   height: 48,
                   onPressed: () async {
                     if (widget.roomId != null) {
+                      final hasTitle = (context.read<AudioPreviewEditCubit>().title.text.trim().isNotEmpty);
+
+                      if (!hasTitle) {
+                        BotToast.showText(text: "Please enter a title.");
+                        return;
+                      }
+
                       await context.read<AudioPreviewEditCubit>().saveAsDraft(
                         roomId: widget.roomId!,
+                        topicType: widget.selectedTopicCategory,
                       );
-                    } else {
-                      BotToast.showText(text: "RoomId is missing");
-                      return;
                     }
                   },
                 ),
@@ -520,14 +573,14 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                       );
                       return;
                     } else if (widget.podcastModel != null) {
-                      if (hasTitle && hasDesc) {
+                      if (hasTitle) {
                         print("Duration Second sends to publish podcast api : ${state.duration.inSeconds}");
                         await context.read<AudioPreviewEditCubit>().publishPodcast(
                           podcastId: widget.podcastModel!.podcastId,
                           durationSeconds: state.duration.inSeconds,
                         );
                       } else {
-                        BotToast.showText(text: "Please fill title, description and cover.");
+                        BotToast.showText(text: "Please fill title of the podcast.");
                       }
                     } else {
                       BotToast.showText(text: "PodcastId Is Missing");

@@ -4,6 +4,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:cached_video_player_plus/util/migration_utils.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_callkit_incoming/entities/android_params.dart';
@@ -15,6 +16,7 @@ import 'package:legacy_sync/core/app_sizes/app_sizes.dart';
 import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/config/theme/app_theme.dart';
 import 'package:legacy_sync/config/db/shared_preferences.dart';
+import 'package:legacy_sync/core/navigation/route_observer.dart';
 import 'package:legacy_sync/core/utils/utils.dart';
 import 'package:legacy_sync/core/strings/strings.dart';
 import 'package:legacy_sync/features/analysis/presentation/bloc/analysis_cubit/analysis_complete_cubit.dart';
@@ -149,6 +151,10 @@ void _listenCallKitEvents() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   await AppService.startNetworkWatcher();
   AppLifeCycleTracker.instance.start();
   final fetchResult = await setup();
@@ -157,9 +163,6 @@ void main() async {
   NotificationService.init();
   FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
   _listenCallKitEvents();
-  FirebaseMessaging.instance.getToken().then((value) {
-    debugPrint("fcm:-$value");
-  });
 
   runApp(
     MultiBlocProvider(
@@ -253,13 +256,26 @@ class MyApp extends StatelessWidget {
 
   MyApp({super.key, required this.authToken, required this.result});
 
+  static bool _routeBootstrapped = false; // ✅ add this
+
   @override
   Widget build(BuildContext context) {
     AppSizes().init(context);
     final botToastBuilder = BotToastInit();
+
     return MaterialApp(
       builder: (context, child) {
         child = botToastBuilder(context, child);
+        // ✅ PLACE IT HERE (runs only once)
+        if (!_routeBootstrapped) {
+          _routeBootstrapped = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final ctx = Utils.navigatorKey.currentContext ?? context;
+            final route = ModalRoute.of(ctx);
+            if (route != null) AppRouteTracker.setRoute(route);
+          });
+        }
+
         return BlocListener<LiveKitConnectionCubit, LiveKitConnectionState>(
           listenWhen: (p, c) => p.navEvent != c.navEvent && !c.navEvent.isNone,
           listener: (context, state) {
@@ -289,7 +305,7 @@ class MyApp extends StatelessWidget {
           ),
         );
       },
-      navigatorObservers: [BotToastNavigatorObserver()],
+      navigatorObservers: [BotToastNavigatorObserver(),AppRouteObserver()],
       navigatorKey: Utils.navigatorKey,
       debugShowCheckedModeBanner: false,
       title: AppStrings.appTitle,
