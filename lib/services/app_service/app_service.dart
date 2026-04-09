@@ -81,6 +81,8 @@ class AppService {
       debugPrint("[FCM] Token refreshed: $newToken");
       await updateFcmTokenIfNeeded();
     });
+
+    await updateFcmTokenIfNeeded();
   }
 
   static Future<void> updateFcmTokenIfNeeded() async {
