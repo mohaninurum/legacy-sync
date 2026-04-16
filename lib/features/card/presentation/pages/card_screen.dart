@@ -24,8 +24,8 @@ class CardScreen extends StatefulWidget {
 class _CardScreenState extends State<CardScreen> with TickerProviderStateMixin {
   late AnimationController _slideController;
   late AnimationController _scaleController;
-  late List<AnimationController> _gridItemControllers;
-  late List<Animation<double>> _gridItemAnimations;
+  List<AnimationController>? _gridItemControllers;
+  List<Animation<double>>? _gridItemAnimations;
 
   @override
   void initState() {
@@ -52,8 +52,8 @@ class _CardScreenState extends State<CardScreen> with TickerProviderStateMixin {
   void dispose() {
     _slideController.dispose();
     _scaleController.dispose();
-    if(_gridItemControllers != null){
-      for (var controller in _gridItemControllers) {
+    if (_gridItemControllers != null) {
+      for (var controller in _gridItemControllers!) {
         controller.dispose();
       }
     }
@@ -403,11 +403,14 @@ class _CardScreenState extends State<CardScreen> with TickerProviderStateMixin {
 
   Widget _buildGradientOption(CardLoaded state, int index) {
     bool isSelected = state.card.selectedGradientIndex == index;
+    if (_gridItemAnimations == null || _gridItemAnimations!.length <= index) {
+      return const SizedBox.shrink();
+    }
     return AnimatedBuilder(
-      animation: _gridItemAnimations[index],
+      animation: _gridItemAnimations![index],
       builder: (context, child) {
         return Transform.scale(
-          scale: _gridItemAnimations[index].value,
+          scale: _gridItemAnimations![index].value,
           child: GestureDetector(
             onTap: () {
               context.read<CardCubit>().updateGradient(index);
@@ -448,6 +451,11 @@ class _CardScreenState extends State<CardScreen> with TickerProviderStateMixin {
   }
 
   void _showCustomizationFunction(CardLoaded state) {
+    if (_gridItemControllers != null) {
+      for (var controller in _gridItemControllers!) {
+        controller.dispose();
+      }
+    }
     _gridItemControllers = List.generate(
       state.gradientOptions.length,
       (index) => AnimationController(
@@ -456,17 +464,17 @@ class _CardScreenState extends State<CardScreen> with TickerProviderStateMixin {
       ),
     );
     _gridItemAnimations =
-        _gridItemControllers
+        _gridItemControllers!
             .map(
               (controller) => Tween<double>(begin: 0.0, end: 1.0).animate(
                 CurvedAnimation(parent: controller, curve: Curves.bounceOut),
               ),
             )
             .toList();
-    for (int i = 0; i < _gridItemControllers.length; i++) {
-      _gridItemControllers[i].reset();
+    for (int i = 0; i < _gridItemControllers!.length; i++) {
+      _gridItemControllers![i].reset();
       Future.delayed(Duration(milliseconds: 100 * i), () {
-        if (mounted) _gridItemControllers[i].forward();
+        if (mounted) _gridItemControllers![i].forward();
       });
     }
   }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:legacy_sync/config/routes/routes_name.dart';
+import 'package:legacy_sync/features/analysis/presentation/pages/analysis_complete_screen.dart';
 import 'package:legacy_sync/features/analysis/presentation/pages/analysis_screen.dart';
+import 'package:legacy_sync/features/answer/presentation/pages/answer_screen.dart';
 import 'package:legacy_sync/features/audio_preview_edit/presentation/bloc/audio_preview_edit_cubit.dart';
 import 'package:legacy_sync/features/auth/presentation/pages/login_screen.dart';
 import 'package:legacy_sync/features/auth/presentation/pages/reset_password_screen.dart';
@@ -9,28 +11,27 @@ import 'package:legacy_sync/features/auth/presentation/pages/signup_screen.dart'
 import 'package:legacy_sync/features/auth/presentation/pages/social_login_screen.dart';
 import 'package:legacy_sync/features/auth/presentation/pages/verification_code_screen.dart';
 import 'package:legacy_sync/features/card/presentation/pages/card_screen.dart';
+import 'package:legacy_sync/features/card/presentation/pages/welcome_card_screen.dart';
 import 'package:legacy_sync/features/create_new_podcast/presentation/pages/create_new_podcast_screen.dart';
 import 'package:legacy_sync/features/favorite_memories/presentation/pages/favorite_memories_screen.dart';
 import 'package:legacy_sync/features/friends_profile/presentation/pages/friends_profile_page.dart';
 import 'package:legacy_sync/features/home/presentation/pages/learn_page.dart';
 import 'package:legacy_sync/features/list_of_module/presentation/pages/list_of_module_screen.dart';
-import 'package:legacy_sync/features/livekit_connection/presentation/bloc/livekit_connection_cubit.dart';
 import 'package:legacy_sync/features/livekit_connection/presentation/pages/room.dart';
+import 'package:legacy_sync/features/onboarding/presentation/pages/onboarding_screen.dart';
+import 'package:legacy_sync/features/paywall/presentation/pages/paywall_screen.dart';
+import 'package:legacy_sync/features/post_paywall/presentation/pages/post_paywall_screen.dart';
 import 'package:legacy_sync/features/question/presentation/pages/question_screen.dart';
 import 'package:legacy_sync/features/settings/presentation/pages/f_a_q_screen.dart';
 import 'package:legacy_sync/features/social_proof/presentation/pages/choose_your_goals_screen.dart';
-import 'package:legacy_sync/features/splash/presentation/pages/splash_screen.dart';
-import 'package:legacy_sync/features/analysis/presentation/pages/analysis_complete_screen.dart';
-import 'package:legacy_sync/features/onboarding/presentation/pages/onboarding_screen.dart';
 import 'package:legacy_sync/features/social_proof/presentation/pages/credibility_screen.dart';
 import 'package:legacy_sync/features/social_proof/presentation/pages/rating_screen.dart';
-import 'package:legacy_sync/features/card/presentation/pages/welcome_card_screen.dart';
-import 'package:legacy_sync/features/post_paywall/presentation/pages/post_paywall_screen.dart';
-import 'package:legacy_sync/features/paywall/presentation/pages/paywall_screen.dart';
-import 'package:legacy_sync/features/answer/presentation/pages/answer_screen.dart';
+import 'package:legacy_sync/features/splash/presentation/pages/splash_screen.dart';
 
 import '../../features/audio_preview_edit/presentation/pages/audio_preview_edit_screen.dart';
 import '../../features/auth/presentation/pages/email_verification_screen.dart';
+import '../../features/home/presentation/bloc/home_bloc/home_cubit.dart';
+import '../../features/home/presentation/pages/home_screen.dart';
 import '../../features/incoming_call_full_screen/incoming_call_full_screen.dart';
 import '../../features/legacy_wrapped/presentation/pages/legacy_wrapped_screen.dart';
 import '../../features/legacy_wrapped/presentation/pages/voice_is_growing_screen.dart';
@@ -39,14 +40,12 @@ import '../../features/play_podcast/presentation/pages/play_podcast.dart';
 import '../../features/play_podcast/presentation/pages/widget/transcript_description.dart';
 import '../../features/podcast/presentation/pages/podcast_screen.dart';
 import '../../features/podcast_recording/presentation/pages/podcast_recording_screen.dart';
+import '../../features/profile/presentation/pages/edit_profile_page.dart';
+import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/settings/presentation/pages/more_options_screen.dart';
-import '../../features/settings/presentation/pages/support_screen.dart';
 import '../../features/settings/presentation/pages/notifications_screen.dart';
 import '../../features/settings/presentation/pages/settings_screen.dart';
-import '../../features/profile/presentation/pages/profile_page.dart';
-import '../../features/profile/presentation/pages/edit_profile_page.dart';
-import '../../features/home/presentation/pages/home_screen.dart';
-import '../../features/home/presentation/bloc/home_bloc/home_cubit.dart';
+import '../../features/settings/presentation/pages/support_screen.dart';
 
 class Routes {
   static Route<dynamic> generateRoutes(RouteSettings settings) {
@@ -57,14 +56,10 @@ class Routes {
         return _animatedRouteRightToLeft(const ResetPasswordScreen());
       case RoutesName.VERIFICATION_CODE_SCREEN:
         final email = settings.arguments as String?;
-        return _animatedRouteRightToLeft(
-          VerificationCodeScreen(email: email ?? ""),
-        );
+        return _animatedRouteRightToLeft(VerificationCodeScreen(email: email ?? ""));
       case RoutesName.email_verification_screen:
         final email = settings.arguments as String?;
-        return _animatedRouteRightToLeft(
-          EmailVerificationScreen(email: email ?? ""),
-        );
+        return _animatedRouteRightToLeft(EmailVerificationScreen(email: email ?? ""));
       case RoutesName.LOGIN_SCREEN:
         return _animatedRouteRightToLeft(const LoginScreen());
       case RoutesName.SOCIAL_LOGIN_SCREEN:
@@ -83,9 +78,7 @@ class Routes {
         final hide_c_btn = args?['hide_c_btn'] as bool? ?? false;
 
         // hide_c_btn
-        return _animatedRouteZoomOut(
-          CardScreen(hideContinueButton: hide_c_btn),
-        );
+        return _animatedRouteZoomOut(CardScreen(hideContinueButton: hide_c_btn));
 
       case RoutesName.FRIENDS_PROFILE_PAGE:
         final args = settings.arguments as Map<String, dynamic>?;
@@ -136,10 +129,7 @@ class Routes {
         return _animatedRouteRightToLeft(const NotificationsScreen());
       case RoutesName.HOME_SCREEN:
         return _animatedRouteZoomOut(
-          BlocProvider(
-            create: (context) => HomeCubit(),
-            child: const HomeScreen(),
-          ),
+          BlocProvider(create: (context) => HomeCubit(), child: const HomeScreen()),
         );
       case RoutesName.CHOOSE_YOUR_GOALS_SCREEN:
         return _animatedRouteRightToLeft(const ChooseYourGoalsScreen());
@@ -178,12 +168,14 @@ class Routes {
       case RoutesName.PODCAST_SCREEN:
         return _animatedRouteRightToLeft(const PodcastScreen());
       case RoutesName.ROOM_PAGE:
-        final args = settings.arguments as Map<String, dynamic>?;
+        final args = settings.arguments as Map<dynamic, dynamic>? ?? {};
 
-        final roomId = args?['roomId'] as String? ?? '';
-        final incomingCall = args!["incoming_call"];
-        final userName = args["userName"];
-        final userId = args["userId"] as int? ?? -1;
+        final roomId = (args['roomId'] ?? args['room_id'] ?? "").toString();
+        final incomingCall =
+            args["incoming_call"] == true || args["incoming_call"]?.toString() == "true";
+        final userName = (args["userName"] ?? args["user_name"] ?? "").toString();
+        final userId =
+            int.tryParse((args["userId"] ?? args["user_id"] ?? "-1").toString()) ?? -1;
 
         return _animatedRouteZoomOut(
           RoomPage(
@@ -195,18 +187,14 @@ class Routes {
         );
 
       case RoutesName.MY_PODCAST_SCREEN:
-        // final data = settings.arguments as Map?;
-        // final incomingCall = data!["isStartFirstTime"];
         return _animatedRouteRightToLeft(const MyPodcastScreen());
+
       case RoutesName.PODCAST_RECORDING_SCREEN:
         final data = settings.arguments as Map?;
         final incomingCall = data!["incoming_call"];
         final userName = data["userName"];
         return _animatedRouteDownToUp(
-          PodcastRecordingScreen(
-            isIncomingCall: incomingCall,
-            userName: userName,
-          ),
+          PodcastRecordingScreen(isIncomingCall: incomingCall, userName: userName),
         );
       case RoutesName.AUDIO_PREVIEW_EDIT_SCREEN:
         final data = settings.arguments as Map?;
@@ -230,28 +218,24 @@ class Routes {
           ),
         );
 
-      // case RoutesName.INCOMING_CALL_FULL_SCREEN:
-      //   return _animatedRouteDownToUp(const IncomingCallFullScreen());
-
       case RoutesName.INCOMING_CALL_FULL_SCREEN:
         final raw = settings.arguments as Map<dynamic, dynamic>? ?? {};
 
         final incomingCall =
-            raw["incoming_call"] == true ||
-            raw["incoming_call"]?.toString() == "true";
+            raw["incoming_call"] == true || raw["incoming_call"]?.toString() == "true";
         final roomId = (raw["room_id"] ?? raw["roomId"] ?? "").toString();
-        final callerUserId =
-            (raw["user_id"] ?? raw["callerUserId"] ?? "").toString();
+        final callerUserId = (raw["user_id"] ?? raw["callerUserId"] ?? "").toString();
         final callerUserName =
             (raw["user_name"] ?? raw["callerUserName"] ?? "").toString();
         final callerProfileImage =
-            (raw["profile_image"] ?? raw["callerProfileImage"] ?? "")
-                .toString();
-        final notificationStatus =
-            (raw["notification_status"] ?? "").toString();
+            (raw["profile_image"] ?? raw["callerProfileImage"] ?? "").toString();
+        final notificationStatus = (raw["notification_status"] ?? "").toString();
+
+        final isAccepted = raw["is_accepted"] ?? false;
 
         return _animatedRouteDownToUp(
           IncomingCallFullScreen(
+            isAlreadyAccepted: isAccepted,
             incomingCall: incomingCall,
             roomId: roomId,
             callerProfileImage: callerProfileImage,
@@ -317,10 +301,7 @@ class Routes {
         ).chain(CurveTween(curve: Curves.easeInOut));
         return ScaleTransition(
           scale: animation.drive(scaleTween),
-          child: FadeTransition(
-            opacity: animation.drive(fadeTween),
-            child: child,
-          ),
+          child: FadeTransition(opacity: animation.drive(fadeTween), child: child),
         );
       },
     );
@@ -336,10 +317,7 @@ class Routes {
           end: Offset.zero, // move to normal position
         ).chain(CurveTween(curve: Curves.easeOutCubic));
 
-        return SlideTransition(
-          position: animation.drive(slideTween),
-          child: child,
-        );
+        return SlideTransition(position: animation.drive(slideTween), child: child);
       },
     );
   }

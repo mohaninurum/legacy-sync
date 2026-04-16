@@ -2,12 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/core/images/images.dart';
 import 'package:legacy_sync/core/strings/strings.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/colors/colors.dart';
 import '../../../../core/components/comman_components/app_button.dart';
 import '../../../../core/components/comman_components/curved_header_clipper.dart';
@@ -55,8 +56,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
 
   Widget _podcastjoin() {
     return BlocConsumer<PodcastCubit, PodcastState>(
-      listenWhen:
-          (prev, curr) => prev.createRoomStatus != curr.createRoomStatus,
+      listenWhen: (prev, curr) => prev.createRoomStatus != curr.createRoomStatus,
       listener: (context, state) {
         if (state.createRoomStatus == CreateRoomStatus.success) {
           Navigator.pushNamed(
@@ -79,9 +79,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
           },
           child: Text(
             "Create Podcast",
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: Colors.blue),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.blue),
           ),
         );
       },
@@ -121,12 +119,6 @@ class _PodcastScreenState extends State<PodcastScreen> {
                     width: double.infinity,
                     fit: BoxFit.fill,
                   ),
-                  // Lottie.asset(
-                  //   LottieFiles.pod_cast,
-                  //   height: 25.height, // match parent height
-                  //   width: double.infinity,
-                  //   fit: BoxFit.fill,
-                  // ),
                 ),
               ),
             ],
@@ -145,10 +137,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _buildBackButton(),
-                      Text(
-                        "Podcast",
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
+                      Text("Podcast", style: Theme.of(context).textTheme.bodyLarge),
                     ],
                   ),
                   _podcastjoin(),
@@ -195,9 +184,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
           SizedBox(height: 2.height),
           Text(
             AppStrings.podcastJourney,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(fontSize: 20),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 20),
           ),
           SizedBox(height: 2.height),
           Text(
@@ -243,17 +230,17 @@ class _PodcastScreenState extends State<PodcastScreen> {
                       dense: true,
                       title: Text(
                         state.buildOwnPodcastList[index].title,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       subtitle: Text(
                         state.buildOwnPodcastList[index].subtitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w400,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w400),
                       ),
                       leading: Image.asset(
                         state.buildOwnPodcastList[index].image,
@@ -275,10 +262,7 @@ class _PodcastScreenState extends State<PodcastScreen> {
       height: 48,
       onPressed: () {
         context.read<PodcastCubit>().startMakingPodcast();
-        Navigator.pushReplacementNamed(
-          context,
-          RoutesName.MY_PODCAST_SCREEN,
-        );
+        Navigator.pushReplacementNamed(context, RoutesName.MY_PODCAST_SCREEN);
       },
       btnText: AppStrings.startMakingPodcast,
     );

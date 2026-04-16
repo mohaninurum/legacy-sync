@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:legacy_sync/core/components/comman_components/app_button.dart';
@@ -12,14 +12,15 @@ import 'package:legacy_sync/features/home/data/model/navigation_tab_model.dart';
 import 'package:legacy_sync/features/home/domain/usecases/navigate_to_module_usecase.dart';
 import 'package:legacy_sync/features/home/presentation/bloc/home_bloc/home_cubit.dart';
 import 'package:legacy_sync/features/home/presentation/bloc/home_state/home_state.dart';
+import 'package:legacy_sync/features/home/presentation/pages/journey_content_widget.dart';
 import 'package:legacy_sync/features/home/presentation/pages/tripe_page_widget.dart';
 import 'package:legacy_sync/features/home/presentation/widgets/bottom_navigation_widget.dart';
 import 'package:legacy_sync/features/home/presentation/widgets/coming_soon_widget.dart';
-import 'package:legacy_sync/features/home/presentation/pages/journey_content_widget.dart';
 import 'package:legacy_sync/features/my_podcast/presentation/pages/my_podcast_screen.dart';
 import 'package:legacy_sync/features/profile/presentation/bloc/profile_bloc/profile_cubit.dart';
 import 'package:legacy_sync/features/profile/presentation/pages/profile_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../config/db/shared_preferences.dart';
 import '../../../../config/routes/routes_name.dart';
 import '../../../../core/images/images.dart';
@@ -34,13 +35,14 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
+class _HomeScreenState extends State<HomeScreen>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   late AnimationController _mainController;
   late Animation<double> _mainAnimation;
   String? _selectedModule;
   String? congratulationValue;
-  bool startMakingPodcast=false;
+  bool startMakingPodcast = false;
 
   // Animation controllers for pipe flow
   late List<AnimationController> _pipeControllers;
@@ -50,16 +52,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // _checkPendingCall();
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   if (pendingCallArguments != null) {
-    //     Utils.navigatorKey.currentState?.pushNamed(
-    //       RoutesName.PODCAST_RECORDING_SCREEN,
-    //       arguments: pendingCallArguments,
-    //     );
-    //     pendingCallArguments = null;
-    //   }
-    // });
+    _checkPendingCall();
     getStartMakingPodcast();
     _setupAnimations();
     context.read<HomeCubit>().initializeHome(context);
@@ -67,70 +60,85 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
     context.read<ProfileCubit>().loadProfile(context);
     context.read<ProfileCubit>().getLegacySteps();
     getModule();
-
-
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // _checkPendingCall();
+      _checkPendingCall();
     }
   }
 
-
   getStartMakingPodcast() async {
-    startMakingPodcast= await AppPreference().getBool(key: AppPreference.start_Making_Podcast);
+    startMakingPodcast = await AppPreference().getBool(
+      key: AppPreference.start_Making_Podcast,
+    );
   }
 
-  // Future<void> _checkPendingCall() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   final data = prefs.getString('pending_call_accept');
-  //  print("notification Data:$data");
-  //   if (data != null) {
-  //     final args = jsonDecode(data);
-  //     WidgetsBinding.instance.addPostFrameCallback((_) {
-  //       Utils.navigatorKey.currentState?.pushNamed(
-  //         RoutesName.PODCAST_RECORDING_SCREEN,
-  //         arguments: args,
-  //       );
-  //     });
-  //   }else{
-  //     WidgetsBinding.instance.addPostFrameCallback((_) {
-  //       if(pendingCallArguments!=null){
-  //         Utils.navigatorKey.currentState?.pushNamed(
-  //           RoutesName.PODCAST_RECORDING_SCREEN,
-  //           arguments: pendingCallArguments,
-  //         );
-  //       }
-  //
-  //     });
-  //   }
-  // }
+  Future<void> _checkPendingCall() async {
+    // Small delay to let main.dart CallKit events land first
+    await Future.delayed(const Duration(milliseconds: 100));
 
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString("pending_call_accept");
+    if (data != null) {
+      final args = jsonDecode(data);
+      await prefs.remove("pending_call_accept");
+      final bool isAccepted = args?["is_accepted"] ?? false;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Utils.navigatorKey.currentState?.pushNamed(
+          isAccepted ? RoutesName.ROOM_PAGE : RoutesName.INCOMING_CALL_FULL_SCREEN,
+          arguments: args,
+        );
+      });
+    } else if (pendingCallArguments != null) {
+      final args = pendingCallArguments;
+      pendingCallArguments = null;
+      final bool isAccepted = args?["is_accepted"] ?? false;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Utils.navigatorKey.currentState?.pushNamed(
+          isAccepted ? RoutesName.ROOM_PAGE : RoutesName.INCOMING_CALL_FULL_SCREEN,
+          arguments: args,
+        );
+      });
+    }
+  }
 
   getModule() async {
-    _selectedModule=  await AppPreference().get(key: "ModuleIndex");
-    congratulationValue=  await AppPreference().get(key: "congratulation");
+    _selectedModule = await AppPreference().get(key: "ModuleIndex");
+    congratulationValue = await AppPreference().get(key: "congratulation");
     print("_selectedModule $_selectedModule congratulationValue $congratulationValue");
-
   }
 
   void _setupAnimations() {
-    _mainController = AnimationController(duration: const Duration(milliseconds: 2200), vsync: this);
+    _mainController = AnimationController(
+      duration: const Duration(milliseconds: 2200),
+      vsync: this,
+    );
 
-    _mainAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _mainController, curve: Curves.easeInOut));
+    _mainAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _mainController, curve: Curves.easeInOut));
 
     _mainController.repeat(reverse: true); // twinkle driver
 
     // Setup pipe animation controllers
     _pipeControllers = List.generate(7, (index) {
-      return AnimationController(duration: const Duration(milliseconds: 2200), vsync: this);
+      return AnimationController(
+        duration: const Duration(milliseconds: 2200),
+        vsync: this,
+      );
     });
 
     _pipeAnimations =
         _pipeControllers.map((controller) {
-          return Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOut));
+          return Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOut));
         }).toList();
   }
 
@@ -151,7 +159,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
     if (state.journeyCards[index].isEnabled) {
       final card = state.journeyCards[index];
       final navigationArgs = NavigateToModuleUsecase.execute(card);
-      await Navigator.pushNamed(context, RoutesName.LIST_OF_MODULE, arguments: navigationArgs).then((value) async {
+      await Navigator.pushNamed(
+        context,
+        RoutesName.LIST_OF_MODULE,
+        arguments: navigationArgs,
+      ).then((value) async {
         if (value == true) {
           // print("Back home screen...");
           getModule();
@@ -168,8 +180,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
           //   );
           // }
         }
-      },);
-
+      });
     } else {
       LockedQuestionDialog.show(context, title: "module");
     }
@@ -178,13 +189,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
   Widget _buildCurrentContent(HomeState state) {
     switch (state.selectedTab) {
       case NavigationTab.journey:
-        return JourneyContentWidget(cards: state.journeyCards,
-            pipes: state.pipeAnimations,
-            onCardTapped: _onCardTapped,
-            pipeControllers: _pipeControllers,
-            pipeAnimations: _pipeAnimations);
+        return JourneyContentWidget(
+          cards: state.journeyCards,
+          pipes: state.pipeAnimations,
+          onCardTapped: _onCardTapped,
+          pipeControllers: _pipeControllers,
+          pipeAnimations: _pipeAnimations,
+        );
       case NavigationTab.chat:
-        return startMakingPodcast? const MyPodcastScreen(): const PodcastScreen();
+        return startMakingPodcast ? const MyPodcastScreen() : const PodcastScreen();
       case NavigationTab.tribe:
         return const TripePageWidget();
       case NavigationTab.profile:
@@ -195,7 +208,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
   Widget _buildChatContent() {
     return const ComingSoonWidget(
       title: 'Chat & Connect',
-      description: 'Engage in meaningful conversations and connect with your community. Share your wisdom and learn from others on their legacy journey.',
+      description:
+          'Engage in meaningful conversations and connect with your community. Share your wisdom and learn from others on their legacy journey.',
       iconPath: 'assets/icons/comment.svg',
       accentColor: Color(0xFF4CAF50), // Green
     );
@@ -204,7 +218,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
   Widget _buildTribeContent() {
     return const ComingSoonWidget(
       title: 'Your Tribe',
-      description: 'Build and nurture your family connections. Create a space where your loved ones can access your wisdom and continue your legacy.',
+      description:
+          'Build and nurture your family connections. Create a space where your loved ones can access your wisdom and continue your legacy.',
       iconPath: 'assets/icons/family-dress.svg',
       accentColor: Color(0xFF9C27B0), // Purple
     );
@@ -213,7 +228,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
   Widget _buildProfileContent() {
     return const ComingSoonWidget(
       title: 'Your Profile',
-      description: 'Personalize your legacy journey. Manage your settings, view your progress, and customize your experience to reflect your unique story.',
+      description:
+          'Personalize your legacy journey. Manage your settings, view your progress, and customize your experience to reflect your unique story.',
       iconPath: 'assets/icons/user.svg',
       accentColor: Color(0xFF2196F3), // Blue
     );
@@ -223,7 +239,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
   Widget build(BuildContext context) {
     return BlocConsumer<HomeCubit, HomeState>(
       listener: (context, state) {
-
         // Listen for animation state changes and trigger Flutter animations
         for (int i = 0; i < state.pipeAnimations.length; i++) {
           final pipe = state.pipeAnimations[i];
@@ -234,22 +249,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
           }
         }
 
-
-        print("Navigation...${_selectedModule}>>>>${state.nextModuleToOpenIndex}:-$congratulationValue");
+        print(
+          "Navigation...${_selectedModule}>>>>${state.nextModuleToOpenIndex}:-$congratulationValue",
+        );
 
         // 2️⃣ Navigation (OUTSIDE loop)
-        if (_selectedModule=="${state.nextModuleToOpenIndex}" && congratulationValue=="true" ) {
+        if (_selectedModule == "${state.nextModuleToOpenIndex}" &&
+            congratulationValue == "true") {
           AppPreference().set(key: "congratulation", value: "");
           final index = int.parse(_selectedModule!);
           final card = state.journeyCards[index];
           final args = NavigateToModuleUsecase.execute(card);
-          Navigator.pushNamed(
-            context,
-            RoutesName.LIST_OF_MODULE,
-            arguments: args,
-          );
+          Navigator.pushNamed(context, RoutesName.LIST_OF_MODULE, arguments: args);
         }
-
       },
       builder: (context, state) {
         return AppWillPopScope(
@@ -265,10 +277,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
                 body: Stack(
                   children: [
                     const NightSkyBackground(),
+
                     // Starry background (twinkle with main animation)
                     // CustomPaint(size: Size.infinite, painter: _StarryBackgroundPainter(t: _mainAnimation.value)),
-
-                    state.isLoading ? const Center(child: CircularProgressIndicator(color: Colors.white)) : _buildCurrentContent(state),
+                    state.isLoading
+                        ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        )
+                        : _buildCurrentContent(state),
                   ],
                 ),
                 floatingActionButton: state.isJourneyTab ? _buildContinueButton() : null,
@@ -278,7 +294,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
                   selectedTab: state.selectedTab,
                   onTabChanged: (index) {
                     context.read<HomeCubit>().onNavigationTabChanged(index);
-
                   },
                 ),
               ),
@@ -296,13 +311,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, 
           onPressed: () {
             context.read<HomeCubit>().onContinueLegacyPressed(context);
           },
-          child: Image.asset(!state.isFirstVisit?Images.btn_start_your_legacy:Images.bt_continue_your_legacy, height: 70, width: 250),
+          child: Image.asset(
+            !state.isFirstVisit
+                ? Images.btn_start_your_legacy
+                : Images.bt_continue_your_legacy,
+            height: 70,
+            width: 250,
+          ),
         );
       },
     );
   }
 }
-
 
 class DisabledPipePainter extends CustomPainter {
   final bool isLeft;
@@ -329,31 +349,44 @@ class DisabledPipePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p1 = Offset(isLeft ? boxWidth + horizontalMargin : size.width - boxWidth - horizontalMargin, boxHeight / 2 + verticalSpacing / 2);
+    final p1 = Offset(
+      isLeft ? boxWidth + horizontalMargin : size.width - boxWidth - horizontalMargin,
+      boxHeight / 2 + verticalSpacing / 2,
+    );
 
-    final p3 = Offset(isLeft ? size.width - boxWidth / 2 - horizontalMargin : boxWidth / 2 + horizontalMargin, boxHeight / 2 + verticalSpacing * 1.5);
+    final p3 = Offset(
+      isLeft
+          ? size.width - boxWidth / 2 - horizontalMargin
+          : boxWidth / 2 + horizontalMargin,
+      boxHeight / 2 + verticalSpacing * 1.5,
+    );
 
     final c1x = (p1.dx + p3.dx) / 2;
     final c2y = p3.dy - (turnFactor * maxLift);
 
     final path =
-    Path()
-      ..moveTo(p1.dx, p1.dy)
-      ..cubicTo(c1x, p1.dy, p3.dx, c2y, p3.dx, p3.dy);
+        Path()
+          ..moveTo(p1.dx, p1.dy)
+          ..cubicTo(c1x, p1.dy, p3.dx, c2y, p3.dx, p3.dy);
 
     // Draw disabled pipe with low opacity
     final paint =
-    Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..color = gradientColors[0].withValues(alpha: 0.2); // Low opacity for disabled state
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..color = gradientColors[0].withValues(
+            alpha: 0.2,
+          ); // Low opacity for disabled state
 
     canvas.drawPath(path, paint);
   }
 
   @override
   bool shouldRepaint(covariant DisabledPipePainter oldDelegate) {
-    return oldDelegate.turnFactor != turnFactor || oldDelegate.maxLift != maxLift || oldDelegate.strokeWidth != strokeWidth || oldDelegate.gradientColors != gradientColors;
+    return oldDelegate.turnFactor != turnFactor ||
+        oldDelegate.maxLift != maxLift ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.gradientColors != gradientColors;
   }
 }
 
@@ -386,17 +419,25 @@ class AnimatedConnectorPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p1 = Offset(isLeft ? boxWidth + horizontalMargin : size.width - boxWidth - horizontalMargin, boxHeight / 2 + verticalSpacing / 2);
+    final p1 = Offset(
+      isLeft ? boxWidth + horizontalMargin : size.width - boxWidth - horizontalMargin,
+      boxHeight / 2 + verticalSpacing / 2,
+    );
 
-    final p3 = Offset(isLeft ? size.width - boxWidth / 2 - horizontalMargin : boxWidth / 2 + horizontalMargin, boxHeight / 2 + verticalSpacing * 1.5);
+    final p3 = Offset(
+      isLeft
+          ? size.width - boxWidth / 2 - horizontalMargin
+          : boxWidth / 2 + horizontalMargin,
+      boxHeight / 2 + verticalSpacing * 1.5,
+    );
 
     final c1x = (p1.dx + p3.dx) / 2;
     final c2y = p3.dy - (turnFactor * maxLift);
 
     final path =
-    Path()
-      ..moveTo(p1.dx, p1.dy)
-      ..cubicTo(c1x, p1.dy, p3.dx, c2y, p3.dx, p3.dy);
+        Path()
+          ..moveTo(p1.dx, p1.dy)
+          ..cubicTo(c1x, p1.dy, p3.dx, c2y, p3.dx, p3.dy);
 
     // Calculate the animated end point based on progress
     final pathMetrics = path.computeMetrics();
@@ -411,23 +452,26 @@ class AnimatedConnectorPainter extends CustomPainter {
 
     // Draw the animated path with full opacity
     final paint =
-    Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..color = gradientColors[0];
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..color = gradientColors[0];
 
     canvas.drawPath(animatedPath, paint);
 
     // Draw gradient effect for the flowing liquid
     if (animationProgress > 0) {
       // For right-to-left pipes, reverse the gradient direction
-      final gradientColors = isLeft ? this.gradientColors : this.gradientColors.reversed.toList();
+      final gradientColors =
+          isLeft ? this.gradientColors : this.gradientColors.reversed.toList();
 
       final gradientPaint =
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth
-        ..shader = LinearGradient(colors: gradientColors).createShader(Rect.fromPoints(p1, p3));
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = strokeWidth
+            ..shader = LinearGradient(
+              colors: gradientColors,
+            ).createShader(Rect.fromPoints(p1, p3));
 
       canvas.drawPath(animatedPath, gradientPaint);
     }
@@ -469,36 +513,53 @@ class ConnectorPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p1 = Offset(isLeft ? boxWidth + horizontalMargin : size.width - boxWidth - horizontalMargin, boxHeight / 2 + verticalSpacing / 2);
+    final p1 = Offset(
+      isLeft ? boxWidth + horizontalMargin : size.width - boxWidth - horizontalMargin,
+      boxHeight / 2 + verticalSpacing / 2,
+    );
 
-    final p3 = Offset(isLeft ? size.width - boxWidth / 2 - horizontalMargin : boxWidth / 2 + horizontalMargin, boxHeight / 2 + verticalSpacing * 1.5);
+    final p3 = Offset(
+      isLeft
+          ? size.width - boxWidth / 2 - horizontalMargin
+          : boxWidth / 2 + horizontalMargin,
+      boxHeight / 2 + verticalSpacing * 1.5,
+    );
 
     final c1x = (p1.dx + p3.dx) / 2;
     final c2y = p3.dy - (turnFactor * maxLift);
 
     final path =
-    Path()
-      ..moveTo(p1.dx, p1.dy)
-      ..cubicTo(c1x, p1.dy, p3.dx, c2y, p3.dx, p3.dy);
+        Path()
+          ..moveTo(p1.dx, p1.dy)
+          ..cubicTo(c1x, p1.dy, p3.dx, c2y, p3.dx, p3.dy);
 
     final paint =
-    Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..shader = LinearGradient(colors: gradientColors).createShader(Rect.fromPoints(p1, p3));
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..shader = LinearGradient(
+            colors: gradientColors,
+          ).createShader(Rect.fromPoints(p1, p3));
 
     canvas.drawPath(path, paint);
   }
 
   @override
   bool shouldRepaint(covariant ConnectorPainter oldDelegate) {
-    return oldDelegate.turnFactor != turnFactor || oldDelegate.maxLift != maxLift || oldDelegate.strokeWidth != strokeWidth || oldDelegate.gradientColors != gradientColors;
+    return oldDelegate.turnFactor != turnFactor ||
+        oldDelegate.maxLift != maxLift ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.gradientColors != gradientColors;
   }
 }
 
 class NoScalingAnimation extends FloatingActionButtonAnimator {
   @override
-  Offset getOffset({required Offset begin, required Offset end, required double progress}) {
+  Offset getOffset({
+    required Offset begin,
+    required Offset end,
+    required double progress,
+  }) {
     return end; // instantly jump to end
   }
 

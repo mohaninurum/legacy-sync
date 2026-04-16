@@ -1,11 +1,13 @@
 import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/core/strings/strings.dart';
 import 'package:legacy_sync/features/audio_overlay_manager/widgets/audio_overlay_widget.dart';
-import '../../../../config/db/shared_preferences.dart';
+
 import '../../../../config/routes/routes_name.dart';
 import '../../../../core/colors/colors.dart';
 import '../../../../core/components/comman_components/app_button.dart';
@@ -14,7 +16,6 @@ import '../../../../core/components/comman_components/curved_header_clipper.dart
 import '../../../../core/components/comman_components/podcast_bg.dart';
 import '../../../../core/components/comman_components/will_pop_scope.dart';
 import '../../../../core/images/images.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/utils.dart';
 import '../../../audio_overlay_manager/audio_overlay_manager.dart';
 import '../../../play_podcast/presentation/bloc/play_podcast_cubit.dart';
@@ -94,8 +95,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
       child: PodcastBg(
         isDark: true,
         child: BlocConsumer<MyPodcastCubit, MyPodcastState>(
-          listenWhen:
-              (prev, curr) => prev.createRoomStatus != curr.createRoomStatus,
+          listenWhen: (prev, curr) => prev.createRoomStatus != curr.createRoomStatus,
           listener: (context, state) {
             final messenger = ScaffoldMessenger.of(context);
             if (state.error.isNotEmpty) {
@@ -166,38 +166,41 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                   const SizedBox(height: 10),
                   BlocBuilder<PlayPodcastCubit, PlayPodcastState>(
                     builder: (context, playState) {
-                      final isFavouriteTab = context.read<MyPodcastCubit>().state.selectedTab == "Favourite";
+                      final isFavouriteTab =
+                          context.read<MyPodcastCubit>().state.selectedTab == "Favourite";
                       final isFav = (playState.podcast?.isFavourite ?? 0) == 1;
-                      final showOverlay = playState.isOverlayManager && isFavouriteTab && isFav;
+                      final showOverlay =
+                          playState.isOverlayManager && isFavouriteTab && isFav;
                       if (!showOverlay) return const SizedBox.shrink();
-                          return Center(
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 30),
-                              child: InkWell(
-                                onTap: () {
-                                  playPodCastCubit.loadOverlayAudioManager(false);
-                                  Navigator.pushNamed(
-                                    context,
-                                    RoutesName.PLAY_PODCAST,
-                                    arguments: {
-                                      "podcast": playState.podcast,
-                                      "audioPath": playState.podcast?.audioPath ?? "",
-                                      "isOverlayManager": playState.isOverlayManager,
-                                      "isContinue": false,
-                                    },
-                                  );
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 30),
+                          child: InkWell(
+                            onTap: () {
+                              playPodCastCubit.loadOverlayAudioManager(false);
+                              Navigator.pushNamed(
+                                context,
+                                RoutesName.PLAY_PODCAST,
+                                arguments: {
+                                  "podcast": playState.podcast,
+                                  "audioPath": playState.podcast?.audioPath ?? "",
+                                  "isOverlayManager": playState.isOverlayManager,
+                                  "isContinue": false,
                                 },
-                                child: AudioOverlayWidget(
-                                  title: playState.podcast?.title ?? '',
-                                  subtitle: "Me • ${Utils.capitalize(playState.podcast?.relationship)}",
-                                  imagePath: playState.podcast!.image,
-                                  isPlaying: playState.isPlaying,
-                                  onPlayPause: playPodCastCubit.playPause,
-                                  onNext: () {},
-                                ),
-                              ),
+                              );
+                            },
+                            child: AudioOverlayWidget(
+                              title: playState.podcast?.title ?? '',
+                              subtitle:
+                                  "Me • ${Utils.capitalize(playState.podcast?.relationship)}",
+                              imagePath: playState.podcast!.image,
+                              isPlaying: playState.isPlaying,
+                              onPlayPause: playPodCastCubit.playPause,
+                              onNext: () {},
                             ),
-                          );
+                          ),
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -217,10 +220,9 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
           ),
           InkWell(
             onTap: () {
@@ -287,10 +289,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _buildBackButton(),
-                      Text(
-                        "Podcast",
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
+                      Text("Podcast", style: Theme.of(context).textTheme.bodyLarge),
                     ],
                   ),
                 ],
@@ -309,27 +308,11 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
         Navigator.pushNamedAndRemoveUntil(
           context,
           RoutesName.HOME_SCREEN,
-              (route) => false,
+          (route) => false,
         );
-        // Navigator.pushNamed(context, RoutesName.HOME_SCREEN);
       },
       child: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
     );
-    // return AppButton(
-    //   padding: const EdgeInsets.all(0),
-    //   onPressed: () async {
-    //     getStartMakingPodcast();
-    //     if (startMakingPodcast) {
-    //       final shouldPop = await _showActionSheet(context);
-    //       if (shouldPop == true) {
-    //         exit(1);
-    //       }
-    //     } else {
-    //       Navigator.pushNamed(context, RoutesName.HOME_SCREEN);
-    //     }
-    //   },
-    //   child: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
-    // );
   }
 
   Widget _tabs() => BlocBuilder<MyPodcastCubit, MyPodcastState>(
@@ -386,42 +369,35 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
     },
   );
 
-  Widget _listContinueListening() =>
-      BlocBuilder<MyPodcastCubit, MyPodcastState>(
-        builder: (context, state) {
-          if (state.listPodcastsContinueListening.isEmpty) {
-            return const Center(
-              child: Text(
-                "No podcasts found",
-                style: TextStyle(color: Colors.white70),
-              ),
-            );
-          }
+  Widget _listContinueListening() => BlocBuilder<MyPodcastCubit, MyPodcastState>(
+    builder: (context, state) {
+      if (state.listPodcastsContinueListening.isEmpty) {
+        return const Center(
+          child: Text("No podcasts found", style: TextStyle(color: Colors.white70)),
+        );
+      }
 
-          return SizedBox(
-            height: 120,
-            child: ListView.builder(
-              physics: const BouncingScrollPhysics(),
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
-              itemCount: state.listPodcastsContinueListening.length,
-              itemBuilder: (_, i) {
-                final data = state.listPodcastsContinueListening[i];
-                return SizedBox(width: 318, child: continueListening(data));
-              },
-            ),
-          );
-        },
+      return SizedBox(
+        height: 120,
+        child: ListView.builder(
+          physics: const BouncingScrollPhysics(),
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+          itemCount: state.listPodcastsContinueListening.length,
+          itemBuilder: (_, i) {
+            final data = state.listPodcastsContinueListening[i];
+            return SizedBox(width: 318, child: continueListening(data));
+          },
+        ),
       );
+    },
+  );
 
   Widget _list() => BlocBuilder<MyPodcastCubit, MyPodcastState>(
     builder: (context, state) {
       if (state.podcasts.isEmpty) {
         return const Center(
-          child: Text(
-            "No podcasts found",
-            style: TextStyle(color: Colors.white70),
-          ),
+          child: Text("No podcasts found", style: TextStyle(color: Colors.white70)),
         );
       }
 
@@ -435,10 +411,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
               itemCount: state.podcasts.length,
               itemBuilder: (_, i) {
                 final data = state.podcasts[i];
-                return SizedBox(
-                  height: 177,
-                  child: myDraftListPodcast(data, false),
-                );
+                return SizedBox(height: 177, child: myDraftListPodcast(data, false));
               },
             ),
           )
@@ -492,15 +465,28 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                data.image,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.image);
-                },
-              ),
+              child:
+                  data.image.trim().isEmpty || data.image.endsWith('/null')
+                      ? Image.asset(
+                        Images.podcast_thumbnail,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                      )
+                      : Image.network(
+                        data.image,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            Images.podcast_thumbnail,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      ),
             ),
 
             const SizedBox(width: 12),
@@ -514,9 +500,9 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                     padding: const EdgeInsets.only(top: 5),
                     child: Text(
                       data.title,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
                   SizedBox(height: 1.height),
@@ -559,9 +545,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                             value: progress,
                             minHeight: 6,
                             backgroundColor: Colors.grey.shade800,
-                            valueColor: const AlwaysStoppedAnimation(
-                              AppColors.purple400,
-                            ),
+                            valueColor: const AlwaysStoppedAnimation(AppColors.purple400),
                           ),
                         ),
                       ),
@@ -611,7 +595,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
               "is_draft": data.audioPath != null ? false : true,
               "participants": data.relationship,
               "roomId": '',
-              "selectedTopicCategory" : data.topicType,
+              "selectedTopicCategory": data.topicType,
             },
           );
         } else {
@@ -637,15 +621,28 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             /// IMAGE
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                data.image,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.image);
-                },
-              ),
+              child:
+                  data.image.trim().isEmpty || data.image.endsWith('/null')
+                      ? Image.asset(
+                        Images.podcast_thumbnail,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                      )
+                      : Image.network(
+                        data.image,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            Images.podcast_thumbnail,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      ),
             ),
 
             const SizedBox(width: 12),
@@ -660,9 +657,9 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                     padding: const EdgeInsets.only(top: 5),
                     child: Text(
                       data.title,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
                   isContinueListening
@@ -720,17 +717,13 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                               value: progress ?? 0,
                               minHeight: 6,
                               backgroundColor: Colors.grey.shade800,
-                              valueColor: const AlwaysStoppedAnimation(
-                                Color(0xFFB388FF),
-                              ),
+                              valueColor: const AlwaysStoppedAnimation(Color(0xFFB388FF)),
                             ),
                           ),
                           const SizedBox(width: 6),
                           Text(
                             timeLeftText,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodySmall?.copyWith(
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
@@ -749,9 +742,9 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                   child: Center(
                     child: Text(
                       data.duration,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ),
@@ -786,7 +779,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             "is_draft": data.audioPath != null ? false : true,
             "participants": data.relationship,
             "roomId": '',
-            "selectedTopicCategory" : data.topicType,
+            "selectedTopicCategory": data.topicType,
           },
         );
       },
@@ -799,12 +792,28 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             /// IMAGE
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                data.image,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-              ),
+              child:
+                  data.image.trim().isEmpty || data.image.endsWith('/null')
+                      ? Image.asset(
+                        Images.podcast_thumbnail,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                      )
+                      : Image.network(
+                        data.image,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            Images.podcast_thumbnail,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      ),
             ),
             const SizedBox(height: 5),
             Padding(
@@ -873,9 +882,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
 
     // choose icon based on incoming/outgoing
     final iconPath =
-        data.type == CallType.incoming
-            ? Images.phone_incoming
-            : Images.phone_outgoing;
+        data.type == CallType.incoming ? Images.phone_incoming : Images.phone_outgoing;
 
     // subtitle: Missed OR duration
     final subtitle =
@@ -894,12 +901,18 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
           /// IMAGE
           ClipRRect(
             borderRadius: BorderRadius.circular(50),
-            child: Image.asset(
-              data.image,
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
-            ),
+            child:
+                data.image.trim().isEmpty
+                    ? const Icon(Icons.person, size: 60, color: Colors.white54)
+                    : Image.asset(
+                      data.image,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(Icons.person, color: Colors.white54);
+                      },
+                    ),
           ),
 
           const SizedBox(width: 5),

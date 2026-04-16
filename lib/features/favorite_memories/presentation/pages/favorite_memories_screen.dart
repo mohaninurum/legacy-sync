@@ -309,15 +309,27 @@ class _FavoriteMemoriesState extends State<FavoriteMemories> {
             /// IMAGE
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                data.image,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.image);
-                },
-              ),
+              child: data.image.trim().isEmpty || data.image.endsWith('/null')
+                  ? Image.asset(
+                      Images.podcast_thumbnail,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                    )
+                  : Image.network(
+                      data.image,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Image.asset(
+                          Images.podcast_thumbnail,
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    ),
             ),
 
             const SizedBox(width: 12),

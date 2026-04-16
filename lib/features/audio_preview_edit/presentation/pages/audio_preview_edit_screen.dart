@@ -3,18 +3,12 @@ import 'dart:io';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:legacy_sync/config/routes/routes.dart';
 import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/core/colors/colors.dart';
 import 'package:legacy_sync/core/components/comman_components/custom_button.dart';
-import 'package:legacy_sync/core/components/comman_components/custom_button_common_mask_widgets.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/features/audio_preview_edit/presentation/widgets/audio_meta_widget.dart';
-import 'package:legacy_sync/features/home/data/model/friends_list_model.dart';
-import 'package:legacy_sync/features/livekit_connection/data/model/podcast_topics_model.dart';
-import 'package:legacy_sync/features/livekit_connection/presentation/bloc/livekit_connection_state.dart';
 import 'package:legacy_sync/features/livekit_connection/presentation/utils/exts.dart';
 import 'package:legacy_sync/features/my_podcast/presentation/bloc/my_podcast_cubit.dart';
 
@@ -25,8 +19,6 @@ import '../../../my_podcast/data/podcast_model.dart';
 import '../bloc/audio_preview_edit_cubit.dart';
 import '../bloc/audio_preview_edit_state.dart';
 import '../widgets/audio_preview_controls_widgets.dart';
-import '../widgets/wave_slider_widges.dart';
-import '../widgets/waveform_view_widget.dart';
 
 class AudioPreviewEditScreen extends StatefulWidget {
   final String? roomId;
@@ -56,7 +48,6 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
   late final MyPodcastCubit _myPodcastCubit;
   bool _publishDialogShown = false;
 
-
   void _safeExitAfterSuccess() {
     if (!mounted || _hasNavigated) return;
     _hasNavigated = true;
@@ -79,14 +70,10 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
 
       // ✅ If MY_PODCAST_SCREEN not in stack, go there explicitly
       if (!found) {
-        nav.pushNamedAndRemoveUntil(
-          RoutesName.MY_PODCAST_SCREEN,
-              (r) => false,
-        );
+        nav.pushNamedAndRemoveUntil(RoutesName.MY_PODCAST_SCREEN, (r) => false);
       }
     });
   }
-
 
   @override
   void initState() {
@@ -127,8 +114,10 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
             child: BlocConsumer<AudioPreviewEditCubit, AudioPreviewEditState>(
               listenWhen:
                   (p, c) =>
-                      p.saveAsDraftStatus != c.saveAsDraftStatus || p.publishStatus != c.publishStatus ||
-                p.markFavStatus != c.markFavStatus || p.markUnFavStatus != c.markUnFavStatus,
+                      p.saveAsDraftStatus != c.saveAsDraftStatus ||
+                      p.publishStatus != c.publishStatus ||
+                      p.markFavStatus != c.markFavStatus ||
+                      p.markUnFavStatus != c.markUnFavStatus,
               listener: (context, state) {
                 if (state.markFavStatus == MarkFavStatus.success) {
                   BotToast.showText(text: state.markFavMessage ?? "Added To Favourites");
@@ -137,7 +126,9 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                   _myPodcastCubit.fetchMyPodcastTab("Posted");
                 }
                 if (state.markUnFavStatus == MarkUnFavStatus.success) {
-                  BotToast.showText(text: state.markUnFavMessage ??  "Removed from favourites");
+                  BotToast.showText(
+                    text: state.markUnFavMessage ?? "Removed from favourites",
+                  );
                   _myPodcastCubit.fetchFavouritePodcastList();
                   _myPodcastCubit.allPodcastsContinueListening();
                   _myPodcastCubit.fetchMyPodcastTab("Posted");
@@ -146,7 +137,9 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                   BotToast.showText(text: state.markFavMessage ?? "Something went wrong");
                 }
                 if (state.markUnFavStatus == MarkUnFavStatus.failure) {
-                  BotToast.showText(text: state.markUnFavMessage ??  "Something went wrong");
+                  BotToast.showText(
+                    text: state.markUnFavMessage ?? "Something went wrong",
+                  );
                 }
                 if (state.saveAsDraftStatus == SaveAsDraftStatus.success) {
                   BotToast.showText(text: "Draft saved successfully.");
@@ -156,8 +149,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                     context.read<MyPodcastCubit>().fetchMyPodcastTab("Draft");
                   });
                   // Navigator.pop(context);
-                } else if (state.saveAsDraftStatus ==
-                    SaveAsDraftStatus.failure) {
+                } else if (state.saveAsDraftStatus == SaveAsDraftStatus.failure) {
                   BotToast.showText(
                     text: state.draftMessage ?? "Failed to save draft. Please try again.",
                   );
@@ -172,7 +164,8 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                   WidgetsBinding.instance.addPostFrameCallback((_) async {
                     if (!mounted) return;
 
-                    final ok = await context.showPodcastPublishedDialog(); // your custom dialog
+                    final ok =
+                        await context.showPodcastPublishedDialog(); // your custom dialog
                     if (!mounted) return;
 
                     if (ok == true) {
@@ -188,9 +181,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                   });
                 } else if (state.publishStatus == PublishStatus.failure) {
                   _publishDialogShown = false;
-                  BotToast.showText(
-                    text: state.publishMessage ?? "Failed to publish",
-                  );
+                  BotToast.showText(text: state.publishMessage ?? "Failed to publish");
                 }
               },
               builder: (context, state) {
@@ -202,10 +193,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                         visible: !widget.isDraft,
                         child: readyToPublish(state, cubit),
                       ),
-                      Visibility(
-                        visible: widget.isDraft,
-                        child: processingAudio(state),
-                      ),
+                      Visibility(visible: widget.isDraft, child: processingAudio(state)),
                     ],
                   ),
                 );
@@ -248,7 +236,6 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
   //   });
   // }
 
-
   Future<bool> _confirmExitIfNeeded() async {
     final state = context.read<AudioPreviewEditCubit>().state;
 
@@ -275,10 +262,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
     return res == true;
   }
 
-  Widget readyToPublish(
-    AudioPreviewEditState state,
-    AudioPreviewEditCubit cubit,
-  ) {
+  Widget readyToPublish(AudioPreviewEditState state, AudioPreviewEditCubit cubit) {
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -295,7 +279,11 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                     ? widget.podcastModel!.audioPath.toString()
                     : '',
           ),
-          AudioMetaWidget(state: state, participants: widget.participants,selectedTopicCategory: widget.selectedTopicCategory),
+          AudioMetaWidget(
+            state: state,
+            participants: widget.participants,
+            selectedTopicCategory: widget.selectedTopicCategory,
+          ),
         ],
       ),
     );
@@ -312,7 +300,11 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
           ),
           const SizedBox(height: 6),
           processingNoticeCard(context: context),
-          AudioMetaWidget(state: state, participants: widget.participants,selectedTopicCategory: widget.selectedTopicCategory),
+          AudioMetaWidget(
+            state: state,
+            participants: widget.participants,
+            selectedTopicCategory: widget.selectedTopicCategory,
+          ),
         ],
       ),
     );
@@ -321,10 +313,9 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
   Widget _SectionTitle(String text, context) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
+      style: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
     );
   }
 
@@ -352,11 +343,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
               borderRadius: BorderRadius.circular(14),
               color: AppColors.yellow.withOpacity(0.14),
             ),
-            child: const Icon(
-              Icons.schedule_rounded,
-              color: AppColors.yellow,
-              size: 22,
-            ),
+            child: const Icon(Icons.schedule_rounded, color: AppColors.yellow, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -375,10 +362,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(999),
                         color: Colors.white.withOpacity(0.08),
@@ -398,15 +382,10 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                         onTap: onLearnMore,
                         borderRadius: BorderRadius.circular(10),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 6,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                           child: Text(
                             "Learn more",
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
                               color: AppColors.yellow,
@@ -431,10 +410,9 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -497,9 +475,9 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
     return BlocBuilder<AudioPreviewEditCubit, AudioPreviewEditState>(
       builder: (context, state) {
         final hasTitle = (state.title ?? '').trim().isNotEmpty;
-        final hasDesc  = (state.description ?? '').trim().isNotEmpty;
+        final hasDesc = (state.description ?? '').trim().isNotEmpty;
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
           child: Row(
             children: [
               Expanded(
@@ -527,7 +505,13 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                   height: 48,
                   onPressed: () async {
                     if (widget.roomId != null) {
-                      final hasTitle = (context.read<AudioPreviewEditCubit>().title.text.trim().isNotEmpty);
+                      final hasTitle =
+                          (context
+                              .read<AudioPreviewEditCubit>()
+                              .title
+                              .text
+                              .trim()
+                              .isNotEmpty);
 
                       if (!hasTitle) {
                         BotToast.showText(text: "Please enter a title.");
@@ -568,13 +552,14 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                   onPressed: () async {
                     if (widget.isDraft) {
                       BotToast.showText(
-                        text:
-                            "Please wait 10–15 minutes. We’re still processing.",
+                        text: "Please wait 10–15 minutes. We’re still processing.",
                       );
                       return;
                     } else if (widget.podcastModel != null) {
                       if (hasTitle) {
-                        print("Duration Second sends to publish podcast api : ${state.duration.inSeconds}");
+                        print(
+                          "Duration Second sends to publish podcast api : ${state.duration.inSeconds}",
+                        );
                         await context.read<AudioPreviewEditCubit>().publishPodcast(
                           podcastId: widget.podcastModel!.podcastId,
                           durationSeconds: state.duration.inSeconds,
@@ -603,9 +588,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
         try {
           final cubit = context.read<AudioPreviewEditCubit>();
           final imagePicker = ImagePicker();
-          final value = await imagePicker.pickImage(
-            source: ImageSource.gallery,
-          );
+          final value = await imagePicker.pickImage(source: ImageSource.gallery);
           if (value != null) {
             cubit.addCoverXFile(value);
             // cubit.addCover(value.path);
@@ -631,7 +614,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                       borderRadius: BorderRadius.circular(24),
                       child: _coverWidget(state.coverImage!),
                     )
-                    : const SizedBox.shrink()
+                    : const SizedBox.shrink(),
           ),
           const SizedBox(height: 15),
           Text(
@@ -649,21 +632,38 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
 
   Widget _coverWidget(String cover) {
     final v = cover.trim();
-
-    if (v.startsWith('http://') || v.startsWith('https://')) {
+    if (v.isEmpty || v.endsWith("/null")) {
+      return Image.asset(
+        Images.podcast_thumbnail,
+        fit: BoxFit.cover,
+        height: 160,
+        width: 160,
+      );
+    }
+    if (v.startsWith("http://") || v.startsWith("https://")) {
       return Image.network(
-          v,
+        v,
+        fit: BoxFit.cover,
+        height: 160,
+        width: 160,
+        errorBuilder: (_, __, ___) => Image.asset(
+          Images.podcast_thumbnail,
           fit: BoxFit.cover,
           height: 160,
           width: 160,
-          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+        ),
       );
     }
-
-    // normal local file path
-    return Image.file(File(v),
-        fit: BoxFit.cover, height: 160, width: 160,
-        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image));
-  }
-
-}
+    return Image.file(
+      File(v),
+      fit: BoxFit.cover,
+      height: 160,
+      width: 160,
+      errorBuilder: (_, __, ___) => Image.asset(
+        Images.podcast_thumbnail,
+        fit: BoxFit.cover,
+        height: 160,
+        width: 160,
+      ),
+    );
+  }}

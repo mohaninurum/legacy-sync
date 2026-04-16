@@ -1,170 +1,4 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_svg/svg.dart';
-// import 'package:legacy_sync/core/colors/colors.dart';
-// import 'package:legacy_sync/core/extension/extension.dart';
-// import 'package:legacy_sync/core/strings/strings.dart';
-// import '../../config/routes/routes_name.dart';
-// import '../../core/components/comman_components/call_action_button.dart';
-// import '../../core/images/images.dart';
-//
-// class IncomingCallFullScreen extends StatefulWidget {
-//   final bool incomingCall;
-//   final String roomId;
-//   final String callerUserId;
-//   final String callerUserName;
-//   final String callerProfileImage;
-//   final String notificationStatus;
-//
-//   const IncomingCallFullScreen({
-//     super.key,
-//     required this.incomingCall,
-//     required this.roomId,
-//     required this.callerUserId,
-//     required this.callerUserName,
-//     required this.callerProfileImage,
-//     required this.notificationStatus,
-//   });
-//
-//   @override
-//   State<IncomingCallFullScreen> createState() => _IncomingCallFullScreenState();
-// }
-//
-// class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: AppColors.teal_accent_Color,
-//       body: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.start,
-//           crossAxisAlignment: CrossAxisAlignment.center,
-//           children: [
-//             SizedBox(height: 7.height),
-//             SvgPicture.asset(
-//               Images.microphone,
-//               height: 40,
-//               width: 40,
-//               color: AppColors.blackColor,
-//             ),
-//             SizedBox(height: 1.5.height),
-//             Text(
-//               AppStrings.legacySync,
-//               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//                 fontSize: 24,
-//                 fontWeight: FontWeight.w700,
-//                 color: AppColors.blackColor,
-//               ),
-//             ),
-//             SizedBox(height: 1.5.height),
-//             Text(
-//               AppStrings.invitedPodcast,
-//               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//                 fontSize: 20,
-//                 fontWeight: FontWeight.w600,
-//                 color: AppColors.blackColor,
-//               ),
-//             ),
-//             SizedBox(
-//               height: 40.height,
-//               child: Stack(
-//                 clipBehavior: Clip.none,
-//                 alignment: Alignment.center,
-//                 children: [
-//                   Positioned(
-//                     left: 0,
-//                     right: 0,
-//                     top: 0,
-//                     child: Image.asset(Images.user_you),
-//                   ),
-//                   Positioned(
-//                     left: 0,
-//                     right: 0,
-//                     bottom: -75,
-//                     child: Container(
-//                       color: AppColors.teal_accent_Color,
-//                       width: 300,
-//                       height: 100,
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//       bottomNavigationBar: Column(
-//         mainAxisAlignment: MainAxisAlignment.end,
-//         mainAxisSize: MainAxisSize.min,
-//         children: [actionCallButton(), SizedBox(height: 3.height)],
-//       ),
-//     );
-//   }
-//
-//   Widget actionCallButton() {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-//       child: Row(
-//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//         crossAxisAlignment: CrossAxisAlignment.end,
-//         children: [
-//           Column(
-//             children: [
-//               CallActionButton(
-//                 enable: false,
-//                 onPressed: () {
-//                   Navigator.pop(context);
-//                 },
-//                 child: const Icon(
-//                   Icons.close,
-//                   color: AppColors.whiteColor,
-//                   size: 30,
-//                 ),
-//               ),
-//               const SizedBox(height: 5),
-//               Text(
-//                 "Decline",
-//                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//                   fontSize: 20,
-//                   fontWeight: FontWeight.w700,
-//                   color: AppColors.blackColor,
-//                 ),
-//               ),
-//             ],
-//           ),
-//           Column(
-//             children: [
-//               CallActionButton(
-//                 enable: true,
-//                 onPressed: () {
-//                   Navigator.pushNamed(
-//                     context,
-//                     RoutesName.PODCAST_RECORDING_SCREEN,
-//                     arguments: {"incoming_call": true, "userName": "naila"},
-//                   );
-//                 },
-//                 child: const Icon(
-//                   Icons.done,
-//                   color: AppColors.whiteColor,
-//                   size: 30,
-//                 ),
-//               ),
-//               const SizedBox(height: 5),
-//               Text(
-//                 "Accept",
-//                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-//                   fontSize: 20,
-//                   fontWeight: FontWeight.w700,
-//                   color: AppColors.blackColor,
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -172,11 +6,14 @@ import 'package:legacy_sync/config/db/shared_preferences.dart';
 import 'package:legacy_sync/core/colors/colors.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/core/strings/strings.dart';
+import 'package:legacy_sync/services/notification_service/notification_service.dart';
+
 import '../../config/routes/routes_name.dart';
 import '../../core/components/comman_components/call_action_button.dart';
 import '../../core/images/images.dart';
 
 class IncomingCallFullScreen extends StatefulWidget {
+  final bool isAlreadyAccepted;
   final bool incomingCall;
   final String roomId;
   final String callerUserId;
@@ -186,6 +23,7 @@ class IncomingCallFullScreen extends StatefulWidget {
 
   const IncomingCallFullScreen({
     super.key,
+    required this.isAlreadyAccepted,
     required this.incomingCall,
     required this.roomId,
     required this.callerUserId,
@@ -199,12 +37,32 @@ class IncomingCallFullScreen extends StatefulWidget {
 }
 
 class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
-  bool _accepting = false;
+  bool _processing = false;
+  StreamSubscription<void>? _cancelSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-dismiss when the host cancels the invite
+    _cancelSub = NotificationService.onCallCancelled.listen((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+
+    if (widget.isAlreadyAccepted) {
+      _acceptCall();
+    }
+  }
+
+  @override
+  void dispose() {
+    _cancelSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final callerName =
-    widget.callerUserName.isNotEmpty ? widget.callerUserName : "Incoming Call";
+        widget.callerUserName.isNotEmpty ? widget.callerUserName : "Incoming Call";
 
     return Scaffold(
       backgroundColor: AppColors.teal_accent_Color,
@@ -257,12 +115,7 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
                 clipBehavior: Clip.none,
                 alignment: Alignment.center,
                 children: [
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    child: _callerAvatar(),
-                  ),
+                  Positioned(left: 0, right: 0, top: 0, child: _callerAvatar()),
                   Positioned(
                     left: 0,
                     right: 0,
@@ -309,9 +162,11 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
             width: 180,
             child: Center(
               child: CircularProgressIndicator(
-                value: progress.expectedTotalBytes != null
-                    ? progress.cumulativeBytesLoaded / (progress.expectedTotalBytes ?? 1)
-                    : null,
+                value:
+                    progress.expectedTotalBytes != null
+                        ? progress.cumulativeBytesLoaded /
+                            (progress.expectedTotalBytes ?? 1)
+                        : null,
               ),
             ),
           );
@@ -330,16 +185,9 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
           Column(
             children: [
               CallActionButton(
-                enable: !_accepting,
-                onPressed: () {
-                  if (_accepting) return;
-                  Navigator.pop(context);
-                },
-                child: const Icon(
-                  Icons.close,
-                  color: AppColors.whiteColor,
-                  size: 30,
-                ),
+                enable: !_processing,
+                onPressed: _declineCall,
+                child: const Icon(Icons.close, color: AppColors.whiteColor, size: 30),
               ),
               const SizedBox(height: 5),
               Text(
@@ -355,19 +203,16 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
           Column(
             children: [
               CallActionButton(
-                enable: !_accepting,
+                enable: !_processing,
                 onPressed: _acceptCall,
-                child: _accepting
-                    ? const SizedBox(
-                  height: 26,
-                  width: 26,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-                    : const Icon(
-                  Icons.done,
-                  color: AppColors.whiteColor,
-                  size: 30,
-                ),
+                child:
+                    _processing
+                        ? const SizedBox(
+                          height: 26,
+                          width: 26,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                        : const Icon(Icons.done, color: AppColors.whiteColor, size: 30),
               ),
               const SizedBox(height: 5),
               Text(
@@ -385,10 +230,37 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
     );
   }
 
-  Future<void> _acceptCall() async {
-    if (_accepting) return;
+  Future<void> _declineCall() async {
+    if (_processing) return;
 
-    setState(() => _accepting = true);
+    setState(() => _processing = true);
+
+    try {
+      // final myUserId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+      // final hostId = int.tryParse(widget.callerUserId) ?? 0;
+      //
+      // if (hostId != 0) {
+      //   // Invite-e cancels the invite from Host perspective
+      //   // userId: Host, friendId: Invitee (Me)
+      //   await LiveKitConnectionUseCases().cancelInviteToPodcast(
+      //     userId: hostId,
+      //     friendId: myUserId,
+      //     roomId: widget.roomId,
+      //   );
+      // }
+    } catch (_) {
+    } finally {
+      if (mounted) {
+        setState(() => _processing = false);
+        Navigator.pop(context);
+      }
+    }
+  }
+
+  Future<void> _acceptCall() async {
+    if (_processing) return;
+
+    setState(() => _processing = true);
 
     try {
       // ✅ Get current logged-in user details for joining
@@ -407,20 +279,20 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
         context,
         RoutesName.ROOM_PAGE,
         arguments: {
-          "incoming_call": true,
-          "userName": safeName,
-
           // pass these too if PodcastRecordingScreen needs them later
           "roomId": widget.roomId,
-          "callerUserId": widget.callerUserId,
-          "callerUserName": widget.callerUserName,
-          "callerProfileImage": widget.callerProfileImage,
-          "notification_status": widget.notificationStatus,
+          "incoming_call": true,
+          "userName": safeName,
           "userId": myUserId,
         },
       );
     } finally {
-      if (mounted) setState(() => _accepting = false);
+      if (mounted) setState(() => _processing = false);
     }
   }
 }
+
+// "callerUserId": widget.callerUserId,
+// "callerUserName": widget.callerUserName,
+// "callerProfileImage": widget.callerProfileImage,
+// "notification_status": widget.notificationStatus,

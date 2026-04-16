@@ -681,7 +681,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                             ),
                             child: Row(
                               children: [
-                                user?.profileImage != null&&user?.profileImage.toString() != null
+                                 user?.profileImage != null && user!.profileImage!.trim().isNotEmpty && !user.profileImage!.endsWith('/null')
                                     ? ClipOval(
                                   child: Image.network(
                                     user!.profileImage!,
@@ -901,7 +901,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
             height: 125,
             child: Stack(
               children: [
-                user.profileImage != null&&user.profileImage.toString().endsWith('/null') == false
+                user.profileImage != null && user.profileImage!.trim().isNotEmpty && !user.profileImage.toString().endsWith('/null')
                     ? Positioned(
                       bottom: -20,
                       left: 0,

@@ -101,7 +101,7 @@ class LiveKitConnectionState extends Equatable {
     this.selectedCategory = TopicCategory.Shuffle,
     this.callStatus = CallStatus.idle,
     this.isSpeaker = true,
-    this.isMic = true,
+    this.isMic = false,
     this.currentTopicIndex = 0,
     this.isLoading = false,
     this.error,
