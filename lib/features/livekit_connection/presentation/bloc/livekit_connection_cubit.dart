@@ -424,14 +424,13 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
   }
 
   void clearUiEvents() {
-    emit(
-      state.copyWith(
-        showRecordingStatusDialog: null,
-        activeRecording: null,
-        dataReceivedText: null,
-        showPlayAudioManuallyDialog: null,
-      ),
-    );
+    emit(state.clearErrorAndUiEvents());
+  }
+
+  void clearError() {
+    if (state.error != null) {
+      emit(state.clearErrorAndUiEvents());
+    }
   }
 
   void setHost(bool isHost) {
@@ -934,27 +933,27 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
 
   void clearNavEvent() => emit(state.copyWith(navEvent: LiveKitNavEvent.none));
 
-  Future<void> _cancelPendingInvites({
-    required int userId,
-    required String roomId,
-  }) async {
-    // cancel invites for everyone who was invited and is still pending
-    final futures = <Future>[];
-
-    for (final friendId in state.invitedFriendIds) {
-      if (friendId == userId) continue;
-
-      futures.add(
-        liveKitUseCase
-            .cancelInviteToPodcast(userId: userId, friendId: friendId, roomId: roomId)
-            .then((either) {
-              debugPrint("Cancel invite result for $friendId: $either");
-            }),
-      );
-    }
-
-    await Future.wait(futures);
-  }
+  // Future<void> _cancelPendingInvites({
+  //   required int userId,
+  //   required String roomId,
+  // }) async {
+  //   // cancel invites for everyone who was invited and is still pending
+  //   final futures = <Future>[];
+  //
+  //   for (final friendId in state.invitedFriendIds) {
+  //     if (friendId == userId) continue;
+  //
+  //     futures.add(
+  //       liveKitUseCase
+  //           .cancelInviteToPodcast(userId: userId, friendId: friendId, roomId: roomId)
+  //           .then((either) {
+  //             debugPrint("Cancel invite result for $friendId: $either");
+  //           }),
+  //     );
+  //   }
+  //
+  //   await Future.wait(futures);
+  // }
 
   Future<void> endCall() async {
     final wasHost = state.isHost;
@@ -973,12 +972,17 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       await stopRecording();
     }
 
-    if (wasHost && !state.everRecorded) {
-      await _cancelPendingInvites(userId: userId, roomId: roomId ?? '');
-    }
+    // if (wasHost && !state.everRecorded) {
+    //
+    //   await _cancelPendingInvites(userId: userId, roomId: roomId ?? '');
+    // }
 
     if (wasHost) {
-      await _broadcastCallEnd();
+      await _broadcastCallEnd(
+        userId: userId,
+        friendId: state.invitedFriendIds,
+        roomId: roomId ?? '',
+      );
     }
 
     await disconnect(); // important
@@ -1006,6 +1010,42 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     }
   }
 
+  Future<void> _broadcastCallEnd({
+    required int userId,
+    required Set<int> friendId,
+    required String roomId,
+  }) async {
+    final room = _room;
+
+    final payload = {"type": "call_end"};
+    final bytes = jsonEncode(payload);
+    final encodedBytes = utf8.encode(bytes);
+
+    try {
+      final response = await liveKitUseCase.endPodcastCall(
+        userId: userId,
+        friendId: friendId,
+        roomId: roomId,
+      );
+
+      print("EndCall Response ::  ${response.toString()}");
+      response.fold(
+        (error) {
+          emit(state.copyWith(error: error.message));
+        },
+        (data) async {
+          emit(state.copyWith(isCallEnded: true, isCallEndMessage: data.message));
+          if (room != null) {
+            await room.localParticipant?.publishData(encodedBytes, reliable: true);
+          }
+          debugPrint("Podcast Call End Result For $friendId");
+        },
+      );
+    } catch (e) {
+      debugPrint("Podcast call end result for $friendId: ${e.toString()}");
+    }
+  }
+
   Future<void> _broadcastRecordingState() async {
     final room = _room;
     if (room == null) return;
@@ -1017,18 +1057,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       "duration_ms": state.duration.inMilliseconds,
     };
 
-    final bytes = utf8.encode(jsonEncode(payload));
-
-    try {
-      await room.localParticipant?.publishData(bytes, reliable: true);
-    } catch (_) {}
-  }
-
-  Future<void> _broadcastCallEnd() async {
-    final room = _room;
-    if (room == null) return;
-
-    final payload = {"type": "call_end"};
     final bytes = utf8.encode(jsonEncode(payload));
 
     try {

@@ -19,7 +19,6 @@ enum LiveKitStatus { initial, connecting, connected, failure }
 enum NetStatus { online, reconnecting, offline }
 
 class LiveKitConnectionState extends Equatable {
-
   final NetStatus netStatus;
   final String? netMessage;
   final int reconnectAttempt; // optional
@@ -74,6 +73,9 @@ class LiveKitConnectionState extends Equatable {
   final String? myUserName;
   final bool consentGiven;
 
+  final bool isCallEnded;
+  final String isCallEndMessage;
+
   const LiveKitConnectionState({
     this.netStatus = NetStatus.online,
     this.netMessage,
@@ -120,10 +122,12 @@ class LiveKitConnectionState extends Equatable {
 
     this.isHost = false,
     this.consentGiven = false,
+
+    this.isCallEnded = false,
+    this.isCallEndMessage = '',
   });
 
   factory LiveKitConnectionState.initial() => const LiveKitConnectionState();
-
 
   LiveKitConnectionState copyWith({
     NetStatus? netStatus,
@@ -178,6 +182,8 @@ class LiveKitConnectionState extends Equatable {
     // In state:
     bool? isHost,
     bool? consentGiven,
+    bool? isCallEnded,
+    String? isCallEndMessage,
   }) {
     return LiveKitConnectionState(
       everRecorded: everRecorded ?? this.everRecorded,
@@ -224,6 +230,8 @@ class LiveKitConnectionState extends Equatable {
 
       isHost: isHost ?? this.isHost,
       consentGiven: consentGiven ?? this.consentGiven,
+      isCallEnded: isCallEnded ?? this.isCallEnded,
+      isCallEndMessage: isCallEndMessage ?? this.isCallEndMessage,
     );
   }
 
@@ -264,5 +272,54 @@ class LiveKitConnectionState extends Equatable {
 
     isHost,
     consentGiven,
+    isCallEnded,
+    isCallEndMessage,
   ];
+
+  LiveKitConnectionState clearErrorAndUiEvents() {
+    return LiveKitConnectionState(
+      everRecorded: everRecorded,
+      navEvent: navEvent,
+      showCallOverlay: showCallOverlay,
+      isStartingRecording: isStartingRecording,
+      myUserId: myUserId,
+      myUserName: myUserName,
+      participantTracks: participantTracks,
+      invitingFriendId: invitingFriendId,
+      inviteStatus: inviteStatus,
+      inviteMessage: inviteMessage,
+      invitedFriendIds: invitedFriendIds,
+      status: status,
+      recordingStatus: recordingStatus,
+      participants: participants,
+      inviteUserList: inviteUserList,
+      allTopics: allTopics,
+      duration: duration,
+      filteredTopics: filteredTopics,
+      currentTopicIndex: currentTopicIndex,
+      selectedCategory: selectedCategory,
+      callStatus: callStatus,
+      isSpeaker: isSpeaker,
+      isMic: isMic,
+      isLoading: isLoading,
+      message: message,
+      roomId: roomId,
+      podcastId: podcastId,
+      room: room,
+      listener: listener,
+      needsPublishConfirm: needsPublishConfirm,
+      isHost: isHost,
+      consentGiven: consentGiven,
+      netStatus: netStatus,
+      netMessage: netMessage,
+      reconnectAttempt: reconnectAttempt,
+      isCallEnded: false,
+      isCallEndMessage: '',
+      error: null,
+      dataReceivedText: null,
+      showRecordingStatusDialog: null,
+      activeRecording: null,
+      showPlayAudioManuallyDialog: null,
+    );
+  }
 }

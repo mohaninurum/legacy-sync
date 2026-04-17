@@ -51,6 +51,9 @@ class RoomPage extends StatefulWidget {
 class _RoomPageState extends State<RoomPage> {
   late final LiveKitConnectionCubit _lkCubit;
   late final HomeCubit _homeCubit;
+  InviteStatus _lastInviteStatus = InviteStatus.idle;
+
+  String lastCallEndMessage = '';
 
   @override
   void initState() {
@@ -81,15 +84,9 @@ class _RoomPageState extends State<RoomPage> {
     _lkCubit.getInviteUse();
     _lkCubit.fetchPodcastTopics();
     _homeCubit.getFriendsList();
-    // _lkCubit.setHost(!widget.incomingCall);
-    // _lkCubit.connect(
-    //   roomId: widget.roomId,
-    //   userName: widget.userName,
-    //   userId: widget.userId,
-    // );
 
     if (widget.incomingCall) {
-      Future.delayed(const Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 1), () {
         if (!mounted) return;
         showConsentDialog(context);
       });
@@ -115,9 +112,7 @@ class _RoomPageState extends State<RoomPage> {
       child: BlocConsumer<LiveKitConnectionCubit, LiveKitConnectionState>(
         listener: (context, state) async {
           final nav = state.navEvent;
-          print(
-            "NAV EVENT => ${state.navEvent.route}  args=${state.navEvent?.arguments}",
-          );
+          print("NAV EVENT => ${nav.route}  args=${nav.arguments}");
 
           if (!nav.isNone) {
             _lkCubit.clearNavEvent(); // clear first to prevent double trigger
@@ -140,38 +135,49 @@ class _RoomPageState extends State<RoomPage> {
 
           final messenger = ScaffoldMessenger.of(context);
 
-          switch (state.inviteStatus) {
-            case InviteStatus.sending:
-              messenger
-                ..hideCurrentSnackBar()
-                ..showSnackBar(const SnackBar(content: Text("Sending invite...")));
-              break;
+          if (state.inviteStatus != _lastInviteStatus) {
+            _lastInviteStatus = state.inviteStatus;
+            switch (state.inviteStatus) {
+              case InviteStatus.sending:
+                messenger
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(const SnackBar(content: Text("Sending invite...")));
+                break;
 
-            case InviteStatus.success:
-              messenger
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(content: Text(state.inviteMessage ?? "Invite sent")),
-                );
+              case InviteStatus.success:
+                messenger
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(content: Text(state.inviteMessage ?? "Invite sent")),
+                  );
 
-              // reset to idle so it doesn’t repeat
-              _lkCubit.resetInviteStatus();
-              break;
+                // reset to idle so it doesn’t repeat
+                _lkCubit.resetInviteStatus();
+                break;
 
-            case InviteStatus.failure:
-              messenger
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(content: Text(state.inviteMessage ?? "Invite failed")),
-                );
+              case InviteStatus.failure:
+                messenger
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(content: Text(state.inviteMessage ?? "Invite failed")),
+                  );
 
-              _lkCubit.resetInviteStatus();
-              break;
+                _lkCubit.resetInviteStatus();
+                break;
 
-            case InviteStatus.idle:
-              break;
+              case InviteStatus.idle:
+                break;
+            }
           }
 
+          if (state.isCallEndMessage.isNotEmpty &&
+              state.isCallEndMessage != lastCallEndMessage) {
+            messenger
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                const SnackBar(content: Text("Podcast Call Has Been Ended")),
+              );
+          }
           // Data received
           if (state.dataReceivedText != null) {
             final text = state.dataReceivedText!;
@@ -209,6 +215,7 @@ class _RoomPageState extends State<RoomPage> {
               ..showSnackBar(
                 SnackBar(content: Text(state.error ?? "Something went wrong")),
               );
+            _lkCubit.clearError();
           }
         },
         builder: (context, state) {
@@ -852,18 +859,32 @@ class _RoomPageState extends State<RoomPage> {
   }
 
   Widget _participantsGrid(LiveKitConnectionState state, BuildContext context) {
-    final participants = state.participants;
+    bool _isHost(FriendsDataList user) {
+      return state.isHost
+          ? (user.userIdPK == state.myUserId)
+          : (user.userIdPK != state.myUserId);
+    }
+
+    final participants = List<FriendsDataList>.from(state.participants);
+    participants.sort((a, b) {
+      bool aIsHost = _isHost(a);
+      bool bIsHost = _isHost(b);
+      if (aIsHost && !bIsHost) return -1;
+      if (!aIsHost && bIsHost) return 1;
+      return 0;
+    });
+
     final showInviteTile =
         state.isHost == true && !widget.incomingCall && participants.length < 2;
 
     Widget tile0 =
         participants.isNotEmpty
-            ? _userCard(state, participants[0], 0)
+            ? _userCard(state, participants[0], 0, isHostTile: _isHost(participants[0]))
             : const SizedBox.shrink();
     Widget tile1;
 
     if (participants.length > 1) {
-      tile1 = _userCard(state, participants[1], 1);
+      tile1 = _userCard(state, participants[1], 1, isHostTile: _isHost(participants[1]));
     } else if (showInviteTile) {
       tile1 = GestureDetector(
         onTap: () => showInviteDialog(context),
@@ -915,7 +936,12 @@ class _RoomPageState extends State<RoomPage> {
     );
   }
 
-  Widget _userCard(LiveKitConnectionState state, FriendsDataList user, int index) {
+  Widget _userCard(
+    LiveKitConnectionState state,
+    FriendsDataList user,
+    int index, {
+    bool isHostTile = false,
+  }) {
     final total = state.participants.length;
     final extraCount = total - 2;
 
@@ -926,7 +952,10 @@ class _RoomPageState extends State<RoomPage> {
           decoration: BoxDecoration(
             color: AppColors.gray_light,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.Border_Color, width: 4),
+            border: Border.all(
+              color: isHostTile ? AppColors.yellow : AppColors.Border_Color,
+              width: isHostTile ? 3 : 4,
+            ),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -990,6 +1019,29 @@ class _RoomPageState extends State<RoomPage> {
             ],
           ),
         ),
+
+        // ✅ Badge for Host
+        if (isHostTile)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.yellow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.Border_Color),
+              ),
+              child: Text(
+                "Host",
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.blackColor,
+                ),
+              ),
+            ),
+          ),
 
         // ✅ Badge only on 2nd tile when participants > 2
         if (index == 1 && extraCount > 0)
@@ -1350,9 +1402,10 @@ class _RoomPageState extends State<RoomPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
           child: BlocBuilder<HomeCubit, HomeState>(
             builder: (context, homeState) {
-              final friends = (homeState.friendsList ?? [])
-                  .where((e) => e.userIdPK != widget.userId)
-                  .toList();
+              final friends =
+                  (homeState.friendsList ?? [])
+                      .where((e) => e.userIdPK != widget.userId)
+                      .toList();
               if (friends.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.all(16),

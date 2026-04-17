@@ -1,5 +1,3 @@
-import 'package:path_provider/path_provider.dart';
-
 class ApiURL {
   final String hostUrl;
   ApiURL._(this.hostUrl);
@@ -43,27 +41,29 @@ class ApiURL {
   static const String varify_email = '$baseURL/users/varify-email';
   static const String livekit_generate_channel = '$baseURL/livekit/generate-channel';
   static const String podcast_topic = '$baseURL/podcast-topic';
-  static const String podcast_Save_Listened_PodcastTime = '$baseURL/podcast/save-listened-podcast-time';
-  static const String podcast__Listened_list = '$baseURL/podcast/continue-listening-podcast-list/';
-  static const String recent_podcast_friend_list = '$baseURL/podcast/recent-podcast-friend-list/';
+  static const String podcast_Save_Listened_PodcastTime =
+      '$baseURL/podcast/save-listened-podcast-time';
+  static const String podcast__Listened_list =
+      '$baseURL/podcast/continue-listening-podcast-list/';
+  static const String recent_podcast_friend_list =
+      '$baseURL/podcast/recent-podcast-friend-list/';
   static const String mark_podcast_favourite = '$baseURL/favourite-podcast';
-  static const String mark_podcast_un_favourite = '$baseURL/favourite-podcast/remove_as_favourite';
-
-
+  static const String mark_podcast_un_favourite =
+      '$baseURL/favourite-podcast/remove_as_favourite';
 
   static const String favourite_podcast_list = '$baseURL/favourite-podcast/';
   static const String create_new_podcast = '$baseURL/podcast/create-podcast';
 
-  static const String liveKitApi = 'https://cloud-api.livekit.io/api/sandbox/connection-details';
+  static const String liveKitApi =
+      'https://cloud-api.livekit.io/api/sandbox/connection-details';
   static const String inviteFriendToPodcast = '$baseURL/podcast/invite-friend';
   static const String record_start = "$baseURL/record-podcast/start";
   static const String record_stop = "$baseURL/record-podcast/stop";
 
   static const String savePodcast_AsDraft = "$baseURL/podcast/save-draft-podcast";
   static const String postPodcast = "$baseURL/podcast/post-podcast";
-  static const String cancelInviteToPodcast = "$baseURL/podcast/cancel-invite";
-
+  // static const String cancelInviteToPodcast = "$baseURL/podcast/cancel-invite";
+  static const String endPodcastCall = "$baseURL/podcast/end-podcast";
 
   static const String livekitUrl = "wss://lagecy-87n09bcj.livekit.cloud";
-
 }

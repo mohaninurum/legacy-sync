@@ -1,28 +1,35 @@
 import 'package:legacy_sync/config/network/network_api_service.dart';
-import 'package:legacy_sync/features/livekit_connection/data/model/cancel_invite_response.dart';
+import 'package:legacy_sync/features/livekit_connection/data/model/end_podcast_call_response.dart';
 import 'package:legacy_sync/features/livekit_connection/data/model/invite_friend_response_model.dart';
 import 'package:legacy_sync/features/livekit_connection/data/model/podcast_topics_model.dart';
 import 'package:legacy_sync/features/livekit_connection/data/repositories/livekit_connection_repository_impl.dart';
 import 'package:legacy_sync/features/livekit_connection/domain/repositories/livekit_connection_repository.dart';
 
 class LiveKitConnectionUseCases {
-  final LiveKitConnectionRepositories repository =
-      LiveKitConnectionRepositoryImpl();
+  final LiveKitConnectionRepositories repository = LiveKitConnectionRepositoryImpl();
 
   ResultFuture<PodcastTopicResponse> getPodcastTopic(int userId) async {
     return await repository.getPodcastTopic(userId);
   }
 
-  ResultFuture<CancelInviteResponse> cancelInviteToPodcast({
+  // ResultFuture<CancelInviteResponse> cancelInviteToPodcast({
+  //   required int userId,
+  //   required int friendId,
+  //   required String roomId,
+  // }) async {
+  //   return repository.cancelInviteToPodcast(
+  //     userId: userId,
+  //     friendId: friendId,
+  //     roomId: roomId,
+  //   );
+  // }
+
+  ResultFuture<EndPodcastCallResponse> endPodcastCall({
     required int userId,
-    required int friendId,
+    required Set<int> friendId,
     required String roomId,
   }) async {
-    return repository.cancelInviteToPodcast(
-      userId: userId,
-      friendId: friendId,
-      roomId: roomId,
-    );
+    return repository.endPodcastCall(userId: userId, friendId: friendId, roomId: roomId);
   }
 
   ResultFuture<String> fetchParticipantToken({
@@ -54,9 +61,7 @@ class LiveKitConnectionUseCases {
     return repository.startRecording(userId: userId, roomId: roomId);
   }
 
-  ResultFuture<Map<String, dynamic>> stopRecording({
-    required String roomId,
-  }) async {
+  ResultFuture<Map<String, dynamic>> stopRecording({required String roomId}) async {
     return repository.stopRecording(roomId: roomId);
   }
 }
