@@ -11,6 +11,7 @@ import 'package:legacy_sync/services/notification_service/notification_service.d
 import '../../config/routes/routes_name.dart';
 import '../../core/components/comman_components/call_action_button.dart';
 import '../../core/images/images.dart';
+import '../livekit_connection/domain/usecases/livekit_connection_usecases.dart';
 
 class IncomingCallFullScreen extends StatefulWidget {
   final bool isAlreadyAccepted;
@@ -236,18 +237,16 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
     setState(() => _processing = true);
 
     try {
-      // final myUserId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
-      // final hostId = int.tryParse(widget.callerUserId) ?? 0;
-      //
-      // if (hostId != 0) {
-      //   // Invite-e cancels the invite from Host perspective
-      //   // userId: Host, friendId: Invitee (Me)
-      //   await LiveKitConnectionUseCases().cancelInviteToPodcast(
-      //     userId: hostId,
-      //     friendId: myUserId,
-      //     roomId: widget.roomId,
-      //   );
-      // }
+      final myUserId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+      final hostId = int.tryParse(widget.callerUserId) ?? 0;
+
+      if (hostId != 0) {
+        await LiveKitConnectionUseCases().rejectInvitation(
+          userId: myUserId,
+          hostId: hostId,
+          roomId: widget.roomId,
+        );
+      }
     } catch (_) {
     } finally {
       if (mounted) {

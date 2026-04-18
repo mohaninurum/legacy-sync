@@ -14,7 +14,11 @@ abstract class LiveKitConnectionRepositories {
     required int friendId,
     required String roomId,
   });
-  // ResultFuture<CancelInviteResponse> cancelInviteToPodcast({required int userId, required int friendId, required String roomId});
+  ResultFuture<Map<String, dynamic>> rejectInvitation({
+    required int userId,
+    required int hostId,
+    required String roomId,
+  });
   ResultFuture<EndPodcastCallResponse> endPodcastCall({
     required int userId,
     required Set<int> friendId,

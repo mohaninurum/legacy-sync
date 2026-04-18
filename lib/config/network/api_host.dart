@@ -62,7 +62,7 @@ class ApiURL {
 
   static const String savePodcast_AsDraft = "$baseURL/podcast/save-draft-podcast";
   static const String postPodcast = "$baseURL/podcast/post-podcast";
-  // static const String cancelInviteToPodcast = "$baseURL/podcast/cancel-invite";
+  static const String rejectInvitation = "$baseURL/podcast/reject-invitation";
   static const String endPodcastCall = "$baseURL/podcast/end-podcast";
 
   static const String livekitUrl = "wss://lagecy-87n09bcj.livekit.cloud";

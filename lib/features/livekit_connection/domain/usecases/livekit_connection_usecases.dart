@@ -24,6 +24,18 @@ class LiveKitConnectionUseCases {
   //   );
   // }
 
+  ResultFuture<Map<String, dynamic>> rejectInvitation({
+    required int userId,
+    required int hostId,
+    required String roomId,
+  }) async {
+    return await repository.rejectInvitation(
+      userId: userId,
+      hostId: hostId,
+      roomId: roomId,
+    );
+  }
+
   ResultFuture<EndPodcastCallResponse> endPodcastCall({
     required int userId,
     required Set<int> friendId,

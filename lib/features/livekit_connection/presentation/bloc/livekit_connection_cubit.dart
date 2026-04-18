@@ -153,6 +153,8 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
           listener: listener,
           callStatus: CallStatus.connected,
           needsPublishConfirm: needsConfirm,
+          // If I'm the host, persist my userId as the hostUserId right away
+          hostUserId: state.isHost ? userId : state.hostUserId,
         ),
       );
       if (state.myUserId != null && state.myUserName != null) {
@@ -163,6 +165,11 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       }
       sortParticipants();
       _startSortLoop();
+
+      // Broadcast host identity so all participants (even late joiners) know who the host is
+      if (state.isHost) {
+        await _broadcastHostInfo();
+      }
     } catch (e) {
       await disconnect();
       print("Call Is Disconnected");
@@ -341,10 +348,14 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
           if (map["type"] == "call_end") {
             if (state.isHost) return;
             await handleRemoteCallEnd();
-            // if (state.callStatus == CallStatus.disconnected) return;
-            //
-            // // This will trigger your UI listener navigation (pop/replace)
-            // await disconnect();
+            return;
+          }
+          // ✅ host identity broadcast — store so we can correctly show the Host badge
+          if (map["type"] == "host_info") {
+            final hId = int.tryParse((map["host_user_id"] ?? "").toString());
+            if (hId != null && hId != 0) {
+              _safeEmit(state.copyWith(hostUserId: hId));
+            }
             return;
           }
         } catch (_) {}
@@ -369,6 +380,8 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
         }
         if (state.isHost == true) {
           _broadcastRecordingState();
+          // Re-broadcast host info so the newly joined participant learns who the host is
+          unawaited(_broadcastHostInfo());
         }
       })
       ..on<ParticipantDisconnectedEvent>((e) {
@@ -967,22 +980,30 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     // ✅ you need your current user id
     final int userId = state.myUserId ?? 0;
 
+    // Combine both invited friends AND actual participants just to be safe
+    final currentParticipantIds = state.participants
+        .where((p) => p.userIdPK != null && p.userIdPK != userId)
+        .map((p) => p.userIdPK!)
+        .toSet();
+
+    final combinedFriends = <int>{...state.invitedFriendIds, ...currentParticipantIds};
+
+    final success = await _broadcastCallEnd(
+      userId: userId,
+      friendId: combinedFriends,
+      roomId: roomId ?? '',
+    );
+    if (!success) {
+      return; // stay in the room, don't disconnect
+    }
+
+    // if (wasHost) {
+    //
+    // }
+
     if (state.recordingStatus == LiveKitRecordingStatus.recording ||
         state.recordingStatus == LiveKitRecordingStatus.paused) {
       await stopRecording();
-    }
-
-    // if (wasHost && !state.everRecorded) {
-    //
-    //   await _cancelPendingInvites(userId: userId, roomId: roomId ?? '');
-    // }
-
-    if (wasHost) {
-      await _broadcastCallEnd(
-        userId: userId,
-        friendId: state.invitedFriendIds,
-        roomId: roomId ?? '',
-      );
     }
 
     await disconnect(); // important
@@ -1010,7 +1031,7 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     }
   }
 
-  Future<void> _broadcastCallEnd({
+  Future<bool> _broadcastCallEnd({
     required int userId,
     required Set<int> friendId,
     required String roomId,
@@ -1029,9 +1050,10 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       );
 
       print("EndCall Response ::  ${response.toString()}");
-      response.fold(
+      return response.fold(
         (error) {
           emit(state.copyWith(error: error.message));
+          return false;
         },
         (data) async {
           emit(state.copyWith(isCallEnded: true, isCallEndMessage: data.message));
@@ -1039,11 +1061,42 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
             await room.localParticipant?.publishData(encodedBytes, reliable: true);
           }
           debugPrint("Podcast Call End Result For $friendId");
+          return true;
         },
       );
     } catch (e) {
       debugPrint("Podcast call end result for $friendId: ${e.toString()}");
+      emit(state.copyWith(error: e.toString()));
+      return false;
     }
+  }
+
+  void syncInvitedFriends(List<dynamic> friends) {
+    if (state.isHost) {
+      final validIds = <int>{};
+      for (final f in friends) {
+        if (f.userIdPK != null &&
+            (f.inPodcast?.toString() == '1' ||
+                f.inviteStatus?.toString().toLowerCase() == 'invited')) {
+          validIds.add(f.userIdPK!);
+        }
+      }
+      emit(state.copyWith(invitedFriendIds: validIds));
+    }
+  }
+
+  Future<void> _broadcastHostInfo() async {
+    final room = _room;
+    if (room == null) return;
+    final hId = state.hostUserId ?? state.myUserId;
+    if (hId == null) return;
+
+    final payload = {"type": "host_info", "host_user_id": hId.toString()};
+    final bytes = utf8.encode(jsonEncode(payload));
+
+    try {
+      await room.localParticipant?.publishData(bytes, reliable: true);
+    } catch (_) {}
   }
 
   Future<void> _broadcastRecordingState() async {

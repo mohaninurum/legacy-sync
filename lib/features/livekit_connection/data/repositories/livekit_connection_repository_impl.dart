@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dartz/dartz.dart';
 import 'package:legacy_sync/config/network/api_host.dart';
 import 'package:legacy_sync/config/network/app_exceptions.dart';
@@ -45,11 +47,11 @@ class LiveKitConnectionRepositoryImpl extends LiveKitConnectionRepositories {
     required String roomId,
   }) async {
     try {
-      final body = {
-        "user_id": userId,
-        "friend_ids": friendId.toList(),
-        "room_id": roomId,
-      };
+      final List<int> friendIdList = friendId.toList();
+
+      final body = {"user_id": userId, "friend_ids": friendIdList, "room_id": roomId};
+
+      print("BodyOf EndCall Api :: ${jsonEncode(body)}");
 
       final res = await _apiServices.getPostApiResponseNoAuth(
         ApiURL.endPodcastCall,
@@ -82,50 +84,37 @@ class LiveKitConnectionRepositoryImpl extends LiveKitConnectionRepositories {
     }
   }
 
-  // @override
-  // ResultFuture<CancelInviteResponse> cancelInviteToPodcast({
-  //   required int userId,
-  //   required int friendId,
-  //   required String roomId,
-  // }) async {
-  //   try {
-  //     final body = {
-  //       "user_id": userId,
-  //       "friend_id": friendId,
-  //       "room_id": roomId,
-  //     };
-  //
-  //     final res = await _apiServices.getPostApiResponseNoAuth(
-  //       ApiURL.cancelInviteToPodcast,
-  //       body,
-  //     );
-  //
-  //     return res.fold(
-  //           (error) => Left(error),
-  //           (data) {
-  //         if (data is! Map<String, dynamic>) {
-  //           return const Left(FetchDataException("Invalid cancel-invite response"));
-  //         }
-  //
-  //         final parsed = CancelInviteResponse.fromJson(data);
-  //
-  //         if (parsed.status != true) {
-  //           return Left(
-  //             FetchDataException(
-  //               parsed.message.isNotEmpty ? parsed.message : "Cancel invite failed",
-  //             ),
-  //           );
-  //         }
-  //
-  //         return Right(parsed);
-  //       },
-  //     );
-  //   } on AppException catch (e) {
-  //     return Left(e);
-  //   } catch (e) {
-  //     return Left(FetchDataException(e.toString()));
-  //   }
-  // }
+  @override
+  ResultFuture<Map<String, dynamic>> rejectInvitation({
+    required int userId,
+    required int hostId,
+    required String roomId,
+  }) async {
+    try {
+      final body = {
+        "user_id": userId,
+        "host_id": hostId,
+        "room_id": roomId,
+      };
+
+      final res = await _apiServices.getPostApiResponseNoAuth(
+        ApiURL.rejectInvitation,
+        body,
+      );
+
+      return res.fold(
+        (error) => Left(error),
+        (data) {
+          if (data is Map<String, dynamic>) return Right(data);
+          return const Left(FetchDataException("Invalid reject invitation response"));
+        },
+      );
+    } on AppException catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(FetchDataException(e.toString()));
+    }
+  }
 
   @override
   ResultFuture<PodcastTopicResponse> getPodcastTopic(int userId) async {

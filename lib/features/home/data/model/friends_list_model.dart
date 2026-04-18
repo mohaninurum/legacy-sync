@@ -16,7 +16,15 @@ class FriendsListModel {
   String? message;
   List<FriendsDataList>? data;
 
-  FriendsListModel copyWith({bool? status, String? message, List<FriendsDataList>? data}) => FriendsListModel(status: status ?? this.status, message: message ?? this.message, data: data ?? this.data);
+  FriendsListModel copyWith({
+    bool? status,
+    String? message,
+    List<FriendsDataList>? data,
+  }) => FriendsListModel(
+    status: status ?? this.status,
+    message: message ?? this.message,
+    data: data ?? this.data,
+  );
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -30,7 +38,25 @@ class FriendsListModel {
 }
 
 class FriendsDataList {
-  FriendsDataList({this.userIdPK, this.firstName, this.lastName, this.email, this.referalCode,this.profileImage});
+  int? userIdPK;
+  String? firstName;
+  String? lastName;
+  String? email;
+  String? referalCode;
+  String? profileImage;
+  int? inPodcast;
+  String? inviteStatus;
+
+  FriendsDataList({
+    this.userIdPK,
+    this.firstName,
+    this.lastName,
+    this.email,
+    this.referalCode,
+    this.profileImage,
+    this.inPodcast,
+    this.inviteStatus,
+  });
 
   FriendsDataList.fromJson(dynamic json) {
     userIdPK = json['user_id_PK'];
@@ -39,17 +65,29 @@ class FriendsDataList {
     email = json['email'];
     referalCode = json['referal_code'];
     profileImage = json['profile_image'];
+    inPodcast = json['in_podcast'];
+    inviteStatus = json['invite_status'];
   }
 
-  int? userIdPK;
-  String? firstName;
-  String? lastName;
-  String? email;
-  String? referalCode;
-  String? profileImage;
-
-  FriendsDataList copyWith({int? userIdPK, String? firstName, String? lastName, String? email, String? referalCode,String? profileImage}) =>
-      FriendsDataList(userIdPK: userIdPK ?? this.userIdPK, firstName: firstName ?? this.firstName, lastName: lastName ?? this.lastName, email: email ?? this.email, referalCode: referalCode ?? this.referalCode, profileImage: profileImage ?? this.profileImage);
+  FriendsDataList copyWith({
+    int? userIdPK,
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? referalCode,
+    String? profileImage,
+    int? inPodcast,
+    String? inviteStatus,
+  }) => FriendsDataList(
+    userIdPK: userIdPK ?? this.userIdPK,
+    firstName: firstName ?? this.firstName,
+    lastName: lastName ?? this.lastName,
+    email: email ?? this.email,
+    referalCode: referalCode ?? this.referalCode,
+    profileImage: profileImage ?? this.profileImage,
+    inPodcast: inPodcast ?? this.inPodcast,
+    inviteStatus: inviteStatus ?? this.inviteStatus,
+  );
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -59,6 +97,8 @@ class FriendsDataList {
     map['email'] = email;
     map['referal_code'] = referalCode;
     map['profile_image'] = profileImage;
+    map['in_podcast'] = inPodcast;
+    map['invite_status'] = inviteStatus;
     return map;
   }
 }

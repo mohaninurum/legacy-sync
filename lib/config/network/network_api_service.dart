@@ -10,6 +10,7 @@ import 'package:legacy_sync/config/network/base_api_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/foundation.dart';
+import 'package:legacy_sync/services/app_service/app_service.dart';
 
 typedef ResultFuture<T> = Future<Either<AppException, T>>;
 typedef ResultVoid = ResultFuture<void>;
@@ -133,7 +134,12 @@ class NetworkApiService implements BaseApiServices {
       final response = await call().timeout(const Duration(seconds: 60));
       return _parseHttpResponse<T>(response);
     } on SocketException {
-      return const Left(NoInternetException('No internet'));
+      final hasNet = await AppService.hasInternet();
+      if (!hasNet) {
+        return const Left(NoInternetException('No internet connection'));
+      } else {
+        return const Left(FetchDataException('Unable to connect to the server. Please try again later.'));
+      }
     } on TimeoutException {
       return const Left(FetchDataException('Request timed out'));
     }

@@ -109,205 +109,219 @@ class _RoomPageState extends State<RoomPage> {
   Widget build(BuildContext context) {
     return PodcastBg(
       isDark: true,
-      child: BlocConsumer<LiveKitConnectionCubit, LiveKitConnectionState>(
-        listener: (context, state) async {
-          final nav = state.navEvent;
-          print("NAV EVENT => ${nav.route}  args=${nav.arguments}");
-
-          if (!nav.isNone) {
-            _lkCubit.clearNavEvent(); // clear first to prevent double trigger
-
-            if (nav.route == "AudioPreviewEditScreen") {
-              Navigator.pushReplacementNamed(
-                context,
-                RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
-                arguments: nav.arguments,
-              );
-            } else if (nav.route == "MyPodcastScreen") {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              } else {
-                Navigator.pushReplacementNamed(context, RoutesName.MY_PODCAST_SCREEN);
-              }
-            }
-            return;
-          }
-
-          final messenger = ScaffoldMessenger.of(context);
-
-          if (state.inviteStatus != _lastInviteStatus) {
-            _lastInviteStatus = state.inviteStatus;
-            switch (state.inviteStatus) {
-              case InviteStatus.sending:
-                messenger
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(const SnackBar(content: Text("Sending invite...")));
-                break;
-
-              case InviteStatus.success:
-                messenger
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(
-                    SnackBar(content: Text(state.inviteMessage ?? "Invite sent")),
-                  );
-
-                // reset to idle so it doesn’t repeat
-                _lkCubit.resetInviteStatus();
-                break;
-
-              case InviteStatus.failure:
-                messenger
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(
-                    SnackBar(content: Text(state.inviteMessage ?? "Invite failed")),
-                  );
-
-                _lkCubit.resetInviteStatus();
-                break;
-
-              case InviteStatus.idle:
-                break;
-            }
-          }
-
-          if (state.isCallEndMessage.isNotEmpty &&
-              state.isCallEndMessage != lastCallEndMessage) {
-            messenger
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                const SnackBar(content: Text("Podcast Call Has Been Ended")),
-              );
-          }
-          // Data received
-          if (state.dataReceivedText != null) {
-            final text = state.dataReceivedText!;
-            _lkCubit.clearUiEvents(); // clear FIRST
-            await context.showDataReceivedDialog(text);
-          }
-
-          // Play audio manually (iOS safari)
-          if (state.showPlayAudioManuallyDialog == true) {
-            _lkCubit.clearUiEvents(); // clear FIRST
-            WidgetsBinding.instance.addPostFrameCallback((_) async {
-              final result = await context.showPlayAudioManuallyDialog();
-              if (!context.mounted) return;
-              if (result == true) {
-                await _lkCubit.startAudioPlayback();
-              }
-            });
-          }
-
-          // Publish confirm
-          if (state.needsPublishConfirm) {
-            _lkCubit.clearPublishConfirm(); // clear FIRST so it won't re-trigger
-            WidgetsBinding.instance.addPostFrameCallback((_) async {
-              final result = await context.showPublishDialog();
-              if (!context.mounted) return;
-              if (result == true) {
-                await _lkCubit.enableMic();
-              }
-            });
-          }
-
-          if (state.error != null) {
-            messenger
-              ..hideCurrentSnackBar()
-              ..showSnackBar(
-                SnackBar(content: Text(state.error ?? "Something went wrong")),
-              );
-            _lkCubit.clearError();
+      child: BlocListener<HomeCubit, HomeState>(
+        listener: (context, homeState) {
+          if (homeState.friendsList != null) {
+            context.read<LiveKitConnectionCubit>().syncInvitedFriends(
+              homeState.friendsList!,
+            );
           }
         },
-        builder: (context, state) {
-          return PopScope(
-            canPop: true,
-            onPopInvoked: (didPop) {
-              if (didPop) _lkCubit.showOverlay();
-            },
-            child: Scaffold(
-              backgroundColor: Colors.transparent,
-              bottomNavigationBar: _bottomCallControls(state.isHost),
-              body: SafeArea(
-                child: Column(
-                  children: [
-                    _topHeader(state),
-                    if (state.netStatus == NetStatus.reconnecting ||
-                        state.netStatus == NetStatus.offline)
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CupertinoActivityIndicator(),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                state.netMessage ?? "Reconnecting...",
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+        child: BlocConsumer<LiveKitConnectionCubit, LiveKitConnectionState>(
+          listener: (context, state) async {
+            final nav = state.navEvent;
+            print("NAV EVENT => ${nav.route}  args=${nav.arguments}");
+
+            if (!nav.isNone) {
+              _lkCubit.clearNavEvent(); // clear first to prevent double trigger
+
+              if (nav.route == "AudioPreviewEditScreen") {
+                Navigator.pushReplacementNamed(
+                  context,
+                  RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
+                  arguments: nav.arguments,
+                );
+              } else if (nav.route == "MyPodcastScreen") {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                } else {
+                  Navigator.pushReplacementNamed(context, RoutesName.MY_PODCAST_SCREEN);
+                }
+              }
+              return;
+            }
+
+            final messenger = ScaffoldMessenger.of(context);
+
+            if (state.inviteStatus != _lastInviteStatus) {
+              _lastInviteStatus = state.inviteStatus;
+              switch (state.inviteStatus) {
+                case InviteStatus.sending:
+                  messenger
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(const SnackBar(content: Text("Sending invite...")));
+                  break;
+
+                case InviteStatus.success:
+                  messenger
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      SnackBar(content: Text(state.inviteMessage ?? "Invite sent")),
+                    );
+
+                  // reset to idle so it doesn’t repeat
+                  _lkCubit.resetInviteStatus();
+                  break;
+
+                case InviteStatus.failure:
+                  messenger
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      SnackBar(content: Text(state.inviteMessage ?? "Invite failed")),
+                    );
+
+                  _lkCubit.resetInviteStatus();
+                  break;
+
+                case InviteStatus.idle:
+                  break;
+              }
+            }
+
+            if (state.isCallEndMessage.isNotEmpty &&
+                state.isCallEndMessage != lastCallEndMessage) {
+              messenger
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  const SnackBar(content: Text("Podcast Call Has Been Ended")),
+                );
+            }
+            // Data received
+            if (state.dataReceivedText != null) {
+              final text = state.dataReceivedText!;
+              _lkCubit.clearUiEvents(); // clear FIRST
+              await context.showDataReceivedDialog(text);
+            }
+
+            // Play audio manually (iOS safari)
+            if (state.showPlayAudioManuallyDialog == true) {
+              _lkCubit.clearUiEvents(); // clear FIRST
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                final result = await context.showPlayAudioManuallyDialog();
+                if (!context.mounted) return;
+                if (result == true) {
+                  await _lkCubit.startAudioPlayback();
+                }
+              });
+            }
+
+            // Publish confirm
+            if (state.needsPublishConfirm) {
+              _lkCubit.clearPublishConfirm(); // clear FIRST so it won't re-trigger
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                final result = await context.showPublishDialog();
+                if (!context.mounted) return;
+                if (result == true) {
+                  await _lkCubit.enableMic();
+                }
+              });
+            }
+
+            if (state.error != null) {
+              messenger
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(content: Text(state.error ?? "Something went wrong")),
+                );
+              _lkCubit.clearError();
+            }
+          },
+          builder: (context, state) {
+            return PopScope(
+              canPop: true,
+              onPopInvoked: (didPop) {
+                if (didPop) _lkCubit.showOverlay();
+              },
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                bottomNavigationBar: _bottomCallControls(state.isHost),
+                body: SafeArea(
+                  child: Column(
+                    children: [
+                      _topHeader(state),
+                      if (state.netStatus == NetStatus.reconnecting ||
+                          state.netStatus == NetStatus.offline)
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CupertinoActivityIndicator(),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  state.netMessage ?? "Reconnecting...",
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
-                            ),
-                            TextButton(
-                              onPressed: () async {
-                                // user chooses to leave
-                                await context.read<LiveKitConnectionCubit>().disconnect();
-                                if (!context.mounted) return;
-                                Navigator.pushReplacementNamed(
-                                  context,
-                                  RoutesName.MY_PODCAST_SCREEN,
-                                );
-                              },
-                              child: const Text("Leave"),
-                            ),
-                          ],
+                              TextButton(
+                                onPressed: () async {
+                                  // user chooses to leave
+                                  await context
+                                      .read<LiveKitConnectionCubit>()
+                                      .disconnect();
+                                  if (!context.mounted) return;
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    RoutesName.MY_PODCAST_SCREEN,
+                                  );
+                                },
+                                child: const Text("Leave"),
+                              ),
+                            ],
+                          ),
                         ),
+
+                      SizedBox(height: 1.3.height),
+                      _topicCard(context, state),
+
+                      Column(
+                        children: [
+                          _participantsGrid(state, context),
+                          SizedBox(height: 1.height),
+                          if (state.recordingStatus == LiveKitRecordingStatus.recording ||
+                              state.recordingStatus == LiveKitRecordingStatus.paused)
+                            const AudioWaveDesign(),
+                        ],
                       ),
-
-                    SizedBox(height: 1.3.height),
-                    _topicCard(context, state),
-
-                    Column(
-                      children: [
-                        _participantsGrid(state, context),
-                        SizedBox(height: 1.height),
-                        if (state.recordingStatus == LiveKitRecordingStatus.recording ||
-                            state.recordingStatus == LiveKitRecordingStatus.paused)
-                          const AudioWaveDesign(),
+                      if (!state.isHost && state.consentGiven != true) ...[
+                        const SizedBox.shrink(),
+                      ] else if (state.isHost) ...[
+                        _recordingSection(state, context), // host controls
+                      ] else ...[
+                        _inviteeRecordingView(state),
                       ],
-                    ),
-                    if (!state.isHost && state.consentGiven != true) ...[
-                      const SizedBox.shrink(),
-                    ] else if (state.isHost) ...[
-                      _recordingSection(state, context), // host controls
-                    ] else ...[
-                      _inviteeRecordingView(state),
+                      SizedBox(height: 5.height),
+                      Expanded(
+                        child:
+                            state.participantTracks.isNotEmpty
+                                ? ParticipantWidget.widgetFor(
+                                  state.participantTracks.first,
+                                  showStatsLayer: true,
+                                )
+                                : const SizedBox.shrink(),
+                      ),
                     ],
-                    SizedBox(height: 5.height),
-                    Expanded(
-                      child:
-                          state.participantTracks.isNotEmpty
-                              ? ParticipantWidget.widgetFor(
-                                state.participantTracks.first,
-                                showStatsLayer: true,
-                              )
-                              : const SizedBox.shrink(),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -859,10 +873,13 @@ class _RoomPageState extends State<RoomPage> {
   }
 
   Widget _participantsGrid(LiveKitConnectionState state, BuildContext context) {
+    // Use the authoritative hostUserId (broadcasted by the original room creator)
+    // so HOST badge is ALWAYS shown on the correct user regardless of who is viewing.
+    final hostId = state.hostUserId;
     bool _isHost(FriendsDataList user) {
-      return state.isHost
-          ? (user.userIdPK == state.myUserId)
-          : (user.userIdPK != state.myUserId);
+      if (hostId != null) return user.userIdPK == hostId;
+      // Fallback before host_info is received: if I'm the host, mark myself
+      return state.isHost && user.userIdPK == state.myUserId;
     }
 
     final participants = List<FriendsDataList>.from(state.participants);
@@ -1177,15 +1194,18 @@ class _RoomPageState extends State<RoomPage> {
               ),
             ],
           ),
-          InkWell(
-            highlightColor: Colors.transparent,
-            hoverColor: Colors.transparent,
-            splashColor: Colors.transparent,
-            onTap: () {
-              showInviteDialog(context);
-            },
-            child: SvgPicture.asset(Images.user_plus, width: 24, height: 24),
-          ),
+          if (state.isHost)
+            InkWell(
+              highlightColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              splashColor: Colors.transparent,
+              onTap: () {
+                showInviteDialog(context);
+              },
+              child: SvgPicture.asset(Images.user_plus, width: 24, height: 24),
+            )
+          else
+            const SizedBox(width: 24),
         ],
       ),
     );
@@ -1388,128 +1408,142 @@ class _RoomPageState extends State<RoomPage> {
   }
 
   void showInviteDialog(BuildContext context) {
-    // If your cubit has a method to fetch friends, call it here
-    if ((_homeCubit.state.friendsList ?? []).isEmpty) {
-      _homeCubit.getFriendsList(); // <- replace with your actual method name
-    }
+    // Fetch the latest friends list on every dialog open
+    _homeCubit.getFriendsList();
 
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: AppColors.dart_purple_Color,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-          child: BlocBuilder<HomeCubit, HomeState>(
-            builder: (context, homeState) {
-              final friends =
-                  (homeState.friendsList ?? [])
-                      .where((e) => e.userIdPK != widget.userId)
-                      .toList();
-              if (friends.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text("Not Friend Found"),
-                );
-              }
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: context.read<HomeCubit>()),
+            BlocProvider.value(value: context.read<LiveKitConnectionCubit>()),
+          ],
+          child: Dialog(
+            backgroundColor: AppColors.dart_purple_Color,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            child: BlocBuilder<HomeCubit, HomeState>(
+              builder: (context, homeState) {
+                final friends =
+                    (homeState.friendsList ?? [])
+                        .where((e) => e.userIdPK != widget.userId)
+                        .toList();
+                if (friends.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text("Not Friend Found"),
+                  );
+                }
 
-              return BlocBuilder<LiveKitConnectionCubit, LiveKitConnectionState>(
-                builder: (context, lkState) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 8,
-                          ),
-                          child: Row(
-                            children: [
-                              GestureDetector(
-                                onTap: () => Navigator.pop(context),
-                                child: const Icon(Icons.close, color: Colors.white70),
-                              ),
-                              const SizedBox(width: 15),
-                              Expanded(
-                                child: Text(
-                                  "Invite friend to podcast",
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
+                return BlocBuilder<LiveKitConnectionCubit, LiveKitConnectionState>(
+                  builder: (context, lkState) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 8,
+                            ),
+                            child: Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () => Navigator.pop(context),
+                                  child: const Icon(Icons.close, color: Colors.white70),
+                                ),
+                                const SizedBox(width: 15),
+                                Expanded(
+                                  child: Text(
+                                    "Invite friend to podcast",
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
 
-                        const SizedBox(height: 12),
+                          const SizedBox(height: 12),
 
-                        Flexible(
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: friends.length,
-                            itemBuilder: (_, i) {
-                              final user = friends[i];
-                              final id = user.userIdPK;
-                              final isInvited =
-                                  id != null && lkState.invitedFriendIds.contains(id);
+                          Flexible(
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: friends.length,
+                              itemBuilder: (_, i) {
+                                final user = friends[i];
+                                final id = user.userIdPK;
+                                final isInvited =
+                                    id != null &&
+                                    (user.inPodcast?.toString() == '1' ||
+                                        user.inviteStatus?.toString().toLowerCase() ==
+                                            'invited' ||
+                                        lkState.participants.any(
+                                          (p) => p.userIdPK == id,
+                                        ));
 
-                              final isSending =
-                                  lkState.inviteStatus == InviteStatus.sending &&
-                                  lkState.invitingFriendId == id;
+                                final isSending =
+                                    lkState.inviteStatus == InviteStatus.sending &&
+                                    lkState.invitingFriendId == id;
 
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 6,
-                                ),
-                                child: Row(
-                                  children: [
-                                    user.profileImage != null &&
-                                            user.profileImage!.trim().isNotEmpty &&
-                                            !user.profileImage!.endsWith('/null')
-                                        ? ClipOval(
-                                          child: Image.network(
-                                            user.profileImage!,
-                                            width: 50,
-                                            height: 50,
-                                            fit: BoxFit.cover,
-                                            loadingBuilder: (
-                                              context,
-                                              child,
-                                              loadingProgress,
-                                            ) {
-                                              if (loadingProgress == null) {
-                                                return child;
-                                              }
-                                              return const SizedBox(
-                                                width: 50,
-                                                height: 50,
-                                                child: Center(
-                                                  child: CupertinoActivityIndicator(),
-                                                ),
-                                              );
-                                            },
-                                            errorBuilder:
-                                                (_, __, ___) => const SizedBox(
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 6,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      user.profileImage != null &&
+                                              user.profileImage!.trim().isNotEmpty &&
+                                              !user.profileImage!.endsWith('/null')
+                                          ? ClipOval(
+                                            child: Image.network(
+                                              user.profileImage!,
+                                              width: 50,
+                                              height: 50,
+                                              fit: BoxFit.cover,
+                                              loadingBuilder: (
+                                                context,
+                                                child,
+                                                loadingProgress,
+                                              ) {
+                                                if (loadingProgress == null) {
+                                                  return child;
+                                                }
+                                                return const SizedBox(
                                                   width: 50,
                                                   height: 50,
-                                                  child: Icon(
-                                                    Icons.person,
-                                                    color: Colors.white54,
+                                                  child: Center(
+                                                    child: CupertinoActivityIndicator(),
                                                   ),
-                                                ),
-                                          ),
-                                        )
-                                        : ClipOval(
-                                          child: Container(
+                                                );
+                                              },
+                                              errorBuilder:
+                                                  (_, __, ___) => const SizedBox(
+                                                    width: 50,
+                                                    height: 50,
+                                                    child: Icon(
+                                                      Icons.person,
+                                                      color: Colors.white54,
+                                                    ),
+                                                  ),
+                                            ),
+                                          )
+                                          : Container(
                                             width: 50,
                                             height: 50,
-                                            decoration: const BoxDecoration(
-                                              color: Colors.deepOrangeAccent,
+                                            decoration: BoxDecoration(
+                                              color: AppColors.greyBlue,
+                                              borderRadius: const BorderRadius.all(
+                                                Radius.circular(50),
+                                              ),
+                                              border: Border.all(color: AppColors.grey),
                                             ),
                                             alignment: Alignment.center,
                                             child: Text(
@@ -1519,81 +1553,96 @@ class _RoomPageState extends State<RoomPage> {
                                               style: const TextStyle(color: Colors.white),
                                             ),
                                           ),
-                                        ),
 
-                                    const SizedBox(width: 12),
+                                      const SizedBox(width: 12),
 
-                                    Expanded(
-                                      child: Text(
-                                        user.firstName ?? '',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium?.copyWith(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
+                                      Expanded(
+                                        child: Text(
+                                          user.firstName ?? '',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium?.copyWith(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
                                       ),
-                                    ),
 
-                                    if (isInvited)
-                                      Text(
-                                        "Invited",
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodyMedium?.copyWith(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white54,
+                                      if (isSending)
+                                        const SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CupertinoActivityIndicator(),
                                         ),
-                                      )
-                                    else if (isSending)
-                                      const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CupertinoActivityIndicator(),
-                                      )
-                                    else
                                       GestureDetector(
-                                        onTap: () async {
-                                          final cubit =
-                                              context.read<LiveKitConnectionCubit>();
-                                          Navigator.pop(context);
-                                          await cubit.inviteFriend(user);
-                                        },
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            SvgPicture.asset(
-                                              Images.plus,
-                                              width: 16,
-                                              height: 16,
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              "Invite",
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.bodyMedium?.copyWith(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w700,
-                                                color: AppColors.light_pink_Text_Color,
+                                        onTap:
+                                            isInvited
+                                                ? null
+                                                : () async {
+                                                  final cubit =
+                                                      context
+                                                          .read<LiveKitConnectionCubit>();
+                                                  Navigator.pop(context);
+                                                  await cubit.inviteFriend(user);
+                                                },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 8,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                isInvited
+                                                    ? AppColors.whiteColor
+                                                    : AppColors.purple400,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.white),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (isInvited)
+                                                Container(
+                                                  height: 6,
+                                                  width: 6,
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.redColor,
+                                                    borderRadius: BorderRadius.circular(
+                                                      10,
+                                                    ),
+                                                  ),
+                                                ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                isInvited ? "Invited" : "Invite+",
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.bodyMedium?.copyWith(
+                                                  color:
+                                                      isInvited
+                                                          ? AppColors.blackColor
+                                                          : AppColors.whiteColor,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                  ],
-                                ),
-                              );
-                            },
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         );
       },

@@ -71,6 +71,7 @@ class LiveKitConnectionState extends Equatable {
   final bool isHost;
   final int? myUserId;
   final String? myUserName;
+  final int? hostUserId; // The user ID of whoever originally created the room
   final bool consentGiven;
 
   final bool isCallEnded;
@@ -88,6 +89,7 @@ class LiveKitConnectionState extends Equatable {
     this.isStartingRecording = false,
     this.myUserId,
     this.myUserName,
+    this.hostUserId,
     this.participantTracks = const [],
     this.inviteStatus = InviteStatus.idle,
     this.inviteMessage,
@@ -142,6 +144,7 @@ class LiveKitConnectionState extends Equatable {
     bool? isStartingRecording,
     int? myUserId,
     String? myUserName,
+    int? hostUserId,
     List<ParticipantTrack>? participantTracks,
     InviteStatus? inviteStatus,
     String? inviteMessage,
@@ -194,6 +197,7 @@ class LiveKitConnectionState extends Equatable {
       isStartingRecording: isStartingRecording ?? this.isStartingRecording,
       myUserId: myUserId ?? this.myUserId,
       myUserName: myUserName ?? this.myUserName,
+      hostUserId: hostUserId ?? this.hostUserId,
       participantTracks: participantTracks ?? this.participantTracks,
       invitingFriendId: invitingFriendId ?? this.invitingFriendId,
       inviteStatus: inviteStatus ?? this.inviteStatus,
@@ -243,6 +247,7 @@ class LiveKitConnectionState extends Equatable {
     isStartingRecording,
     myUserId,
     myUserName,
+    hostUserId,
     invitingFriendId,
     showRecordingStatusDialog,
     activeRecording,
@@ -284,6 +289,7 @@ class LiveKitConnectionState extends Equatable {
       isStartingRecording: isStartingRecording,
       myUserId: myUserId,
       myUserName: myUserName,
+      hostUserId: hostUserId,
       participantTracks: participantTracks,
       invitingFriendId: invitingFriendId,
       inviteStatus: inviteStatus,
