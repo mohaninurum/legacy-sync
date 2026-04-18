@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/features/audio_preview_edit/presentation/widgets/RealWaveSlider.dart';
-import 'package:legacy_sync/features/audio_preview_edit/presentation/widgets/wave_slider_widges.dart';
 import 'package:legacy_sync/features/audio_preview_edit/presentation/widgets/waveform_view_widget.dart';
-import 'package:audio_waveforms/audio_waveforms.dart';
+
 import '../../../../core/colors/colors.dart';
-import '../../../../core/components/comman_components/audio_wave_form_widget.dart';
 import '../../../../core/images/images.dart';
 import '../bloc/audio_preview_edit_cubit.dart';
 import '../bloc/audio_preview_edit_state.dart';
@@ -39,9 +37,11 @@ class AudioPreviewControls extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           child:
-              state.isAudioInitial
+              (state.isAudioInitial && !state.isBuffering)
                   ? state.isWaveLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      )
                       : RealWaveSlider(
                         state: state,
                         duration: state.duration.inSeconds.toDouble(),
@@ -54,7 +54,7 @@ class AudioPreviewControls extends StatelessWidget {
                           print("onEnd $seconds");
                         },
                       )
-                  : const SizedBox.shrink(),
+                  : const Center(child: CircularProgressIndicator(color: Colors.white)),
         ),
 
         Padding(
@@ -156,14 +156,8 @@ class AudioPreviewControls extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                _format(state.position),
-                style: const TextStyle(color: Colors.white),
-              ),
-              Text(
-                _format(state.duration),
-                style: const TextStyle(color: Colors.white),
-              ),
+              Text(_format(state.position), style: const TextStyle(color: Colors.white)),
+              Text(_format(state.duration), style: const TextStyle(color: Colors.white)),
             ],
           ),
         ),
@@ -172,7 +166,7 @@ class AudioPreviewControls extends StatelessWidget {
 
         /// ▶️ Controls Row
         Padding(
-          padding: const EdgeInsets.only(left: 16, right: 0),
+          padding: const EdgeInsets.only(left: 22, right: 0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
@@ -192,9 +186,7 @@ class AudioPreviewControls extends StatelessWidget {
               SizedBox(width: 5.width),
               IconButton(
                 icon: Icon(
-                  state.isPlaying
-                      ? Icons.pause_circle_filled
-                      : Icons.play_circle_filled,
+                  state.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
                   size: 64,
                 ),
                 color: Colors.white,

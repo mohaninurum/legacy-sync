@@ -11,8 +11,10 @@ import 'package:legacy_sync/core/components/comman_components/gradient_divider_t
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/core/images/images.dart';
 import 'package:legacy_sync/core/images/lottie.dart';
+import 'package:legacy_sync/core/utils/utils.dart';
 import 'package:legacy_sync/features/home/home.dart';
 import 'package:lottie/lottie.dart';
+
 import '../../../../core/components/comman_components/custom_button.dart';
 
 class TripePageWidget extends StatefulWidget {
@@ -23,9 +25,9 @@ class TripePageWidget extends StatefulWidget {
 }
 
 class _TripePageWidgetState extends State<TripePageWidget> {
-
   TextEditingController mobileTextController = TextEditingController();
   TextEditingController emailTextController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return BgImageStack(
@@ -56,17 +58,35 @@ class _TripePageWidgetState extends State<TripePageWidget> {
                     const SizedBox(height: 20),
                     Row(
                       children: [
-                        Expanded(child: _buildImageContainer(imagePath: LottieFiles.articles, text: "Articles")),
+                        Expanded(
+                          child: _buildImageContainer(
+                            imagePath: LottieFiles.articles,
+                            text: "Articles",
+                          ),
+                        ),
                         const SizedBox(width: 20),
-                        Expanded(child: _buildImageContainer(imagePath: LottieFiles.pod_cast, text: "Podcast",    onPressed: () {
-                          Navigator.pushNamed(context, RoutesName.PODCAST_SCREEN);
-                        },)),
+                        Expanded(
+                          child: _buildImageContainer(
+                            imagePath: LottieFiles.pod_cast,
+                            text: "Podcast",
+                            onPressed: () {
+                              Navigator.pushNamed(context, RoutesName.PODCAST_SCREEN);
+                            },
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
                     Row(
                       children: [
-                        Text("Friend’s list", style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text(
+                          "Friend’s list",
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const Spacer(),
                         _buildAddFriendButton(),
                       ],
@@ -74,7 +94,14 @@ class _TripePageWidgetState extends State<TripePageWidget> {
                     const SizedBox(height: 20),
                     _buildFriendList(),
                     const SizedBox(height: 10),
-                    Text("Share legacy", style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(
+                      "Share legacy",
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     _buildFeaturePreview(),
                     const SizedBox(height: 40),
@@ -109,7 +136,14 @@ class _TripePageWidgetState extends State<TripePageWidget> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [const Color(0xff110e54).withOpacity(0.1), const Color(0xff110e54).withOpacity(0.05)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xff110e54).withOpacity(0.1),
+            const Color(0xff110e54).withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xff415072), width: 1),
       ),
@@ -118,9 +152,23 @@ class _TripePageWidgetState extends State<TripePageWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text("Pass on your legacy to family and firends.", style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(
+            "Pass on your legacy to family and firends.",
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 20),
-          Text("Send code via text", style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+          Text(
+            "Send code via text",
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 15),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -132,32 +180,56 @@ class _TripePageWidgetState extends State<TripePageWidget> {
                   hintText: "Phone Number",
                   controller: mobileTextController,
                   maxLength: 10,
-                  keyboardType: const TextInputType.numberWithOptions(signed: false, decimal: false),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    signed: false,
+                    decimal: false,
+                  ),
                 ),
               ),
               const SizedBox(width: 10),
               GestureDetector(
-                onTap: (){
-                  context.read<HomeCubit>().openSms(mobileTextController.text,"Join legacy using this code ${context.read<HomeCubit>().state.referalCode}");
+                onTap: () {
+                  context.read<HomeCubit>().openSms(
+                    mobileTextController.text,
+                    "Join legacy using this code ${context.read<HomeCubit>().state.referalCode}",
+                  );
                 },
-                  child: Image.asset(Images.send_button, height: 50, width: 50)),
+                child: Image.asset(Images.send_button, height: 50, width: 50),
+              ),
             ],
           ),
           const SizedBox(height: 20),
-          Text("Send code via Email", style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+          Text(
+            "Send code via Email",
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 15),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(child: CustomTextField(bottomPadding: false, hintText: "Email Address", controller: emailTextController, keyboardType: TextInputType.emailAddress)),
+              Expanded(
+                child: CustomTextField(
+                  bottomPadding: false,
+                  hintText: "Email Address",
+                  controller: emailTextController,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ),
               const SizedBox(width: 10),
               GestureDetector(
-                onTap: (){
-                  context.read<HomeCubit>().openEmail(emailTextController.text,context.read<HomeCubit>().state.referalCode);
-
+                onTap: () {
+                  context.read<HomeCubit>().openEmail(
+                    emailTextController.text,
+                    context.read<HomeCubit>().state.referalCode,
+                  );
                 },
-                  child: Image.asset(Images.send_button, height: 50, width: 50)),
+                child: Image.asset(Images.send_button, height: 50, width: 50),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -165,7 +237,12 @@ class _TripePageWidgetState extends State<TripePageWidget> {
           const SizedBox(height: 20),
           BlocBuilder<HomeCubit, HomeState>(
             builder: (context, state) {
-              return CustomTextField(enabled: false, bottomPadding: false, hintText: "Refer Code", controller: TextEditingController(text: state.referalCode ?? ""));
+              return CustomTextField(
+                enabled: false,
+                bottomPadding: false,
+                hintText: "Refer Code",
+                controller: TextEditingController(text: state.referalCode ?? ""),
+              );
             },
           ),
           const SizedBox(height: 20),
@@ -175,7 +252,12 @@ class _TripePageWidgetState extends State<TripePageWidget> {
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: state.referalCode));
                 },
-                child: Image.asset(Images.copy_link_btn, height: 50, width: double.infinity, fit: BoxFit.fill),
+                child: Image.asset(
+                  Images.copy_link_btn,
+                  height: 50,
+                  width: double.infinity,
+                  fit: BoxFit.fill,
+                ),
               );
             },
           ),
@@ -199,22 +281,71 @@ class _TripePageWidgetState extends State<TripePageWidget> {
           itemBuilder: (context, index) {
             final friend = state.friendsList![index];
             return SizedBox(
-              height: 60,
+              height: 50,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const CircleAvatar(radius: 18, backgroundImage: AssetImage(Images.user_ic_fixed)),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text("${friend.firstName}", style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500))),
+                  Flexible(
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 18,
+                          backgroundImage: AssetImage(Images.user_ic_fixed),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          "${friend.firstName}",
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   Flexible(
                     child: CustomButton(
-                      height: 40,
+                      height: 30,
+                      fontSize: 12,
                       onPressed: () {
                         Map<String, dynamic> data = {"friendId": friend.userIdPK};
-                        Navigator.pushNamed(context, RoutesName.FRIENDS_PROFILE_PAGE, arguments: data);
+                        Navigator.pushNamed(
+                          context,
+                          RoutesName.FRIENDS_PROFILE_PAGE,
+                          arguments: data,
+                        );
                       },
                       btnText: "View legacy profile",
+                    ),
+                  ),
+                  Flexible(
+                    child: CustomButton(
+                      height: 30,
+                      width: 100,
+                      isDanger: true,
+                      fontSize: 12,
+                      onPressed: () {
+                        Utils.showWarningDialog(
+                          context: context,
+                          title: "Are Your Sure?",
+                          content: "To Remove This Friend",
+                          actionsText: "Okay",
+                          actionsText2: "Cancel",
+                          okPressed: () {
+                            context.read<HomeCubit>().removeFriend(
+                              context: context,
+                              friendId: friend.userIdPK ?? 0,
+                            );
+                          },
+                          cancelPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        );
+                      },
+                      btnText: "Remove",
                     ),
                   ),
                 ],
@@ -226,7 +357,13 @@ class _TripePageWidgetState extends State<TripePageWidget> {
     );
   }
 
-  Widget _buildImageContainer({required String imagePath, double height = 80, required String text, EdgeInsets margin = EdgeInsets.zero, Function? onPressed}) {
+  Widget _buildImageContainer({
+    required String imagePath,
+    double height = 80,
+    required String text,
+    EdgeInsets margin = EdgeInsets.zero,
+    Function? onPressed,
+  }) {
     return AppButton(
       onPressed: () {
         if (onPressed != null) {
@@ -240,8 +377,22 @@ class _TripePageWidgetState extends State<TripePageWidget> {
           borderRadius: BorderRadius.circular(10),
           child: Stack(
             children: [
-              Lottie.asset(imagePath, height: 10.height, width: double.infinity, fit: BoxFit.fill),
-              Center(child: Text(text, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600))),
+              Lottie.asset(
+                imagePath,
+                height: 10.height,
+                width: double.infinity,
+                fit: BoxFit.fill,
+              ),
+              Center(
+                child: Text(
+                  text,
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -273,7 +424,11 @@ class _TripePageWidgetState extends State<TripePageWidget> {
               ),
             ],
           ),
-          Positioned(top: 60, left: 16, child: Text("Tribe library", style: Theme.of(context).textTheme.bodyLarge)),
+          Positioned(
+            top: 60,
+            left: 16,
+            child: Text("Tribe library", style: Theme.of(context).textTheme.bodyLarge),
+          ),
           Positioned(
             bottom: 0,
             right: 0,
@@ -284,10 +439,22 @@ class _TripePageWidgetState extends State<TripePageWidget> {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildIconsOption(imagePath: Images.featured_article, title: "Featured\nArticle"),
-                  _buildIconsOption(imagePath: Images.guided_wisdom, title: "Guided\nWisdom"),
-                  _buildIconsOption(imagePath: Images.podcast_episode, title: "Podcast\nEpisode"),
-                  _buildIconsOption(imagePath: Images.test_your_ai, title: "Test\nYour AI"),
+                  _buildIconsOption(
+                    imagePath: Images.featured_article,
+                    title: "Featured\nArticle",
+                  ),
+                  _buildIconsOption(
+                    imagePath: Images.guided_wisdom,
+                    title: "Guided\nWisdom",
+                  ),
+                  _buildIconsOption(
+                    imagePath: Images.podcast_episode,
+                    title: "Podcast\nEpisode",
+                  ),
+                  _buildIconsOption(
+                    imagePath: Images.test_your_ai,
+                    title: "Test\nYour AI",
+                  ),
                 ],
               ),
             ),
@@ -305,7 +472,15 @@ class _TripePageWidgetState extends State<TripePageWidget> {
       children: [
         Image.asset(imagePath, height: 60, width: 60),
         const SizedBox(height: 5),
-        Text(title, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white, fontSize: 14), maxLines: 2, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium!.copyWith(color: Colors.white, fontSize: 14),
+          maxLines: 2,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+        ),
       ],
     );
   }

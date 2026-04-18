@@ -41,4 +41,22 @@ class AudioPreviewEditUseCase {
   ResultFuture<MarkUnFavouriteResponse> markUnFavouritePodcast(Map<String, dynamic> body) async {
     return await repository.markUnFavouritePodcast(body);
   }
+
+  ResultFuture<Map<String, dynamic>> deletePodcastDraft(Map<String, dynamic> body) async {
+    return await repository.deletePodcastDraft(body);
+  }
+
+  ResultFuture<PublishResponse> editPublishedPodcast({
+    required Map<String, String> fields,
+    required List<int>? thumbnailBytes,
+    required String thumbnailFileName,
+    required String thumbnailKey,
+  }) async {
+    return await repository.editPublishedPodcast(
+      fields: fields,
+      thumbnailBytes: thumbnailBytes,
+      thumbnailFileName: thumbnailFileName,
+      thumbnailKey: thumbnailKey,
+    );
+  }
 }

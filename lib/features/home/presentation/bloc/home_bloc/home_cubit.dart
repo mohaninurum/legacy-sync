@@ -1,9 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
-import 'package:legacy_sync/config/db/encryption_service.dart';
-import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/config/db/shared_preferences.dart';
+import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/core/utils/utils.dart';
 import 'package:legacy_sync/features/home/data/model/friends_list_model.dart';
 import 'package:legacy_sync/features/home/data/model/home_journey_card_model.dart';
@@ -25,9 +24,10 @@ class HomeCubit extends Cubit<HomeState> {
   static const String CACHE_KEY_PIPE_ANIMATIONS = 'home_pipe_animations';
   static const String CACHE_KEY_FRIENDS_LIST = 'home_friends_list';
 
-
   void initializeHome(BuildContext context) async {
-    final isFirstVisit = await AppPreference().getBool(key: AppPreference.KEY_USER_FIRST_VISIT);
+    final isFirstVisit = await AppPreference().getBool(
+      key: AppPreference.KEY_USER_FIRST_VISIT,
+    );
     if (!isFirstVisit) {
       await AppPreference().setBool(key: AppPreference.KEY_USER_FIRST_VISIT, value: true);
     }
@@ -42,18 +42,17 @@ class HomeCubit extends Cubit<HomeState> {
       fromJson: (json) => JourneyCardModel.fromJson(json),
     );
 
-    final cachedPipeAnimations = await appPreference.getCachedModelList<PipeAnimationModel>(
-      cacheKey: CACHE_KEY_PIPE_ANIMATIONS,
-      fromJson: (json) => PipeAnimationModel.fromJson(json),
-    );
+    final cachedPipeAnimations = await appPreference
+        .getCachedModelList<PipeAnimationModel>(
+          cacheKey: CACHE_KEY_PIPE_ANIMATIONS,
+          fromJson: (json) => PipeAnimationModel.fromJson(json),
+        );
 
     // If cache exists, use it and skip API call
     if (cachedJourneyCards != null && cachedPipeAnimations != null) {
       emit(state.copyWith(referalCode: referalCode, isLoading: false));
 
       print('Using cached home data');
-
-
 
       // Enable pipes between consecutive enabled cards
       for (int i = 0; i < cachedJourneyCards.length - 1; i++) {
@@ -63,10 +62,12 @@ class HomeCubit extends Cubit<HomeState> {
           });
         }
       }
-      emit(state.copyWith(
-        journeyCards: cachedJourneyCards,
-        pipeAnimations: cachedPipeAnimations,
-      ));
+      emit(
+        state.copyWith(
+          journeyCards: cachedJourneyCards,
+          pipeAnimations: cachedPipeAnimations,
+        ),
+      );
 
       return;
     }
@@ -74,20 +75,28 @@ class HomeCubit extends Cubit<HomeState> {
     // No cache, fetch from API
     final result = await _homeUseCases.getHomeModule(userId: userId);
     emit(state.copyWith(isLoading: false));
-    result.fold((l) {
-      emit(state.copyWith(isLoading: false));
-      Utils.showInfoDialog(context: context, title: l.message ?? "Something went wrong");
-    }, (r) async {
-      if (r.data != null) {
-        emit(state.copyWith(referalCode: referalCode, isLoading: false));
-        await _processAndCacheHomeData(r.data!);
-      }
-    });
+    result.fold(
+      (l) {
+        emit(state.copyWith(isLoading: false));
+        Utils.showInfoDialog(
+          context: context,
+          title: l.message ?? "Something went wrong",
+        );
+      },
+      (r) async {
+        if (r.data != null) {
+          emit(state.copyWith(referalCode: referalCode, isLoading: false));
+          await _processAndCacheHomeData(r.data!);
+        }
+      },
+    );
   }
 
   Future<void> _processAndCacheHomeData(List<JourneyCardDataModel> mJourneyCards) async {
     List<JourneyCardModel> journeyCards = List<JourneyCardModel>.from(state.journeyCards);
-    List<PipeAnimationModel> pipeAnimations = List<PipeAnimationModel>.from(state.pipeAnimations);
+    List<PipeAnimationModel> pipeAnimations = List<PipeAnimationModel>.from(
+      state.pipeAnimations,
+    );
 
     print("journeyCards: ${journeyCards}, mJourneyCards: ${mJourneyCards}");
 
@@ -112,19 +121,16 @@ class HomeCubit extends Cubit<HomeState> {
       }
     }
 
-    emit(state.copyWith(
-      pipeAnimations: pipeAnimations,
-      journeyCards: journeyCards,
-    ));
+    emit(state.copyWith(pipeAnimations: pipeAnimations, journeyCards: journeyCards));
 
     // Cache the data
     await _saveCacheData(journeyCards, pipeAnimations);
   }
 
   Future<void> _saveCacheData(
-      List<JourneyCardModel> journeyCards,
-      List<PipeAnimationModel> pipeAnimations,
-      ) async {
+    List<JourneyCardModel> journeyCards,
+    List<PipeAnimationModel> pipeAnimations,
+  ) async {
     await appPreference.saveCachedModelList<JourneyCardModel>(
       cacheKey: CACHE_KEY_JOURNEY_CARDS,
       modelList: journeyCards,
@@ -138,7 +144,6 @@ class HomeCubit extends Cubit<HomeState> {
     );
     print('Home data cached successfully');
   }
-
 
   void onJourneyCardTapped(int cardIndex) {
     final currentCards = List<JourneyCardModel>.from(state.journeyCards);
@@ -154,25 +159,31 @@ class HomeCubit extends Cubit<HomeState> {
 
     if (allEnabled || cardIndex == 7) {
       // Reset all cards except first and disable all pipes
-      final resetCards = currentCards.asMap().entries.map((entry) {
-        final index = entry.key;
-        final card = entry.value;
-        return card.copyWith(isEnabled: index == 0, isAnimating: false);
-      }).toList();
+      final resetCards =
+          currentCards.asMap().entries.map((entry) {
+            final index = entry.key;
+            final card = entry.value;
+            return card.copyWith(isEnabled: index == 0, isAnimating: false);
+          }).toList();
 
-      final resetPipes = currentPipes
-          .map((pipe) => pipe.copyWith(
-        isEnabled: false,
-        animationProgress: 0.0,
-        isAnimating: false,
-      ))
-          .toList();
+      final resetPipes =
+          currentPipes
+              .map(
+                (pipe) => pipe.copyWith(
+                  isEnabled: false,
+                  animationProgress: 0.0,
+                  isAnimating: false,
+                ),
+              )
+              .toList();
 
-      emit(state.copyWith(
-        journeyCards: resetCards,
-        pipeAnimations: resetPipes,
-        isJourneyAnimating: false,
-      ));
+      emit(
+        state.copyWith(
+          journeyCards: resetCards,
+          pipeAnimations: resetPipes,
+          isJourneyAnimating: false,
+        ),
+      );
 
       // Save reset state to cache
       _saveCacheData(resetCards, resetPipes);
@@ -187,7 +198,6 @@ class HomeCubit extends Cubit<HomeState> {
   void onNavigationTabChanged(int tabIndex) {
     final selectedTab = NavigationTab.fromIndex(tabIndex);
     emit(state.copyWith(selectedTab: selectedTab));
-
   }
 
   Future<void> startJourneyAnimation(int cardIndex) async {
@@ -207,10 +217,7 @@ class HomeCubit extends Cubit<HomeState> {
       print("Cubit: Starting pipe animation for index $cardIndex");
     }
 
-    emit(state.copyWith(
-      journeyCards: currentCards,
-      pipeAnimations: currentPipes,
-    ));
+    emit(state.copyWith(journeyCards: currentCards, pipeAnimations: currentPipes));
 
     // Auto-complete animation after delay (simulating the pipe filling time)
     if (cardIndex < 7) {
@@ -240,78 +247,89 @@ class HomeCubit extends Cubit<HomeState> {
 
       // Enable the next card
       if (cardIndex + 1 < currentCards.length) {
-        currentCards[cardIndex + 1] = currentCards[cardIndex + 1].copyWith(isEnabled: true);
+        currentCards[cardIndex + 1] = currentCards[cardIndex + 1].copyWith(
+          isEnabled: true,
+        );
       }
     }
 
-    emit(state.copyWith(
-      journeyCards: currentCards,
-      pipeAnimations: currentPipes,
-      isJourneyAnimating: false,
-        nextModuleToOpenIndex:cardIndex+1
-    ));
+    emit(
+      state.copyWith(
+        journeyCards: currentCards,
+        pipeAnimations: currentPipes,
+        isJourneyAnimating: false,
+        nextModuleToOpenIndex: cardIndex + 1,
+      ),
+    );
 
     // Save updated state to cache whenever a module is enabled
     _saveCacheData(currentCards, currentPipes);
-
   }
-
 
   Future<void> completeAndAutoStartNext(int cardIndex) async {
     final updatedCards = List<JourneyCardModel>.from(state.journeyCards);
     final updatedPipes = List<PipeAnimationModel>.from(state.pipeAnimations);
 
     // Complete current module
-    updatedCards[cardIndex] = updatedCards[cardIndex]
-        .copyWith(isEnabled: true, isAnimating: false);
+    updatedCards[cardIndex] = updatedCards[cardIndex].copyWith(
+      isEnabled: true,
+      isAnimating: false,
+    );
 
     if (cardIndex < updatedPipes.length) {
-      updatedPipes[cardIndex] =
-          updatedPipes[cardIndex].copyWith(isAnimating: false, animationProgress: 1.0);
+      updatedPipes[cardIndex] = updatedPipes[cardIndex].copyWith(
+        isAnimating: false,
+        animationProgress: 1.0,
+      );
     }
 
     int nextIndex = cardIndex + 1;
 
     // Enable next module
     if (nextIndex < updatedCards.length) {
-      updatedCards[nextIndex] =
-          updatedCards[nextIndex].copyWith(isEnabled: true);
+      updatedCards[nextIndex] = updatedCards[nextIndex].copyWith(isEnabled: true);
     }
 
     // Emit changes + instruction to navigate
-    emit(state.copyWith(
-      journeyCards: updatedCards,
-      pipeAnimations: updatedPipes,
-      nextModuleToOpenIndex: nextIndex,   // 👈 Navigation signal
-    ));
+    emit(
+      state.copyWith(
+        journeyCards: updatedCards,
+        pipeAnimations: updatedPipes,
+        nextModuleToOpenIndex: nextIndex, // 👈 Navigation signal
+      ),
+    );
 
     // Reset signal so that listener triggers only once
     emit(state.copyWith(nextModuleToOpenIndex: null));
   }
 
-
-
   void resetJourney() {
-    final resetCards = state.journeyCards.asMap().entries.map((entry) {
-      final index = entry.key;
-      final card = entry.value;
-      return card.copyWith(isEnabled: index == 0, isAnimating: false);
-    }).toList();
+    final resetCards =
+        state.journeyCards.asMap().entries.map((entry) {
+          final index = entry.key;
+          final card = entry.value;
+          return card.copyWith(isEnabled: index == 0, isAnimating: false);
+        }).toList();
 
     // Reset all pipes to disabled state
-    final resetPipes = state.pipeAnimations
-        .map((pipe) => pipe.copyWith(
-      isEnabled: false,
-      animationProgress: 0.0,
-      isAnimating: false,
-    ))
-        .toList();
+    final resetPipes =
+        state.pipeAnimations
+            .map(
+              (pipe) => pipe.copyWith(
+                isEnabled: false,
+                animationProgress: 0.0,
+                isAnimating: false,
+              ),
+            )
+            .toList();
 
-    emit(state.copyWith(
-      journeyCards: resetCards,
-      pipeAnimations: resetPipes,
-      isJourneyAnimating: false,
-    ));
+    emit(
+      state.copyWith(
+        journeyCards: resetCards,
+        pipeAnimations: resetPipes,
+        isJourneyAnimating: false,
+      ),
+    );
 
     // Save reset state to cache
     _saveCacheData(resetCards, resetPipes);
@@ -334,9 +352,7 @@ class HomeCubit extends Cubit<HomeState> {
     if (lastEnabledIndex != -1) {
       final lastEnabledCard = cards[lastEnabledIndex];
       navigationArgs = NavigateToModuleUsecase.execute(lastEnabledCard);
-      navigationArgs.addAll({
-        "preExpanded": true,
-      });
+      navigationArgs.addAll({"preExpanded": true});
     }
 
     Navigator.pushNamed(context, RoutesName.LIST_OF_MODULE, arguments: navigationArgs);
@@ -373,6 +389,52 @@ class HomeCubit extends Cubit<HomeState> {
     });
   }
 
+  void removeFriend({required BuildContext context, required int friendId}) async {
+    final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+    Map<String, dynamic> body = {"user_id": userId, "friend_id": friendId};
+
+    try {
+      Utils.showLoader();
+      final result = await _homeUseCases.removeFriend(body: body);
+      Utils.closeLoader();
+
+      result.fold(
+        (l) {
+          Utils.showInfoDialog(
+            context: context,
+            title: "Failed",
+            content: l.message ?? "Something went wrong",
+          );
+        },
+        (data) {
+          // Remove from state
+          List<FriendsDataList>? friendsList = List<FriendsDataList>.from(
+            state.friendsList ?? [],
+          );
+          friendsList.removeWhere((f) => f.userIdPK == friendId);
+          
+          emit(state.copyWith(friendsList: friendsList));
+
+          // Update cache
+          appPreference.saveCachedModelList<FriendsDataList>(
+            cacheKey: CACHE_KEY_FRIENDS_LIST,
+            modelList: friendsList,
+            toJson: (model) => model.toJson(),
+          );
+
+          Utils.showInfoDialog(
+            context: context,
+            title: "Success",
+            content: data.message ?? "Friend removed successfully",
+          );
+        },
+      );
+    } catch (e) {
+      Utils.closeLoader();
+      Utils.showInfoDialog(context: context, title: "Failed", content: e.toString());
+    }
+  }
+
   void addFriend({required BuildContext context, required String code}) async {
     final userID = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
     Map<String, dynamic> body = {"user_id": userID, "referal_code": code};
@@ -383,14 +445,14 @@ class HomeCubit extends Cubit<HomeState> {
       Utils.closeLoader();
 
       result.fold(
-            (l) {
+        (l) {
           Utils.showInfoDialog(
             context: context,
             title: "Failed",
             content: l.message ?? "Something went wrong",
           );
         },
-            (data) {
+        (data) {
           Utils.showInfoDialog(
             context: context,
             title: "Success",
@@ -398,7 +460,9 @@ class HomeCubit extends Cubit<HomeState> {
           );
 
           if (data.data != null) {
-            List<FriendsDataList>? friendsList = List<FriendsDataList>.from(state.friendsList ?? []);
+            List<FriendsDataList>? friendsList = List<FriendsDataList>.from(
+              state.friendsList ?? [],
+            );
             FriendsDataList friendsDataList = FriendsDataList();
             friendsDataList.email = data.data?.email ?? "";
             friendsDataList.userIdPK = data.data?.userIdPK ?? 0;
@@ -420,11 +484,7 @@ class HomeCubit extends Cubit<HomeState> {
       );
     } catch (e) {
       Utils.closeLoader();
-      Utils.showInfoDialog(
-        context: context,
-        title: "Failed",
-        content: e.toString(),
-      );
+      Utils.showInfoDialog(context: context, title: "Failed", content: e.toString());
     }
   }
 
@@ -436,16 +496,19 @@ class HomeCubit extends Cubit<HomeState> {
     final result = await _homeUseCases.getHomeModule(userId: userId);
     emit(state.copyWith(isLoading: false));
 
-    result.fold((l) {
-      Utils.showInfoDialog(
-        context: context,
-        title: l.message ?? "Something went wrong",
-      );
-    }, (r) async {
-      if (r.data != null) {
-        await _processAndCacheHomeData(r.data!);
-      }
-    });
+    result.fold(
+      (l) {
+        Utils.showInfoDialog(
+          context: context,
+          title: l.message ?? "Something went wrong",
+        );
+      },
+      (r) async {
+        if (r.data != null) {
+          await _processAndCacheHomeData(r.data!);
+        }
+      },
+    );
   }
 
   // Clear all home cache
@@ -456,17 +519,19 @@ class HomeCubit extends Cubit<HomeState> {
     print('Home cache cleared');
   }
 
-  Future<void> openSms(String phone,String message) async {
-    final Uri smsUri = Uri(scheme: 'sms', path: phone,queryParameters: <String, String>{
-      'body': message,
-    },);
+  Future<void> openSms(String phone, String message) async {
+    final Uri smsUri = Uri(
+      scheme: 'sms',
+      path: phone,
+      queryParameters: <String, String>{'body': message},
+    );
 
     if (!await launchUrl(smsUri)) {
       print("Could not launch SMS");
     }
   }
 
-  Future<void> openEmail(String mEmail,String message) async {
+  Future<void> openEmail(String mEmail, String message) async {
     final Email email = Email(
       body: 'Hello, join legacy now using this code ${message}',
       subject: 'Join Legacy',

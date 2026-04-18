@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -12,11 +13,8 @@ import 'package:legacy_sync/features/auth/presentation/bloc/auth_bloc/verificati
 import 'package:legacy_sync/features/auth/presentation/bloc/auth_state/verification_code_state.dart';
 import 'package:vibration/vibration.dart';
 
-import 'package:audioplayers/audioplayers.dart';
-
 class SoundFx {
-  static final AudioPlayer _p = AudioPlayer()
-    ..setReleaseMode(ReleaseMode.stop);
+  static final AudioPlayer _p = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
 
   static bool _ready = false;
 
@@ -39,21 +37,89 @@ class SoundFx {
   }
 
   static Future<void> dispose() async {
-    try { await _p.dispose(); } catch (_) {}
+    try {
+      await _p.dispose();
+    } catch (_) {}
   }
 }
 
 class Utils {
   static GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-  static void showInfoDialog({required BuildContext context, required String title, String content = "", String actionsText = AppStrings.okay, Function? onPressed}) {
+  static void showWarningDialog({
+    required BuildContext context,
+    required String title,
+    String content = "",
+    String actionsText = AppStrings.okay,
+    String actionsText2 = AppStrings.cancel,
+    Function? okPressed,
+    Function? cancelPressed,
+  }) {
     showCupertinoDialog(
       barrierDismissible: false,
       context: context,
       builder:
           (_) => CupertinoAlertDialog(
             title: Text(title),
-            content: content.isEmpty ? null : Text(content, style: const TextStyle(color: AppColors.whiteColor, fontSize: 14)),
+            content:
+                content.isEmpty
+                    ? null
+                    : Text(
+                      content,
+                      style: const TextStyle(color: AppColors.whiteColor, fontSize: 14),
+                    ),
+            actions: [
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                onPressed: () {
+                  navigatorKey.currentState?.pop();
+                  if (okPressed != null) {
+                    okPressed();
+                  }
+                },
+                child: Text(
+                  actionsText,
+                  style: const TextStyle(color: AppColors.primaryColorBlue, fontSize: 14),
+                ),
+              ),
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                onPressed: () {
+                  navigatorKey.currentState?.pop();
+                  if (cancelPressed != null) {
+                    cancelPressed();
+                  }
+                },
+                child: Text(
+                  actionsText2,
+                  style: const TextStyle(color: AppColors.primaryColorBlue, fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
+  static void showInfoDialog({
+    required BuildContext context,
+    required String title,
+    String content = "",
+    String actionsText = AppStrings.okay,
+    Function? onPressed,
+  }) {
+    showCupertinoDialog(
+      barrierDismissible: false,
+      context: context,
+      builder:
+          (_) => CupertinoAlertDialog(
+            title: Text(title),
+            content:
+                content.isEmpty
+                    ? null
+                    : Text(
+                      content,
+                      style: const TextStyle(color: AppColors.whiteColor, fontSize: 14),
+                    ),
             actions: [
               CupertinoDialogAction(
                 isDefaultAction: true,
@@ -63,29 +129,45 @@ class Utils {
                     onPressed();
                   }
                 },
-                child: Text(actionsText, style: const TextStyle(color: AppColors.primaryColorBlue, fontSize: 14)),
+                child: Text(
+                  actionsText,
+                  style: const TextStyle(color: AppColors.primaryColorBlue, fontSize: 14),
+                ),
               ),
             ],
           ),
     );
   }
 
-
-  static void showLogOutDialog({required BuildContext context, required String title, String content = "", String actionsText = AppStrings.okay, Function? onPressed}) {
+  static void showLogOutDialog({
+    required BuildContext context,
+    required String title,
+    String content = "",
+    String actionsText = AppStrings.okay,
+    Function? onPressed,
+  }) {
     showCupertinoDialog(
       context: context,
       barrierDismissible: false,
       builder:
           (_) => CupertinoAlertDialog(
             title: Text(title),
-            content: content.isEmpty ? null : Text(content, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+            content:
+                content.isEmpty
+                    ? null
+                    : Text(
+                      content,
+                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
             actions: [
               CupertinoDialogAction(
                 onPressed: () {
                   navigatorKey.currentState?.pop();
-
                 },
-                child:const Text("Cancel", style: TextStyle(color: AppColors.whiteColor, fontSize: 14)),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(color: AppColors.whiteColor, fontSize: 14),
+                ),
               ),
 
               CupertinoDialogAction(
@@ -97,14 +179,23 @@ class Utils {
                     onPressed();
                   }
                 },
-                child: Text(actionsText, style: const TextStyle(color: AppColors.redColor, fontSize: 14)),
+                child: Text(
+                  actionsText,
+                  style: const TextStyle(color: AppColors.redColor, fontSize: 14),
+                ),
               ),
             ],
           ),
     );
   }
 
-  static void showRemainingSecondsDialog({required BuildContext context, required String email, required String title, String actionsText = AppStrings.okay, Function? onPressed}) {
+  static void showRemainingSecondsDialog({
+    required BuildContext context,
+    required String email,
+    required String title,
+    String actionsText = AppStrings.okay,
+    Function? onPressed,
+  }) {
     showCupertinoDialog(
       context: context,
       barrierDismissible: true,
@@ -113,7 +204,12 @@ class Utils {
             title: Text(title),
             content: BlocBuilder<VerificationCodeCubit, VerificationCodeState>(
               builder: (context, state) {
-                return Text(state.remainingSeconds == 0 ? AppStrings.resend_email : "(${state.remainingSeconds})s", style: const TextStyle(color: AppColors.whiteColor, fontSize: 14));
+                return Text(
+                  state.remainingSeconds == 0
+                      ? AppStrings.resend_email
+                      : "(${state.remainingSeconds})s",
+                  style: const TextStyle(color: AppColors.whiteColor, fontSize: 14),
+                );
               },
             ),
             actions: [
@@ -121,7 +217,12 @@ class Utils {
                 listener: (context, state) {
                   if (state.resentSuccess) {
                     Navigator.pop(context);
-                    showInfoDialog(context: context, title: AppStrings.emailSend, content: "${AppStrings.weHaveResendEmail} $email", onPressed: onPressed);
+                    showInfoDialog(
+                      context: context,
+                      title: AppStrings.emailSend,
+                      content: "${AppStrings.weHaveResendEmail} $email",
+                      onPressed: onPressed,
+                    );
                   }
                 },
                 builder: (context, state) {
@@ -130,13 +231,29 @@ class Utils {
                     onPressed: () {
                       if (!state.loading) {
                         if (state.remainingSeconds == 0) {
-                          context.read<VerificationCodeCubit>().resendEmailOtp(email: email);
+                          context.read<VerificationCodeCubit>().resendEmailOtp(
+                            email: email,
+                          );
                         } else {
                           Navigator.pop(context);
                         }
                       }
                     },
-                    child: state.loading ? const CupertinoActivityIndicator(radius: 10, color: AppColors.whiteColor) : Text(state.remainingSeconds == 0 ? AppStrings.resend_email : actionsText, style: const TextStyle(color: AppColors.primaryColorBlue, fontSize: 14)),
+                    child:
+                        state.loading
+                            ? const CupertinoActivityIndicator(
+                              radius: 10,
+                              color: AppColors.whiteColor,
+                            )
+                            : Text(
+                              state.remainingSeconds == 0
+                                  ? AppStrings.resend_email
+                                  : actionsText,
+                              style: const TextStyle(
+                                color: AppColors.primaryColorBlue,
+                                fontSize: 14,
+                              ),
+                            ),
                   );
                 },
               ),
@@ -152,7 +269,14 @@ class Utils {
   static void showLoader({String? message}) {
     BotToast.showCustomLoading(
       toastBuilder: (cancelFunc) {
-        return Container(padding: const EdgeInsets.all(30), decoration: const BoxDecoration(color: AppColors.blackColorDull, borderRadius: BorderRadius.all(Radius.circular(12))), child: const CupertinoActivityIndicator(radius: 12, color: Colors.white));
+        return Container(
+          padding: const EdgeInsets.all(30),
+          decoration: const BoxDecoration(
+            color: AppColors.blackColorDull,
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+          ),
+          child: const CupertinoActivityIndicator(radius: 12, color: Colors.white),
+        );
       },
     );
   }
@@ -161,23 +285,21 @@ class Utils {
     BotToast.closeAllLoading();
   }
 
-
-
-  static void showPhotoDialog({required BuildContext context,required VoidCallback onGalleryPressed,required VoidCallback onCameraPressed}) {
+  static void showPhotoDialog({
+    required BuildContext context,
+    required VoidCallback onGalleryPressed,
+    required VoidCallback onCameraPressed,
+  }) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return PhotoSelectionDialog(
-          onGalleryPressed:onGalleryPressed,
+          onGalleryPressed: onGalleryPressed,
           onCameraPressed: onCameraPressed,
         );
       },
     );
   }
-
-
-
-
 
   static String getModuleLottie(String? code) {
     switch (code) {
@@ -306,6 +428,7 @@ class Utils {
         return LottieFiles.m1q1;
     }
   }
+
   static String getModuleImage(String? code) {
     switch (code) {
       case null:
@@ -563,7 +686,6 @@ class Utils {
     }
   }
 
-
   static String capitalize(String? value) {
     if (value == null || value.isEmpty) return '';
     return '${value[0].toUpperCase()}${value.substring(1).toLowerCase()}';
@@ -595,7 +717,7 @@ class Utils {
     }
   }
 
- static String formatDuration(Duration d) {
+  static String formatDuration(Duration d) {
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
     return "$m:$s";
@@ -608,7 +730,6 @@ class Utils {
     return "$h:$m:$s";
   }
 
-
   static String minAndSecDuration(String input) {
     final parts = input.split(':');
     if (parts.length != 2) return input;
@@ -619,8 +740,6 @@ class Utils {
     return '$minutes min $seconds sec';
   }
 
-
-
   static String secondsToHrOrMin(int seconds) {
     final totalMinutes = seconds ~/ 60;
     final remainingSeconds = seconds % 60;
@@ -630,8 +749,6 @@ class Utils {
     }
     return '$totalMinutes:$remainingSeconds';
   }
-
-
 
   static String formatDurationFromString(String input) {
     try {

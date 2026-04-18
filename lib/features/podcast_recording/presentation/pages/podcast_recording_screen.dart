@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
@@ -12,35 +11,33 @@ import 'package:legacy_sync/features/podcast_recording/presentation/pages/widget
 import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/audio_waves_widget.dart';
 import 'package:legacy_sync/features/podcast_recording/presentation/pages/widgets/record_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../config/routes/routes_name.dart';
 import '../../../../core/colors/colors.dart';
 import '../../../../core/components/comman_components/app_button.dart';
 import '../../../../core/components/comman_components/custom_button.dart';
 import '../../../../core/components/comman_components/custom_button_common_mask_widgets.dart';
 import '../../../../core/components/comman_components/podcast_bg.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/images/images.dart';
 import '../../../home/data/model/friends_list_model.dart';
 import '../../../home/presentation/bloc/home_bloc/home_cubit.dart';
 import '../../../home/presentation/bloc/home_state/home_state.dart';
-import '../../data/user_list_model/user_list_model.dart';
 import '../bloc/podcast_recording_cubit.dart';
-import 'package:permission_handler/permission_handler.dart';
-
-import 'package:file_picker/file_picker.dart';
 
 class PodcastRecordingScreen extends StatefulWidget {
   final bool isIncomingCall;
   final String userName;
-  const PodcastRecordingScreen({super.key,required this.isIncomingCall,required this.userName});
+  const PodcastRecordingScreen({
+    super.key,
+    required this.isIncomingCall,
+    required this.userName,
+  });
 
   @override
   State<PodcastRecordingScreen> createState() => _PodcastRecordingScreenState();
 }
 
 class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
-
-
   @override
   void initState() {
     super.initState();
@@ -49,12 +46,11 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     context.read<PodCastRecordingCubit>().fetchPodcastTopics();
     context.read<PodCastRecordingCubit>().addSelfParticipant(widget.isIncomingCall);
     context.read<HomeCubit>().getFriendsList();
-    if(widget.isIncomingCall){
-      Future.delayed(const Duration(seconds: 2),() {
+    if (widget.isIncomingCall) {
+      Future.delayed(const Duration(seconds: 2), () {
         showIncomingCallDialog(context);
         noticalldataclean();
-      },);
-
+      });
     }
   }
 
@@ -64,16 +60,14 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     super.dispose();
   }
 
-
   noticalldataclean() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('pending_call_accept');
   }
 
-  incomingCallStartRecording(){
+  incomingCallStartRecording() {
     context.read<PodCastRecordingCubit>().startRecording();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -90,18 +84,19 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                   SizedBox(height: 1.3.height),
                   _topicCard(context, state),
                   SizedBox(height: 0.5.height),
-                  if(widget.isIncomingCall==false)
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _participantsGrid(state, context),
-                        SizedBox(height: 1.height),
-                        if (state.status == PodCastRecordingStatus.recording ||
-                            state.status == PodCastRecordingStatus.paused)
-                          const AudioWaveDesign(),
-                      ],
-                    ),
-                  )else
+                  if (widget.isIncomingCall == false)
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _participantsGrid(state, context),
+                          SizedBox(height: 1.height),
+                          if (state.status == PodCastRecordingStatus.recording ||
+                              state.status == PodCastRecordingStatus.paused)
+                            const AudioWaveDesign(),
+                        ],
+                      ),
+                    )
+                  else
                     Column(
                       children: [
                         _participantsGrid(state, context),
@@ -112,21 +107,27 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                       ],
                     ),
                   if (state.status == PodCastRecordingStatus.idle)
-                 InkWell(
-                     highlightColor: Colors.transparent,
-                     hoverColor: Colors.transparent,
-                     splashColor: Colors.transparent,
-                     onTap: () {
-                   Navigator.pushNamed(context, RoutesName.INCOMING_CALL_FULL_SCREEN);
-                 }, child: const Text("Incoming call Screen test for click here")),
+                    InkWell(
+                      highlightColor: Colors.transparent,
+                      hoverColor: Colors.transparent,
+                      splashColor: Colors.transparent,
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          RoutesName.INCOMING_CALL_FULL_SCREEN,
+                        );
+                      },
+                      child: const Text("Incoming call Screen test for click here"),
+                    ),
                   if (state.status == PodCastRecordingStatus.idle)
-                  SizedBox(height: 1.3.height),
-                 if(widget.isIncomingCall==false)
-                  _recordingSection(state, context)
+                    SizedBox(height: 1.3.height),
+                  if (widget.isIncomingCall == false)
+                    _recordingSection(state, context)
                   else if (state.status == PodCastRecordingStatus.recording ||
-                   state.status == PodCastRecordingStatus.paused)
-                    _incomingCallRecordingSection(state,context)
-                 else _IncomingRecordingCard(state),
+                      state.status == PodCastRecordingStatus.paused)
+                    _incomingCallRecordingSection(state, context)
+                  else
+                    _IncomingRecordingCard(state),
                   SizedBox(height: 5.height),
                 ],
               );
@@ -200,7 +201,11 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "${widget.userName},${widget.isIncomingCall?"you":state.participants.length-1==1?state.participants[1].firstName:""} ",
+                "${widget.userName},${widget.isIncomingCall
+                    ? "you"
+                    : state.participants.length - 1 == 1
+                    ? state.participants[1].firstName
+                    : ""} ",
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -210,11 +215,13 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
           ),
           InkWell(
             highlightColor: Colors.transparent,
-              hoverColor: Colors.transparent,
-              splashColor: Colors.transparent,
-              onTap: () {
-            showInviteDialog(context);
-          }, child: SvgPicture.asset(Images.user_plus, width: 24, height: 24)),
+            hoverColor: Colors.transparent,
+            splashColor: Colors.transparent,
+            onTap: () {
+              showInviteDialog(context);
+            },
+            child: SvgPicture.asset(Images.user_plus, width: 24, height: 24),
+          ),
         ],
       ),
     );
@@ -226,12 +233,10 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     final int participantCount = state.participants.length.clamp(0, 2);
 
     final bool showInvite =
-        state.callStatus != CallStatus.connected &&
-        state.participants.length < 2;
-    final plusUser= state.participants.length;
+        state.callStatus != CallStatus.connected && state.participants.length < 2;
+    final plusUser = state.participants.length;
 
     final int itemCount = participantCount + (showInvite ? 1 : 0);
-
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -246,16 +251,15 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
         ),
         itemBuilder: (_, i) {
           if (i < participantCount) {
-            return _userCard(state.participants[i],i,plusUser);
+            return _userCard(state.participants[i], i, plusUser);
           }
 
           if (showInvite && i == participantCount) {
             return GestureDetector(
               onTap: () {
                 showInviteDialog(context);
-
-                },
-              child: widget.isIncomingCall? const SizedBox.shrink(): _inviteCard(),
+              },
+              child: widget.isIncomingCall ? const SizedBox.shrink() : _inviteCard(),
             );
           }
 
@@ -299,12 +303,8 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                           : "Pause Recording",
                   onPressed: () {
                     state.status == PodCastRecordingStatus.paused
-                        ? context
-                            .read<PodCastRecordingCubit>()
-                            .resumeRecording()
-                        : context
-                            .read<PodCastRecordingCubit>()
-                            .pauseRecording();
+                        ? context.read<PodCastRecordingCubit>().resumeRecording()
+                        : context.read<PodCastRecordingCubit>().pauseRecording();
                   },
                 ),
                 Column(
@@ -361,8 +361,10 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     );
   }
 
-
-  Widget _incomingCallRecordingSection(PodCastRecordingState state, BuildContext context) {
+  Widget _incomingCallRecordingSection(
+    PodCastRecordingState state,
+    BuildContext context,
+  ) {
     if (state.status == PodCastRecordingStatus.completed) {
       return _doneRecordingCard(state);
     }
@@ -373,7 +375,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           children: [
-             SizedBox(height: 1.5.height),
+            SizedBox(height: 1.5.height),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,10 +399,8 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                     SizedBox(height: 1.height),
-                   nowRecordingCard(state),
-
-
+                    SizedBox(height: 1.height),
+                    nowRecordingCard(state),
                   ],
                 ),
               ],
@@ -425,11 +425,9 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     );
   }
 
-  Widget nowRecordingCard(PodCastRecordingState state){
-    return  GestureDetector(
-      onTap:() {
-
-      },
+  Widget nowRecordingCard(PodCastRecordingState state) {
+    return GestureDetector(
+      onTap: () {},
       child: Container(
         height: 30,
         width: 136,
@@ -441,16 +439,13 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors:
-                    [
-                    AppColors.whiteColor,
-                    AppColors.whiteColor,
-                    AppColors.whiteColor,
-                    AppColors.whiteColor,
-                    AppColors.whiteColor,
-                    AppColors.whiteColor
-
-
+                    colors: [
+                      AppColors.whiteColor,
+                      AppColors.whiteColor,
+                      AppColors.whiteColor,
+                      AppColors.whiteColor,
+                      AppColors.whiteColor,
+                      AppColors.whiteColor,
                     ],
                     begin: Alignment.bottomLeft,
                     end: Alignment.bottomLeft,
@@ -464,38 +459,43 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                   gradient: RadialGradient(
                     center: Alignment.bottomCenter,
                     radius: 1.0,
-                    colors: [
-                      Colors.white.withOpacity(0.3),
-                      Colors.transparent,
-                    ],
+                    colors: [Colors.white.withOpacity(0.3), Colors.transparent],
                   ),
                 ),
               ),
 
               /// 🎨 Grain texture
-              CustomPaint(
-                painter: GrainPainter(),
-              ),
+              CustomPaint(painter: GrainPainter()),
 
               /// 🔤 Content
               Center(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(height: 6,
-                    width: 6,
-                    decoration: BoxDecoration(color:state.status == PodCastRecordingStatus.paused?AppColors.yellow: AppColors.redColor,borderRadius: BorderRadius.circular(50)),
+                    Container(
+                      height: 6,
+                      width: 6,
+                      decoration: BoxDecoration(
+                        color:
+                            state.status == PodCastRecordingStatus.paused
+                                ? AppColors.yellow
+                                : AppColors.redColor,
+                        borderRadius: BorderRadius.circular(50),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 2),
                       child: Text(
-                          state.status == PodCastRecordingStatus.paused?  "Recording paused": "Now Recording",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.blackColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          )),
+                        state.status == PodCastRecordingStatus.paused
+                            ? "Recording paused"
+                            : "Now Recording",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.blackColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -505,10 +505,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
         ),
       ),
     );
-
-
   }
-
 
   Widget _doneRecordingCard(PodCastRecordingState state) {
     return Column(
@@ -576,6 +573,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
       ],
     );
   }
+
   Widget _IncomingRecordingCard(PodCastRecordingState state) {
     return Container(
       width: MediaQuery.of(context).size.width,
@@ -591,28 +589,24 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
         children: [
           Text(
             "Recording Not Started!",
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           SizedBox(height: 1.height),
           Text(
             "The host hasn’t started recording this podcast yet.\n You’ll be included automatically once recording begins.\n Please stay in the room.",
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontSize: 12, fontWeight: FontWeight.w700),
             textAlign: TextAlign.start,
           ),
-
         ],
       ),
     );
   }
 
-
-// invite call dialog
+  // invite call dialog
   void showInviteDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -620,43 +614,32 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
       builder: (_) {
         return Dialog(
           backgroundColor: AppColors.dart_purple_Color,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
           child: BlocBuilder<HomeCubit, HomeState>(
             builder: (context, state) {
-             print("User Image Name:${state.friendsList?[0].profileImage}");
+              print("User Image Name:${state.friendsList?[0].profileImage}");
               if (state.friendsList == null || state.friendsList!.isEmpty) {
                 return const Text("Not Friend Found");
               }
-              
-              
+
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                       child: Row(
                         children: [
                           GestureDetector(
                             onTap: () => Navigator.pop(context),
-                            child: const Icon(
-                              Icons.close,
-                              color: Colors.white70,
-                            ),
+                            child: const Icon(Icons.close, color: Colors.white70),
                           ),
                           const SizedBox(width: 15),
                           Expanded(
                             child: Text(
                               "Invite friend to podcast",
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.copyWith(
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -681,38 +664,43 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                             ),
                             child: Row(
                               children: [
-                                 user?.profileImage != null && user!.profileImage!.trim().isNotEmpty && !user.profileImage!.endsWith('/null')
+                                user?.profileImage != null &&
+                                        user!.profileImage!.trim().isNotEmpty &&
+                                        !user.profileImage!.endsWith('/null')
                                     ? ClipOval(
-                                  child: Image.network(
-                                    user!.profileImage!,
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.cover,
-
-                                    // 🔄 Loading state
-                                    loadingBuilder: (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-
-                                      return const SizedBox(
+                                      child: Image.network(
+                                        user!.profileImage!,
                                         width: 50,
                                         height: 50,
-                                        child: Center(
-                                          child: CupertinoActivityIndicator(),
-                                        ),
-                                      );
-                                    },
+                                        fit: BoxFit.cover,
 
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return SizedBox.shrink();
-                                    },
-                                  ),
-                                )
+                                        // 🔄 Loading state
+                                        loadingBuilder: (
+                                          context,
+                                          child,
+                                          loadingProgress,
+                                        ) {
+                                          if (loadingProgress == null) return child;
+
+                                          return const SizedBox(
+                                            width: 50,
+                                            height: 50,
+                                            child: Center(
+                                              child: CupertinoActivityIndicator(),
+                                            ),
+                                          );
+                                        },
+
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return SizedBox.shrink();
+                                        },
+                                      ),
+                                    )
                                     : ClipOval(
                                       child: Text(
-                                        user?.firstName?[0].toString().toUpperCase()??"",
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                        ),
+                                        user?.firstName?[0].toString().toUpperCase() ??
+                                            "",
+                                        style: const TextStyle(color: Colors.white),
                                       ),
                                     ),
 
@@ -720,7 +708,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
 
                                 Expanded(
                                   child: Text(
-                                    user?.firstName??'',
+                                    user?.firstName ?? '',
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium?.copyWith(
@@ -732,12 +720,10 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
 
                                 GestureDetector(
                                   onTap: () {
-                                    context
-                                        .read<PodCastRecordingCubit>()
-                                        .addParticipant(user!);
+                                    context.read<PodCastRecordingCubit>().addParticipant(
+                                      user!,
+                                    );
                                     Navigator.pop(context);
-
-
                                   },
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -755,8 +741,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                                         ).textTheme.bodyMedium?.copyWith(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700,
-                                          color:
-                                              AppColors.light_pink_Text_Color,
+                                          color: AppColors.light_pink_Text_Color,
                                         ),
                                       ),
                                     ],
@@ -785,9 +770,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
       builder: (_) {
         return Dialog(
           backgroundColor: AppColors.dart_purple_Color,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
           child: BlocBuilder<PodCastRecordingCubit, PodCastRecordingState>(
             builder: (context, state) {
               return Padding(
@@ -796,10 +779,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
                       child: Row(
                         children: [
                           const SizedBox(width: 15),
@@ -807,9 +787,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                             child: Text(
                               textAlign: TextAlign.center,
                               AppStrings.invitedIncomingCallPodcast,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium?.copyWith(
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -824,35 +802,49 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                       child: Text(
                         textAlign: TextAlign.center,
                         AppStrings.invitedIncomingCallDescription,
-                      style: Theme.of(
-                      context,
-                      ).textTheme.bodyMedium?.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                      ),),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                     const Divider(),
                     Row(
                       children: [
-                        Expanded(child:TextButton(onPressed: () {
-                          Navigator.pop(context);
-                        }, child: Text("Decline",   style:  GoogleFonts.poppins(
-                          color: AppColors.light_pink_Text_Color,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),)) ),
-                        Container(color: AppColors.whiteColor,
-                        height: 21,width: 2,),
-                        Expanded(child:TextButton(onPressed: () {
-                          Navigator.pop(context);
-                          incomingCallStartRecording();
-                        }, child: Text("Agree & Join",  style:  GoogleFonts.poppins(
-                          color: AppColors.light_pink_Text_Color,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),)) )
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: Text(
+                              "Decline",
+                              style: GoogleFonts.poppins(
+                                color: AppColors.light_pink_Text_Color,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(color: AppColors.whiteColor, height: 21, width: 2),
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              incomingCallStartRecording();
+                            },
+                            child: Text(
+                              "Agree & Join",
+                              style: GoogleFonts.poppins(
+                                color: AppColors.light_pink_Text_Color,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
-                    )
+                    ),
                   ],
                 ),
               );
@@ -884,7 +876,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     );
   }
 
-  Widget _userCard(FriendsDataList user,int index,int plusUser) {
+  Widget _userCard(FriendsDataList user, int index, int plusUser) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -901,7 +893,9 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
             height: 125,
             child: Stack(
               children: [
-                user.profileImage != null && user.profileImage!.trim().isNotEmpty && !user.profileImage.toString().endsWith('/null')
+                user.profileImage != null &&
+                        user.profileImage!.trim().isNotEmpty &&
+                        !user.profileImage.toString().endsWith('/null')
                     ? Positioned(
                       bottom: -20,
                       left: 0,
@@ -918,20 +912,14 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                               return const SizedBox(
                                 height: 20,
                                 width: 20,
-                                child: Center(
-                                  child: CupertinoActivityIndicator(),
-                                ),
+                                child: Center(child: CupertinoActivityIndicator()),
                               );
                             },
                             errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.person,
-                                color: Colors.grey,
-                              );
+                              return const Icon(Icons.person, color: Colors.grey);
                             },
                           ),
-                        )
-,
+                        ),
                       ),
                     )
                     : ClipOval(
@@ -950,19 +938,17 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 YouAudioWave(useName: user.firstName),
-                if(index==1&&plusUser>=3)
-                plushUser(plusUser),
+                if (index == 1 && plusUser >= 3) plushUser(plusUser),
               ],
             ),
           ),
-
         ],
       ),
     );
   }
 
-  Widget plushUser(plusUser){
-    return  Container(
+  Widget plushUser(plusUser) {
+    return Container(
       alignment: Alignment.center,
       height: 30,
       width: 30,
@@ -970,17 +956,14 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
         color: const Color(0xFFB8C0C0),
         borderRadius: BorderRadius.circular(50),
       ),
-      child:  Text(
+      child: Text(
         "$plusUser+",
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }
-
-
 
   Widget _inviteCard() {
     return Container(
@@ -1015,7 +998,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     if (state.filteredTopics.isEmpty) return const SizedBox();
     final topic = state.filteredTopics[state.currentTopicIndex];
 
-    if(state.isLoading){
+    if (state.isLoading) {
       return const CircularProgressIndicator();
     }
 
@@ -1081,8 +1064,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
                 },
                 child: _topicChip(
                   label: "Relationship",
-                  selected:
-                      state.selectedCategory == TopicCategory.relationship,
+                  selected: state.selectedCategory == TopicCategory.relationship,
                 ),
               ),
             ],
@@ -1095,10 +1077,9 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
             child: Text(
               topic.description,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontSize: 14, fontWeight: FontWeight.w700),
             ),
           ),
 
@@ -1120,8 +1101,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: CustomButton(
-                  enable:
-                      state.currentTopicIndex < state.filteredTopics.length - 1,
+                  enable: state.currentTopicIndex < state.filteredTopics.length - 1,
                   btnText: "Next",
                   height: 48,
                   onPressed: () {
@@ -1138,55 +1118,63 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
 
   Widget _bottomCallControls() {
     return BlocBuilder<PodCastRecordingCubit, PodCastRecordingState>(
-  builder: (context, state) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 17),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _circleBtn(
-            Icons.volume_up,
-            color: AppColors.dart_grey,
-            isDisable: state.isSpeaker??false,
-            Pressed: () {
-              context.read<PodCastRecordingCubit>().speakerONOff();
-            },
-          ),
-          _circleBtn(
-            Icons.mic_off,
-            color: AppColors.dart_grey,
-            isDisable: state.isMic??false,
-            Pressed: () {
-              context.read<PodCastRecordingCubit>().micONOff();
-            },
-          ),
-          _circleBtn(
-            Icons.call_end,
-            color: AppColors.redColor,
-            isDisable: true,
-            isRed: true,
-            Pressed: () async {
-              context.read<PodCastRecordingCubit>().endCall();
-              // FilePickerResult? result = await FilePicker.platform.pickFiles();
-              //
-              // if (result != null) {
-              //   File file = File(result.files.single.path!);
-              // } else {
-              //   // User canceled the picker
-              // }
+      builder: (context, state) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 17),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _circleBtn(
+                Icons.volume_up,
+                color: AppColors.dart_grey,
+                isDisable: state.isSpeaker ?? false,
+                Pressed: () {
+                  context.read<PodCastRecordingCubit>().speakerONOff();
+                },
+              ),
+              _circleBtn(
+                Icons.mic_off,
+                color: AppColors.dart_grey,
+                isDisable: state.isMic ?? false,
+                Pressed: () {
+                  context.read<PodCastRecordingCubit>().micONOff();
+                },
+              ),
+              _circleBtn(
+                Icons.call_end,
+                color: AppColors.redColor,
+                isDisable: true,
+                isRed: true,
+                Pressed: () async {
+                  context.read<PodCastRecordingCubit>().endCall();
+                  // FilePickerResult? result = await FilePicker.platform.pickFiles();
+                  //
+                  // if (result != null) {
+                  //   File file = File(result.files.single.path!);
+                  // } else {
+                  //   // User canceled the picker
+                  // }
 
-              Navigator.pushNamed(context, RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,arguments: {
-                "audioPath": "assets/images/test_audio.mp3",
-                "is_draft":false,
-                "participants":   state.participants.length-1==1?state.participants[1].firstName:""
-              });
-            },
+                  Navigator.pushNamed(
+                    context,
+                    RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
+                    arguments: {
+                      "audioPath": "assets/images/test_audio.mp3",
+                      "is_draft": false,
+                      "participants":
+                          state.participants.length - 1 == 1
+                              ? state.participants[1].firstName
+                              : "",
+                      "isFromDraftSection": false,
+                    },
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
-  },
-);
   }
 
   Widget _circleBtn(
@@ -1221,12 +1209,7 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
     );
   }
 
-  Widget _topicChip({
-    IconData? icon,
-    required String label,
-    bool selected = false,
-  })
-  {
+  Widget _topicChip({IconData? icon, required String label, bool selected = false}) {
     return Container(
       margin: const EdgeInsets.only(left: 10),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1244,10 +1227,9 @@ class _PodcastRecordingScreenState extends State<PodcastRecordingScreen> {
           ],
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontSize: 12, fontWeight: FontWeight.w700),
           ),
         ],
       ),

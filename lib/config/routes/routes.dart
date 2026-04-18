@@ -199,11 +199,13 @@ class Routes {
       case RoutesName.AUDIO_PREVIEW_EDIT_SCREEN:
         final data = settings.arguments as Map?;
         final podcastModel = data?["podcastModel"];
-        final isDraft = data?["is_draft"];
-        final participants = data?["participants"];
+        final isDraft = data?["isDraft"] ?? data?["is_draft"] ?? false;
+        final isEditMode = data?["isEditMode"] ?? false;
+        final participants = data?["participants"] ?? "";
         final roomId = data?["roomId"] ?? '';
-        final selectedTopicCategory = data?["selectedTopicCategory"];
-        final filteredTopics = data?["filteredTopics"];
+        final selectedTopicCategory = data?["selectedTopicCategory"] ?? "";
+        final durationSeconds = data?["durationSeconds"] ?? 0;
+        final isFromDraftSection = data?["isFromDraftSection"] ?? false;
 
         return _animatedRouteDownToUp(
           BlocProvider(
@@ -211,9 +213,12 @@ class Routes {
             child: AudioPreviewEditScreen(
               podcastModel: podcastModel,
               isDraft: isDraft,
+              isEditMode: isEditMode,
               participants: participants,
               roomId: roomId,
               selectedTopicCategory: selectedTopicCategory,
+              durationSeconds: durationSeconds,
+              isFromDraftSection: isFromDraftSection,
             ),
           ),
         );

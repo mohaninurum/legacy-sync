@@ -1,7 +1,9 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:legacy_sync/services/app_service/app_service.dart';
+
 import '../../../../config/db/shared_preferences.dart';
 import '../../../../core/utils/utils.dart';
 import '../../data/podcast_model.dart';
@@ -32,7 +34,10 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       draftPodcasts.map((e) => (e.title ?? '').trim()).where((s) => s.isNotEmpty).toSet();
 
   Set<String> get draftDescriptions =>
-      draftPodcasts.map((e) => (e.description ?? '').trim()).where((s) => s.isNotEmpty).toSet();
+      draftPodcasts
+          .map((e) => (e.description ?? '').trim())
+          .where((s) => s.isNotEmpty)
+          .toSet();
 
   Future<String> _generateShortRoomId() async {
     final prefs = AppPreference();
@@ -41,8 +46,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
 
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     final rand = Random.secure();
-    final randomPart =
-        List.generate(8, (_) => chars[rand.nextInt(chars.length)]).join();
+    final randomPart = List.generate(8, (_) => chars[rand.nextInt(chars.length)]).join();
 
     return '${namePart}_$randomPart';
   }
@@ -60,18 +64,10 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
         );
         return;
       }
-      emit(
-        state.copyWith(createRoomStatus: CreateRoomStatus.loading, error: ''),
-      );
-      final userId = await AppPreference().getInt(
-        key: AppPreference.KEY_USER_ID,
-      );
-      final firstName = await AppPreference().get(
-        key: AppPreference.KEY_USER_FIRST_NAME,
-      );
-      final lastName = await AppPreference().get(
-        key: AppPreference.KEY_USER_LAST_NAME,
-      );
+      emit(state.copyWith(createRoomStatus: CreateRoomStatus.loading, error: ''));
+      final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+      final firstName = await AppPreference().get(key: AppPreference.KEY_USER_FIRST_NAME);
+      final lastName = await AppPreference().get(key: AppPreference.KEY_USER_LAST_NAME);
       final userName = "${firstName}_$lastName";
 
       print("FirstName New Podcast Cubit :: $firstName");
@@ -114,24 +110,24 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
     final myPodCast = await _myPodCastUseCase.getMyPodcast(userId);
     myPodCast.fold(
       (error) {
-        print("APP EXCEPTION:: ${error.message}");
+        debugPrint("APP EXCEPTION:: ${error.message}");
         emit(state.copyWith(isLoading: false, error: error.message));
       },
       (result) {
         if (result.data != null) {
-          print("DATA ON SUCCESS:: ${result.data}");
+          debugPrint("DATA ON SUCCESS:: ${result.data}");
           _allPodcasts.clear();
           result.data.forEach((element) {
             final postType = element.isPosted == 1 ? "Posted" : "Draft";
             _allPodcasts.add(
               PodcastModel(
                 podcastId: element.podcastId,
-                title: (element.title == null || element.title!.trim().isEmpty)
-                    ? 'Untitled'
-                    : element.title!.trim(),
-                relationship: element.members.isNotEmpty
-                        ? element.members[0].firstName
-                        : "",
+                title:
+                    (element.title == null || element.title!.trim().isEmpty)
+                        ? 'Untitled'
+                        : element.title!.trim(),
+                relationship:
+                    element.members.isNotEmpty ? element.members[0].firstName : "",
                 duration: Utils.secondsToHrOrMin(element.durationSeconds ?? 0),
                 image: element.thumbnail,
                 type: postType,
@@ -142,14 +138,14 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
                 description: element.description ?? '',
                 isFavourite: element.isFavourite,
                 topicType: element.topicType,
+                roomId: element.livekitRoomId,
               ),
             );
           });
+          _allPodcasts.sort((a, b) => b.podcastId.compareTo(a.podcastId));
           emit(state.copyWith(isLoading: false));
         } else {
-          emit(
-            state.copyWith(isLoading: false, error: "No profile data found"),
-          );
+          emit(state.copyWith(isLoading: false, error: "No profile data found"));
         }
       },
     );
@@ -205,7 +201,8 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
               PodcastModel(
                 podcastId: element.podcastId,
                 title: element.title ?? "Untitled",
-                relationship: element.members.isNotEmpty ? element.members[0].firstName : "",
+                relationship:
+                    element.members.isNotEmpty ? element.members[0].firstName : "",
                 duration: Utils.secondsToHrOrMin(element.durationSeconds ?? 0),
                 image: element.thumbnailUrl,
                 type: postType, // keep as Posted/Draft (fine)
@@ -216,15 +213,15 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
                 description: element.description ?? '',
                 isFavourite: 1,
                 topicType: element.topicType,
+                roomId: element.livekitRoomId,
               ),
             );
           }
+          _allPodcasts.sort((a, b) => b.podcastId.compareTo(a.podcastId));
 
           await loadTab(state.selectedTab);
         } else {
-          emit(
-            state.copyWith(isLoading: false, error: "No profile data found"),
-          );
+          emit(state.copyWith(isLoading: false, error: "No profile data found"));
         }
       },
     );
@@ -235,7 +232,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
       debugPrint("all");
       emit(state.copyWith(podcasts: _allPodcasts, isLoading: false));
     } else {
-      if(tab == "Favourite") {
+      if (tab == "Favourite") {
         emit(
           state.copyWith(
             selectedTab: tab,
@@ -262,9 +259,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
   Future<void> allPodcastsContinueListening() async {
     final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
     emit(state.copyWith(isLoading: true));
-    final continueListening = await _myPodCastUseCase.getContinueListeningList(
-      userId,
-    );
+    final continueListening = await _myPodCastUseCase.getContinueListeningList(userId);
     String postType = 'Posted';
     continueListening.fold(
       (error) {
@@ -284,9 +279,7 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
               podcastId: element.podcastId,
               title: element.title,
               relationship:
-                  element.members.isNotEmpty
-                      ? element.members[0].firstName
-                      : "",
+                  element.members.isNotEmpty ? element.members[0].firstName : "",
               duration: Utils.secondsToHrOrMin(element.durationSeconds),
               image: element.thumbnail,
               type: postType,
@@ -297,9 +290,11 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
               description: element.description ?? '',
               isFavourite: element.isFavourite,
               topicType: element.topicType,
+              roomId: element.livekitRoomId,
             ),
           );
         });
+        _allPodcastsContinueListening.sort((a, b) => b.podcastId.compareTo(a.podcastId));
         emit(
           state.copyWith(
             listPodcastsContinueListening: _allPodcastsContinueListening,
@@ -317,12 +312,12 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
     final res = await _myPodCastUseCase.getRecentFriendList(userId);
 
     res.fold(
-          (error) {
+      (error) {
         debugPrint("APP EXCEPTION:: ${error.message}");
         Utils.closeLoader();
         emit(state.copyWith(isLoading: false, error: error.message));
       },
-          (result) {
+      (result) {
         Utils.closeLoader();
 
         recentUserList.clear();
@@ -333,9 +328,8 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
 
           // call_type => "incoming" / "outgoing"
           final callTypeStr = (element.callType).toLowerCase().trim();
-          final callType = callTypeStr == "incoming"
-              ? CallType.incoming
-              : CallType.outgoing;
+          final callType =
+              callTypeStr == "incoming" ? CallType.incoming : CallType.outgoing;
 
           final missed = element.missedCall == 1;
 
@@ -364,7 +358,12 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
           );
         }
 
-        emit(state.copyWith(recentUserList: List<RecentUserListModel>.from(recentUserList), isLoading: false));
+        emit(
+          state.copyWith(
+            recentUserList: List<RecentUserListModel>.from(recentUserList),
+            isLoading: false,
+          ),
+        );
       },
     );
   }
@@ -373,7 +372,6 @@ class MyPodcastCubit extends Cubit<MyPodcastState> {
     String two(int v) => v.toString().padLeft(2, '0');
     return '${dt.year}-${two(dt.month)}-${two(dt.day)} ${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)}';
   }
-
 
   // Future<void> fetchRecentUserList() async {
   //   final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);

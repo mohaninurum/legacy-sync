@@ -8,6 +8,8 @@ import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/core/colors/colors.dart';
 import 'package:legacy_sync/core/components/comman_components/custom_button.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
+import 'package:legacy_sync/core/strings/strings.dart';
+import 'package:legacy_sync/core/utils/utils.dart';
 import 'package:legacy_sync/features/audio_preview_edit/presentation/widgets/audio_meta_widget.dart';
 import 'package:legacy_sync/features/livekit_connection/presentation/utils/exts.dart';
 import 'package:legacy_sync/features/my_podcast/presentation/bloc/my_podcast_cubit.dart';
@@ -24,8 +26,12 @@ class AudioPreviewEditScreen extends StatefulWidget {
   final String? roomId;
   final PodcastModel? podcastModel;
   final bool isDraft;
+  final bool isFromDraftSection;
+  final bool isEditMode;
   final String participants;
   final String selectedTopicCategory;
+  final int? durationSeconds;
+
   // final List<FriendsDataList>? participants;
 
   const AudioPreviewEditScreen({
@@ -33,8 +39,11 @@ class AudioPreviewEditScreen extends StatefulWidget {
     required this.roomId,
     this.podcastModel,
     required this.isDraft,
+    required this.isFromDraftSection,
+    this.isEditMode = false,
     required this.participants,
     required this.selectedTopicCategory,
+    this.durationSeconds,
   });
 
   @override
@@ -117,8 +126,22 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                       p.saveAsDraftStatus != c.saveAsDraftStatus ||
                       p.publishStatus != c.publishStatus ||
                       p.markFavStatus != c.markFavStatus ||
-                      p.markUnFavStatus != c.markUnFavStatus,
+                      p.markUnFavStatus != c.markUnFavStatus ||
+                      p.deleteStatus != c.deleteStatus,
               listener: (context, state) {
+                if (state.deleteStatus == DeleteStatus.success) {
+                  BotToast.showText(text: state.deleteMessage ?? "Draft deleted.");
+                  _safeExitAfterSuccess();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!context.mounted) return;
+                    context.read<MyPodcastCubit>().fetchMyPodcastTab("Draft");
+                  });
+                }
+                if (state.deleteStatus == DeleteStatus.failure) {
+                  BotToast.showText(
+                    text: state.deleteMessage ?? "Failed to delete draft",
+                  );
+                }
                 if (state.markFavStatus == MarkFavStatus.success) {
                   BotToast.showText(text: state.markFavMessage ?? "Added To Favourites");
                   _myPodcastCubit.fetchFavouritePodcastList();
@@ -294,6 +317,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _topHeader(state),
           Padding(
             padding: const EdgeInsets.fromLTRB(16.0, 16.0, 0, 8.0),
             child: _SectionTitle("Processing your recording", context),
@@ -431,41 +455,88 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(left: 16, right: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           buildBackButton(),
-          const SizedBox(),
-          InkWell(
-            onTap: () {
-              if (state.isBookmark) {
-                final id = widget.podcastModel?.podcastId ?? 0;
-                if (id == 0) return; // safety
-                audioPreviewEditCubit.markUnFavourite(podcastId: id);
-              } else {
-                final id = widget.podcastModel?.podcastId ?? 0;
-                if (id == 0) return; // safety
-                audioPreviewEditCubit.markFavourite(podcastId: id);
-              }
-            },
-            child: Container(
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: state.isBookmark ? AppColors.yellow : Colors.transparent,
-                borderRadius: BorderRadius.circular(50),
-              ),
-              width: 45,
-              height: 45,
-              child: ClipRect(
-                child: Image.asset(
-                  state.isBookmark ? Images.bookmarked : Images.bookmark,
-                  width: 24,
-                  height: 24,
+          if ((widget.isDraft && widget.isFromDraftSection) || widget.isEditMode)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (widget.isEditMode)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 12),
+                    child: Icon(Icons.edit, color: Colors.white, size: 24),
+                  ),
+                InkWell(
+                  onTap: () {
+                    if (state.isBookmark) {
+                      final id = widget.podcastModel?.podcastId ?? 0;
+                      if (id == 0) return; // safety
+                      audioPreviewEditCubit.markUnFavourite(podcastId: id);
+                    } else {
+                      final id = widget.podcastModel?.podcastId ?? 0;
+                      if (id == 0) return; // safety
+                      audioPreviewEditCubit.markFavourite(podcastId: id);
+                    }
+                  },
+                  child: Container(
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: state.isBookmark ? AppColors.yellow : Colors.transparent,
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    width: 45,
+                    height: 45,
+                    child: ClipRect(
+                      child: Image.asset(
+                        state.isBookmark ? Images.bookmarked : Images.bookmark,
+                        width: 24,
+                        height: 24,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                if (widget.isDraft &&
+                    !widget.isEditMode &&
+                    widget.podcastModel != null &&
+                    widget.isFromDraftSection) ...[
+                  const SizedBox(width: 20),
+                  GestureDetector(
+                    onTap: () async {
+                      Utils.showWarningDialog(
+                        context: context,
+                        title: "Delete Draft",
+                        content: "Are you sure you want to delete this draft?",
+                        actionsText: "Okay",
+                        actionsText2: "Cancel",
+                        okPressed: () {
+                          final id = widget.podcastModel?.podcastId ?? 0;
+                          context.read<AudioPreviewEditCubit>().deletePodcastDraft(
+                            podcastId: id,
+                          );
+                        },
+                        cancelPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      width: 45,
+                      height: 45,
+                      child: const Icon(Icons.delete, color: Colors.white, size: 30),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ),
         ],
       ),
     );
@@ -479,100 +550,150 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: CustomButton(
-                  isOtherColor: true,
-                  leftWidget:
-                      state.saveAsDraftStatus == SaveAsDraftStatus.loading
-                          ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              color: AppColors.whiteColor,
-                              strokeWidth: 2,
-                            ),
-                          )
-                          : const Icon(
-                            Icons.arrow_downward_rounded,
-                            color: AppColors.whiteColor,
-                          ),
-                  enable: widget.isDraft,
-                  btnText:
-                      state.saveAsDraftStatus == SaveAsDraftStatus.loading
-                          ? "Saving..."
-                          : "Draft",
-                  height: 48,
-                  onPressed: () async {
-                    if (widget.roomId != null) {
-                      final hasTitle =
-                          (context
-                              .read<AudioPreviewEditCubit>()
-                              .title
-                              .text
-                              .trim()
-                              .isNotEmpty);
+              const SizedBox(width: 12),
 
-                      if (!hasTitle) {
-                        BotToast.showText(text: "Please enter a title.");
-                        return;
-                      }
-
-                      await context.read<AudioPreviewEditCubit>().saveAsDraft(
-                        roomId: widget.roomId!,
-                        topicType: widget.selectedTopicCategory,
-                      );
-                    }
-                  },
+              Visibility(
+                visible: widget.isDraft,
+                child: Expanded(
+                  child: CustomButton(
+                    isOtherColor: true,
+                    isDanger: widget.isDraft,
+                    btnText: AppStrings.cancel,
+                    height: 48,
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                    },
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: CustomButton(
-                  leftWidget:
-                      state.publishStatus == PublishStatus.loading
-                          ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
+
+              Visibility(
+                visible: widget.isDraft,
+                child: Expanded(
+                  child: CustomButton(
+                    isOtherColor: false,
+                    leftWidget:
+                        state.saveAsDraftStatus == SaveAsDraftStatus.loading
+                            ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                color: AppColors.whiteColor,
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : const Icon(
+                              Icons.arrow_downward_rounded,
                               color: AppColors.whiteColor,
-                              strokeWidth: 2,
                             ),
-                          )
-                          : const Icon(
-                            Icons.arrow_upward_rounded,
-                            color: AppColors.whiteColor,
-                          ),
-                  enable: !widget.isDraft,
-                  btnText:
-                      state.publishStatus == PublishStatus.loading
-                          ? "Publishing..."
-                          : "Publish",
-                  height: 48,
-                  onPressed: () async {
-                    if (widget.isDraft) {
-                      BotToast.showText(
-                        text: "Please wait 10–15 minutes. We’re still processing.",
-                      );
-                      return;
-                    } else if (widget.podcastModel != null) {
-                      if (hasTitle) {
-                        print(
-                          "Duration Second sends to publish podcast api : ${state.duration.inSeconds}",
+                    enable: widget.isDraft,
+                    btnText:
+                        state.saveAsDraftStatus == SaveAsDraftStatus.loading
+                            ? "Saving..."
+                            : "Draft",
+                    height: 48,
+                    onPressed: () async {
+                      if (widget.roomId != null) {
+                        final hasTitle =
+                            (context
+                                .read<AudioPreviewEditCubit>()
+                                .title
+                                .text
+                                .trim()
+                                .isNotEmpty);
+
+                        if (!hasTitle) {
+                          BotToast.showText(text: "Please enter a title.");
+                          return;
+                        }
+
+                        await context.read<AudioPreviewEditCubit>().saveAsDraft(
+                          roomId: widget.roomId!,
+                          topicType: widget.selectedTopicCategory,
+                          durationSeconds: widget.durationSeconds ?? 0,
                         );
-                        await context.read<AudioPreviewEditCubit>().publishPodcast(
-                          podcastId: widget.podcastModel!.podcastId,
-                          durationSeconds: state.duration.inSeconds,
-                        );
-                      } else {
-                        BotToast.showText(text: "Please fill title of the podcast.");
                       }
-                    } else {
-                      BotToast.showText(text: "PodcastId Is Missing");
-                    }
-                  },
+                    },
+                  ),
                 ),
               ),
+
+              Visibility(
+                visible: !widget.isDraft,
+                child: Expanded(
+                  child: CustomButton(
+                    isOtherColor: true,
+                    enable: !widget.isDraft,
+                    btnText: AppStrings.cancel,
+                    height: 48,
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              Visibility(
+                visible: !widget.isDraft,
+                child: Expanded(
+                  child: CustomButton(
+                    leftWidget:
+                        state.publishStatus == PublishStatus.loading
+                            ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                color: AppColors.whiteColor,
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : const Icon(
+                              Icons.arrow_upward_rounded,
+                              color: AppColors.whiteColor,
+                            ),
+                    enable: !widget.isDraft,
+                    btnText:
+                        state.publishStatus == PublishStatus.loading
+                            ? (widget.isEditMode ? "Updating..." : "Publishing...")
+                            : (widget.isEditMode ? "Update" : "Publish"),
+                    height: 48,
+                    onPressed: () async {
+                      if (widget.isDraft) {
+                        BotToast.showText(
+                          text: "Please wait 10–15 minutes. We’re still processing.",
+                        );
+                        return;
+                      } else if (widget.podcastModel != null) {
+                        if (hasTitle) {
+                          if (widget.isEditMode) {
+                            await context
+                                .read<AudioPreviewEditCubit>()
+                                .editPublishedPodcast(
+                                  podcastId: widget.podcastModel!.podcastId,
+                                  roomId: widget.podcastModel!.roomId ?? "",
+                                  durationSeconds: state.duration.inSeconds,
+                                );
+                          } else {
+                            await context.read<AudioPreviewEditCubit>().publishPodcast(
+                              podcastId: widget.podcastModel!.podcastId,
+                              durationSeconds: state.duration.inSeconds,
+                            );
+                          }
+                        } else {
+                          BotToast.showText(text: "Please fill title of the podcast.");
+                        }
+                      } else {
+                        BotToast.showText(text: "PodcastId Is Missing");
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
             ],
           ),
         );
@@ -646,12 +767,13 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
         fit: BoxFit.cover,
         height: 160,
         width: 160,
-        errorBuilder: (_, __, ___) => Image.asset(
-          Images.podcast_thumbnail,
-          fit: BoxFit.cover,
-          height: 160,
-          width: 160,
-        ),
+        errorBuilder:
+            (_, __, ___) => Image.asset(
+              Images.podcast_thumbnail,
+              fit: BoxFit.cover,
+              height: 160,
+              width: 160,
+            ),
       );
     }
     return Image.file(
@@ -659,11 +781,13 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
       fit: BoxFit.cover,
       height: 160,
       width: 160,
-      errorBuilder: (_, __, ___) => Image.asset(
-        Images.podcast_thumbnail,
-        fit: BoxFit.cover,
-        height: 160,
-        width: 160,
-      ),
+      errorBuilder:
+          (_, __, ___) => Image.asset(
+            Images.podcast_thumbnail,
+            fit: BoxFit.cover,
+            height: 160,
+            width: 160,
+          ),
     );
-  }}
+  }
+}

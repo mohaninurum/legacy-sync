@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/features/play_podcast/presentation/pages/widget/audio_play_controller.dart';
 import 'package:legacy_sync/features/play_podcast/presentation/pages/widget/bg_album_widget.dart';
+
 import '../../../../config/routes/routes_name.dart';
 import '../../../../core/colors/colors.dart';
 import '../../../../core/components/comman_components/app_button.dart';
@@ -99,7 +100,7 @@ class _PlayPodcastState extends State<PlayPodcast> {
           _myPodcastCubit.fetchMyPodcastTab("Posted");
         }
         if (state.markUnFavStatus == MarkUnFavStatus.success) {
-          BotToast.showText(text: state.markUnFavMessage ??  "Removed from favourites");
+          BotToast.showText(text: state.markUnFavMessage ?? "Removed from favourites");
           _myPodcastCubit.fetchFavouritePodcastList();
           _myPodcastCubit.allPodcastsContinueListening();
           _myPodcastCubit.fetchMyPodcastTab("Posted");
@@ -108,7 +109,7 @@ class _PlayPodcastState extends State<PlayPodcast> {
           BotToast.showText(text: state.markFavMessage ?? "Something went wrong");
         }
         if (state.markUnFavStatus == MarkUnFavStatus.failure) {
-          BotToast.showText(text: state.markUnFavMessage ??  "Something went wrong");
+          BotToast.showText(text: state.markUnFavMessage ?? "Something went wrong");
         }
       },
       builder: (context, state) {
@@ -125,9 +126,7 @@ class _PlayPodcastState extends State<PlayPodcast> {
             isDark: state.isScroll,
             child: Scaffold(
               backgroundColor:
-                  state.isScroll
-                      ? AppColors.primaryColorDull
-                      : Colors.transparent,
+                  state.isScroll ? AppColors.primaryColorDull : Colors.transparent,
               body: SafeArea(
                 child: SingleChildScrollView(
                   controller: scrollController,
@@ -204,37 +203,67 @@ class _PlayPodcastState extends State<PlayPodcast> {
               fontWeight: FontWeight.w700,
             ),
           ),
-          InkWell(
-            highlightColor: Colors.transparent,
-            hoverColor: Colors.transparent,
-            splashColor: Colors.transparent,
-            onTap: () {
-              if (state.isBookmark) {
-                final id = widget.podcast.podcastId ?? 0;
-                if (id == 0) return; // safety
-                _cubit.markUnFavourite(podcastId: id);
-              } else {
-                final id = widget.podcast.podcastId ?? 0;
-                if (id == 0) return; // safety
-                _cubit.markFavourite(podcastId: id);
-              }
-            },
-            child: Container(
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: state.isBookmark ? AppColors.yellow : Colors.transparent,
-                borderRadius: BorderRadius.circular(50),
-              ),
-              width: 45,
-              height: 45,
-              child: ClipRect(
-                child: Image.asset(
-                  state.isBookmark ? Images.bookmarked : Images.bookmark,
-                  width: 24,
-                  height: 24,
+          Row(
+            children: [
+              InkWell(
+                onTap: () {
+                  if (state.isBookmark) {
+                    final id = widget.podcast.podcastId ?? 0;
+                    if (id == 0) return; // safety
+                    _cubit.markUnFavourite(podcastId: id);
+                  } else {
+                    final id = widget.podcast.podcastId ?? 0;
+                    if (id == 0) return; // safety
+                    _cubit.markFavourite(podcastId: id);
+                  }
+                },
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: state.isBookmark ? AppColors.yellow : Colors.transparent,
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  width: 45,
+                  height: 45,
+                  child: ClipRect(
+                    child: Image.asset(
+                      state.isBookmark ? Images.bookmarked : Images.bookmark,
+                      width: 24,
+                      height: 24,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
+                    arguments: {
+                      "podcastModel": widget.podcast,
+                      "isDraft": false,
+                      "isEditMode": true,
+                      "selectedTopicCategory": widget.podcast.topicType ?? "",
+                      "participants": "",
+                      "durationSeconds": 0,
+                      "roomId": widget.podcast.roomId ?? "",
+                      "isFromDraftSection": false,
+                    },
+                  );
+                },
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  width: 45,
+                  height: 45,
+                  child: const Icon(Icons.edit, color: Colors.white, size: 24),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -268,10 +297,9 @@ class _PlayPodcastState extends State<PlayPodcast> {
             padding: const EdgeInsets.only(top: 5),
             child: Text(
               podcast?.title ?? "how to deal with anxiety",
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
             ),
           ),
           SizedBox(height: 1.height),
@@ -324,18 +352,16 @@ class _PlayPodcastState extends State<PlayPodcast> {
         children: [
           Text(
             description,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700, fontSize: 14),
           ),
           SizedBox(height: 2.height),
           Text(
             content,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w400,
-              fontSize: 12,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w400, fontSize: 12),
           ),
         ],
       ),
@@ -374,11 +400,7 @@ class _PlayPodcastState extends State<PlayPodcast> {
                     arguments: {"podcast": widget.podcast},
                   );
                 },
-                child: const Icon(
-                  Icons.open_in_full,
-                  color: Colors.white70,
-                  size: 18,
-                ),
+                child: const Icon(Icons.open_in_full, color: Colors.white70, size: 18),
               ),
             ],
           ),

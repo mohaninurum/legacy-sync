@@ -102,4 +102,47 @@ class AudioPreviewEditRepoImpl extends AudioPreviewEditRepositories {
       return Left(e);
     }
   }
+
+  @override
+  ResultFuture<Map<String, dynamic>> deletePodcastDraft(Map<String, dynamic> body) async {
+    try {
+      final res = await _apiServices.getDeleteApiResponse(
+        ApiURL.deletePodcastDraft,
+        body,
+      );
+      return res.fold(
+            (error) => Left(error),
+            (data) => Right(data as Map<String, dynamic>),
+      );
+    } on AppException catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(FetchDataException(e.toString()));
+    }
+  }
+
+  @override
+  ResultFuture<PublishResponse> editPublishedPodcast({
+    required Map<String, String> fields,
+    required List<int>? thumbnailBytes,
+    required String thumbnailFileName,
+    required String thumbnailKey,
+  }) async {
+    try {
+      final res = await _apiServices.getPostUploadMultiPartApiResponse(
+        ApiURL.editPublishedPodcast,
+        fields,
+        thumbnailBytes,
+        thumbnailFileName,
+        thumbnailKey,
+        'PUT',
+      );
+      return res.fold(
+            (error) => Left(error),
+            (data) => Right(PublishResponse.fromJson(data)),
+      );
+    } on AppException catch (e) {
+      return Left(e);
+    }
+  }
 }

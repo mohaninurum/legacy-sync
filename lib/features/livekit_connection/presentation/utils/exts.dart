@@ -320,6 +320,24 @@ extension LKExampleExt on BuildContext {
       );
     },
   );
+
+  Future<bool?> showWarningInfo({required String title, required String content}) => showDialog<bool>(
+    context: this,
+    builder: (ctx) => AlertDialog(
+      title: Text(title),
+      content: Text(content),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
+  );
 }
 
 enum SimulateScenarioResult {

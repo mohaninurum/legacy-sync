@@ -981,10 +981,11 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
     final int userId = state.myUserId ?? 0;
 
     // Combine both invited friends AND actual participants just to be safe
-    final currentParticipantIds = state.participants
-        .where((p) => p.userIdPK != null && p.userIdPK != userId)
-        .map((p) => p.userIdPK!)
-        .toSet();
+    final currentParticipantIds =
+        state.participants
+            .where((p) => p.userIdPK != null && p.userIdPK != userId)
+            .map((p) => p.userIdPK!)
+            .toSet();
 
     final combinedFriends = <int>{...state.invitedFriendIds, ...currentParticipantIds};
 
@@ -1006,6 +1007,9 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
       await stopRecording();
     }
 
+    // Capture the duration before disconnect resets the state completely
+    final recordedDurationSeconds = state.duration.inSeconds;
+
     await disconnect(); // important
 
     // decide navigation exactly like your RoomPage listener
@@ -1022,6 +1026,8 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
               "roomId": roomId,
               "selectedTopicCategory": selectedTopicCategory.name.toString(),
               "filteredTopics": filteredTopics,
+              "durationSeconds": recordedDurationSeconds,
+              "isFromDraftSection": false,
             },
           ),
         ),

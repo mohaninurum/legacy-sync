@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:audio_waveforms/audio_waveforms.dart' as aw;
 import 'package:bot_toast/bot_toast.dart';
 import 'package:crypto/crypto.dart';
-import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:just_audio/just_audio.dart' as ja;
@@ -14,17 +16,15 @@ import 'package:legacy_sync/core/images/images.dart';
 import 'package:legacy_sync/features/audio_preview_edit/domain/usecases/audio_preview_edit_usecase.dart';
 import 'package:legacy_sync/features/my_podcast/data/podcast_model.dart';
 import 'package:path_provider/path_provider.dart';
+
 import 'audio_preview_edit_state.dart';
-import 'dart:typed_data';
-import 'package:flutter/services.dart' show rootBundle;
 
 class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
   AudioPreviewEditCubit() : super(AudioPreviewEditState.initial()) {
     _bindPlayerStreams();
   }
 
-  final AudioPreviewEditUseCase audioPreviewEditUseCase =
-      AudioPreviewEditUseCase();
+  final AudioPreviewEditUseCase audioPreviewEditUseCase = AudioPreviewEditUseCase();
   final ja.AudioPlayer _player = ja.AudioPlayer();
   final aw.PlayerController _waveController = aw.PlayerController();
 
@@ -61,8 +61,13 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     await _playbackEventSub.cancel();
 
     // stop players (dispose NOT here)
-    try { await _player.stop(); await _player.seek(Duration.zero);} catch (_) {}
-    try { await _waveController.stopPlayer(); } catch (_) {}
+    try {
+      await _player.stop();
+      await _player.seek(Duration.zero);
+    } catch (_) {}
+    try {
+      await _waveController.stopPlayer();
+    } catch (_) {}
 
     // DON'T dispose controllers here
     title.clear();
@@ -74,14 +79,14 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
   }
 
   Future<void> setData({required PodcastModel data}) async {
-    final audioPath =
-        (data.audioPath ?? '').trim(); // must hold audio_url for drafts
+    final audioPath = (data.audioPath ?? '').trim(); // must hold audio_url for drafts
 
     final img = (data.image ?? '').trim();
 
-    final safeCover = (img.startsWith("http://") || img.startsWith("https://"))
-        ? img
-        : Images.podcast_thumbnail;
+    final safeCover =
+        (img.startsWith("http://") || img.startsWith("https://"))
+            ? img
+            : Images.podcast_thumbnail;
 
     print("Image Comes from draft section :: $img");
     emit(
@@ -90,6 +95,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
         title: data.title,
         description: data.description,
         isAudioInitial: false,
+        isBuffering: true,
         errorMessage: null,
         isBookmark: data.isFavourite == 1,
       ),
@@ -211,19 +217,35 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     emit(state.copyWith(markFavStatus: MarkFavStatus.loading));
     try {
       final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
-      Map<String, dynamic> body = {
-        "user_id": userId,
-        "podcast_id": podcastId,
-      };
+      Map<String, dynamic> body = {"user_id": userId, "podcast_id": podcastId};
       final response = await audioPreviewEditUseCase.markFavouritePodcast(body);
-      response.fold((error) {
-        emit(state.copyWith(markFavMessage: error.message ?? "Failed to add favourites", markFavStatus: MarkFavStatus.failure));
-      }, (result) {
-        emit(state.copyWith(isBookmark: true, markFavStatus: MarkFavStatus.success, markFavMessage: result.message));
-      },);
+      response.fold(
+        (error) {
+          emit(
+            state.copyWith(
+              markFavMessage: error.message ?? "Failed to add favourites",
+              markFavStatus: MarkFavStatus.failure,
+            ),
+          );
+        },
+        (result) {
+          emit(
+            state.copyWith(
+              isBookmark: true,
+              markFavStatus: MarkFavStatus.success,
+              markFavMessage: result.message,
+            ),
+          );
+        },
+      );
     } catch (e) {
       debugPrint("Error :: ${e.toString()}");
-      emit(state.copyWith(markFavMessage: e.toString(), markFavStatus: MarkFavStatus.initial));
+      emit(
+        state.copyWith(
+          markFavMessage: e.toString(),
+          markFavStatus: MarkFavStatus.initial,
+        ),
+      );
     }
   }
 
@@ -231,19 +253,70 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     emit(state.copyWith(markUnFavStatus: MarkUnFavStatus.loading));
     try {
       final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
-      Map<String, dynamic> body = {
-        "user_id": userId,
-        "podcast_id": podcastId,
-      };
+      Map<String, dynamic> body = {"user_id": userId, "podcast_id": podcastId};
       final response = await audioPreviewEditUseCase.markUnFavouritePodcast(body);
-      response.fold((error) {
-        emit(state.copyWith(markUnFavMessage: error.message, markUnFavStatus: MarkUnFavStatus.failure));
-      }, (result) {
-        emit(state.copyWith(markUnFavMessage: result.message, isBookmark: false, markUnFavStatus: MarkUnFavStatus.success));
-      },);
+      response.fold(
+        (error) {
+          emit(
+            state.copyWith(
+              markUnFavMessage: error.message,
+              markUnFavStatus: MarkUnFavStatus.failure,
+            ),
+          );
+        },
+        (result) {
+          emit(
+            state.copyWith(
+              markUnFavMessage: result.message,
+              isBookmark: false,
+              markUnFavStatus: MarkUnFavStatus.success,
+            ),
+          );
+        },
+      );
     } catch (e) {
       debugPrint("Error :: ${e.toString()}");
-      emit(state.copyWith(markUnFavMessage: e.toString(), markUnFavStatus: MarkUnFavStatus.initial));
+      emit(
+        state.copyWith(
+          markUnFavMessage: e.toString(),
+          markUnFavStatus: MarkUnFavStatus.initial,
+        ),
+      );
+    }
+  }
+
+  Future<void> deletePodcastDraft({required int podcastId}) async {
+    emit(state.copyWith(deleteStatus: DeleteStatus.loading, deleteMessage: null));
+    try {
+      final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+      Map<String, dynamic> body = {"user_id": userId, "podcast_id": podcastId};
+      final response = await audioPreviewEditUseCase.deletePodcastDraft(body);
+      response.fold(
+        (error) {
+          emit(
+            state.copyWith(
+              deleteMessage: error.message ?? "Failed to delete draft",
+              deleteStatus: DeleteStatus.failure,
+            ),
+          );
+        },
+        (result) {
+          emit(
+            state.copyWith(
+              deleteStatus: DeleteStatus.success,
+              deleteMessage: result["message"] ?? "Draft deleted successfully",
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint("Error :: ${e.toString()}");
+      emit(
+        state.copyWith(
+          deleteMessage: e.toString(),
+          deleteStatus: DeleteStatus.failure,
+        ),
+      );
     }
   }
 
@@ -295,7 +368,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     final dio = Dio(
       BaseOptions(
         connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 60),
         followRedirects: true,
       ),
     );
@@ -307,12 +380,9 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     final fileName = _safeFileNameFromUrl(url);
     final file = File('${tempDir.path}/ls_wave_$fileName');
 
-    // simple cache: if already exists and not tiny, reuse
+    // Remove existing file to avoid partial/corrupted cache issues
     if (await file.exists()) {
-      final len = await file.length();
-      if (len > 50 * 1024) {
-        return file.path;
-      }
+      await file.delete();
     }
 
     await dio.download(
@@ -320,7 +390,6 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       file.path,
       cancelToken: _downloadCancelToken,
       options: Options(
-        responseType: ResponseType.bytes,
         // Range support improves streaming/caching reliability on some servers
         headers: {"Accept": "*/*"},
       ),
@@ -331,7 +400,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
         }
       },
     );
-
+    print("Wave file downloaded. Path: ${file.path}, Size: ${await file.length()} bytes");
     return file.path;
   }
 
@@ -354,8 +423,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
 
   String _safeFileNameFromUrl(String url) {
     final uri = Uri.tryParse(url);
-    final last =
-        uri?.pathSegments.isNotEmpty == true ? uri!.pathSegments.last : "audio";
+    final last = uri?.pathSegments.isNotEmpty == true ? uri!.pathSegments.last : "audio";
     final clean = last.replaceAll(RegExp(r'[^a-zA-Z0-9\._-]'), '_');
     // ensure unique stable name
     final hash = md5.convert(url.codeUnits).toString().substring(0, 10);
@@ -410,13 +478,11 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     return Uint8List.fromList(result);
   }
 
-  Future<void> publishPodcast({required int podcastId, required int durationSeconds}) async {
-    emit(
-      state.copyWith(
-        publishStatus: PublishStatus.loading,
-        publishMessage: null,
-      ),
-    );
+  Future<void> publishPodcast({
+    required int podcastId,
+    required int durationSeconds,
+  }) async {
+    emit(state.copyWith(publishStatus: PublishStatus.loading, publishMessage: null));
 
     final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
 
@@ -425,7 +491,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       "title": title.text.trim(),
       "description": description.text.trim(),
       "podcast_id": podcastId.toString(),
-      "duration_seconds": durationSeconds.toString()
+      "duration_seconds": durationSeconds.toString(),
       // backend expects thumb_nail as file, so no need to send "" here
     };
 
@@ -452,12 +518,9 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
           emit(
             state.copyWith(
               publishStatus:
-                  data.status == true
-                      ? PublishStatus.success
-                      : PublishStatus.failure,
+                  data.status == true ? PublishStatus.success : PublishStatus.failure,
               publishMessage:
-                  data.message ??
-                  (data.status == true ? "Published" : "Publish failed"),
+                  data.message ?? (data.status == true ? "Published" : "Publish failed"),
             ),
           );
           _pickedCoverFile = null;
@@ -473,13 +536,77 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       );
     }
   }
+
+  Future<void> editPublishedPodcast({
+    required int podcastId,
+    required String roomId,
+    required int durationSeconds,
+  }) async {
+    emit(state.copyWith(publishStatus: PublishStatus.loading, publishMessage: null));
+
+    final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+
+    final fields = <String, String>{
+      "user_id": userId.toString(),
+      "room_id": roomId,
+      "podcast_id": podcastId.toString(),
+      "title": title.text.trim(),
+      "description": description.text.trim(),
+      "duration_seconds": durationSeconds.toString(),
+    };
+
+    try {
+      final thumbBytes = await getDraftThumbnailBytes();
+      final res = await audioPreviewEditUseCase.editPublishedPodcast(
+        fields: fields,
+        thumbnailBytes: thumbBytes,
+        thumbnailFileName: "thumb_${DateTime.now().millisecondsSinceEpoch}.png",
+        thumbnailKey: "thumb_nail",
+      );
+
+      res.fold(
+        (error) {
+          emit(
+            state.copyWith(
+              publishStatus: PublishStatus.failure,
+              publishMessage: error.message ?? "Edit failed",
+            ),
+          );
+        },
+        (data) {
+          emit(
+            state.copyWith(
+              publishStatus:
+                  data.status == true ? PublishStatus.success : PublishStatus.failure,
+              publishMessage:
+                  data.message ?? (data.status == true ? "Updated" : "Edit failed"),
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint("Edit failed error : ${e.toString()}");
+      emit(
+        state.copyWith(
+          publishStatus: PublishStatus.failure,
+          publishMessage: "Edit failed. Please try again.",
+        ),
+      );
+    }
+  }
+
   String? _roomId;
 
   void setRoomId(String? roomId) {
     _roomId = (roomId ?? '').trim().isEmpty ? null : roomId!.trim();
   }
 
-  bool _validateDraft({bool showToast = false, String? roomId, int? userId, String? topicCovered}) {
+  bool _validateDraft({
+    bool showToast = false,
+    String? roomId,
+    int? userId,
+    String? topicCovered,
+  }) {
     final t = title.text.trim();
     if (t.isEmpty) {
       if (showToast) {
@@ -506,11 +633,23 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     return true;
   }
 
-  Future<void> saveAsDraft({required String roomId, required String topicType}) async {
+  Future<void> saveAsDraft({
+    required String roomId,
+    required String topicType,
+    required int durationSeconds,
+  }) async {
     final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
     final topicCovered = topicType;
-    if (!_validateDraft(showToast: true, roomId: roomId, userId: userId, topicCovered: topicCovered)) return;
-    emit(state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.loading,draftMessage: null));
+    if (!_validateDraft(
+      showToast: true,
+      roomId: roomId,
+      userId: userId,
+      topicCovered: topicCovered,
+    ))
+      return;
+    emit(
+      state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.loading, draftMessage: null),
+    );
 
     final fields = <String, String>{
       "user_id": userId.toString(),
@@ -518,6 +657,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       "description": description.text.trim(),
       "livekit_room_id": _roomId!,
       "topic_type": topicCovered,
+      "duration": durationSeconds.toString(),
       // backend expects thumb_nail as file, so no need to send "" here
     };
 
@@ -531,18 +671,32 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       );
       res.fold(
         (error) {
-          emit(state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.failure,  draftMessage: error.message ?? "Save as draft failed", ));
+          emit(
+            state.copyWith(
+              saveAsDraftStatus: SaveAsDraftStatus.failure,
+              draftMessage: error.message ?? "Save as draft failed",
+            ),
+          );
         },
         (data) async {
-          emit(state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.success, publishMessage:
-          data.message ??
-              (data.status == true ? "Saved" : "Draft failed"),));
+          emit(
+            state.copyWith(
+              saveAsDraftStatus: SaveAsDraftStatus.success,
+              publishMessage:
+                  data.message ?? (data.status == true ? "Saved" : "Draft failed"),
+            ),
+          );
           _pickedCoverFile = null;
         },
       );
     } catch (e) {
       debugPrint("[AudioPreviewEdit] saveAsDraft error: $e");
-      emit(state.copyWith(saveAsDraftStatus: SaveAsDraftStatus.failure, draftMessage: "Save as draft failed. Please try again."));
+      emit(
+        state.copyWith(
+          saveAsDraftStatus: SaveAsDraftStatus.failure,
+          draftMessage: "Save as draft failed. Please try again.",
+        ),
+      );
     }
   }
 
@@ -576,8 +730,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     );
   }
 
-  bool _isNetwork(String s) =>
-      s.startsWith("http://") || s.startsWith("https://");
+  bool _isNetwork(String s) => s.startsWith("http://") || s.startsWith("https://");
 
   bool _isAsset(String s) => s.startsWith("assets/");
 
@@ -599,10 +752,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
   }
 
   /// 🎯 REAL AUDIO TRIM (Second Screenshot)
-  Future<String> saveTrimmedAudio(
-    String inputPath,
-    BuildContext context,
-  ) async {
+  Future<String> saveTrimmedAudio(String inputPath, BuildContext context) async {
     final output =
         '${Directory.systemTemp.path}/trimmed_${DateTime.now().millisecondsSinceEpoch}.mp3';
     print(output);

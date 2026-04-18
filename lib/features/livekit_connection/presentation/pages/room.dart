@@ -180,6 +180,8 @@ class _RoomPageState extends State<RoomPage> {
 
             if (state.isCallEndMessage.isNotEmpty &&
                 state.isCallEndMessage != lastCallEndMessage) {
+              lastCallEndMessage = state.isCallEndMessage;
+              _lkCubit.clearUiEvents();
               messenger
                 ..hideCurrentSnackBar()
                 ..showSnackBar(

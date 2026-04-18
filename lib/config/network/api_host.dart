@@ -30,6 +30,7 @@ class ApiURL {
   static const String EDIT_PROFILE_PICTURE = '$baseURL/users/edit-profile-picture';
   static const String GET_FRIEND_LIST = '$baseURL/friend-list/';
   static const String ADD_NEW_FRIEND = '$baseURL/friend-list';
+  static const String REMOVE_FRIEND = '$baseURL/friend-list/remove-friend';
   static const String GET_LEGACY_HOME_MODULE = '$baseURL/legacy-modules/module-list/';
   static const String GET_SPLASH_DATA = '$baseURL/users/splash-screen/';
   static const String ADD_FAV_QUESTION = '$baseURL/favorite-questions/add';
@@ -64,6 +65,8 @@ class ApiURL {
   static const String postPodcast = "$baseURL/podcast/post-podcast";
   static const String rejectInvitation = "$baseURL/podcast/reject-invitation";
   static const String endPodcastCall = "$baseURL/podcast/end-podcast";
+  static const String deletePodcastDraft = "$baseURL/podcast/remove-draft-podcast";
+  static const String editPublishedPodcast = "$baseURL/podcast/edit-published-podcast";
 
   static const String livekitUrl = "wss://lagecy-87n09bcj.livekit.cloud";
 }

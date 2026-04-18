@@ -5,16 +5,14 @@ class PodcastModel {
   final String duration;
   final String image;
   final String type; // Posted, Draft, Favorite
-  final int totalDurationSec;   // e.g. 1800 (30 min)
-  final int listenedSec;        // e.g. 900 (15 min)
+  final int totalDurationSec; // e.g. 1800 (30 min)
+  final int listenedSec; // e.g. 900 (15 min)
   final String author;
   final String description;
-  final String?  audioPath;
+  final String? audioPath;
   final int isFavourite;
   final String topicType;
-  // final String subtitle;
-  // final String summary;
-
+  final String? roomId;
 
   PodcastModel({
     required this.podcastId,
@@ -23,15 +21,14 @@ class PodcastModel {
     required this.duration,
     required this.image,
     required this.type,
-    required this.totalDurationSec,   // e.g. 1800 (30 min)
-    required this.listenedSec,        // e.g. 900 (15 min)
+    required this.totalDurationSec, // e.g. 1800 (30 min)
+    required this.listenedSec, // e.g. 900 (15 min)
     required this.author,
     required this.description,
     this.audioPath,
     required this.isFavourite,
     required this.topicType,
-    // required this.subtitle,
-    // required this.summary
+    this.roomId,
   });
 }
 

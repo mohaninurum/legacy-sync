@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart' hide BoxDecoration, BoxShadow;
+import 'package:flutter_inset_shadow/flutter_inset_shadow.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
+import 'package:legacy_sync/core/utils/utils.dart';
+
 import '../../../../../core/colors/colors.dart';
 import '../../../../../core/images/images.dart';
 import '../../bloc/play_podcast_cubit.dart';
 import '../../bloc/play_podcast_state.dart';
-import 'package:flutter_inset_shadow/flutter_inset_shadow.dart';
 
 class AudioPlayController extends StatelessWidget {
   final PlayPodcastState state;
   final PlayPodcastCubit cubit;
-  const AudioPlayController({
-    super.key,
-    required this.state,
-    required this.cubit,
-  });
+  const AudioPlayController({super.key, required this.state, required this.cubit});
 
   @override
   Widget build(BuildContext context) {
@@ -34,9 +32,9 @@ class AudioPlayController extends StatelessWidget {
               child: Slider(
                 min: 0,
                 max:
-                state.duration.inSeconds.toDouble() == 0
-                    ? 1
-                    : state.duration.inSeconds.toDouble(),
+                    state.duration.inSeconds.toDouble() == 0
+                        ? 1
+                        : state.duration.inSeconds.toDouble(),
 
                 value: state.position.inSeconds.toDouble().clamp(
                   0,
@@ -55,6 +53,7 @@ class AudioPlayController extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
+
           /// ⏱️ Time Row
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -62,11 +61,11 @@ class AudioPlayController extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  _format(state.position),
+                  Utils.formatDuration(state.position),
                   style: const TextStyle(color: Colors.white),
                 ),
                 Text(
-                  _format(state.duration),
+                  Utils.formatDuration(state.duration),
                   style: const TextStyle(color: Colors.white),
                 ),
               ],
@@ -77,7 +76,7 @@ class AudioPlayController extends StatelessWidget {
 
           /// ▶️ Controls Row
           Padding(
-            padding: const EdgeInsets.only(left: 3, right: 16),
+            padding: const EdgeInsets.only(left: 22),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
@@ -101,39 +100,38 @@ class AudioPlayController extends StatelessWidget {
                   splashColor: Colors.transparent,
                   onTap: cubit.playPause,
                   child: Container(
-                    width:  75,
+                    width: 75,
                     height: 75,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(50),
-                      gradient:   const LinearGradient(
+                      gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          AppColors.primaryColorDark,
-                          AppColors.primaryColorDark,
-                        ],
+                        colors: [AppColors.primaryColorDark, AppColors.primaryColorDark],
                       ),
 
-
-                      boxShadow:  const [
-
-                         BoxShadow(
+                      boxShadow: const [
+                        BoxShadow(
                           color: Color.fromRGBO(255, 255, 255, 0.30),
-                          blurRadius:   15,
+                          blurRadius: 15,
                           offset: Offset(0, -4),
-                           inset: true,
+                          inset: true,
                         ),
 
-                         BoxShadow(
+                        BoxShadow(
                           color: Color.fromRGBO(255, 255, 255, 0.22),
                           blurRadius: 15,
                           offset: Offset(0, 6),
-                           inset: true,
+                          inset: true,
                         ),
                       ],
                     ),
                     child: Center(
-                      child: SvgPicture.asset(state.isPlaying? Images.pause:Images.play,height: 26,width: 26,),
+                      child: SvgPicture.asset(
+                        state.isPlaying ? Images.pause : Images.play,
+                        height: 26,
+                        width: 26,
+                      ),
                     ),
                   ),
                 ),
@@ -160,12 +158,4 @@ class AudioPlayController extends StatelessWidget {
       ),
     );
   }
-
-  /// ⏱️ Time formatter
-  static String _format(Duration d) {
-    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return "$m:$s";
-  }
-
 }

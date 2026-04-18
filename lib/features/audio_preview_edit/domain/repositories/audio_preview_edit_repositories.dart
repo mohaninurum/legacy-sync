@@ -21,4 +21,12 @@ abstract class AudioPreviewEditRepositories {
   ResultFuture<MarkFavouriteResponse> markFavouritePodcast(Map<String, dynamic> body);
   ResultFuture<MarkUnFavouriteResponse> markUnFavouritePodcast(Map<String, dynamic> body);
 
+  ResultFuture<Map<String, dynamic>> deletePodcastDraft(Map<String, dynamic> body);
+
+  ResultFuture<PublishResponse> editPublishedPodcast({
+    required Map<String, String> fields,
+    required List<int>? thumbnailBytes,
+    required String thumbnailFileName,
+    required String thumbnailKey,
+  });
 }

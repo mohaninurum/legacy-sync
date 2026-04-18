@@ -2,6 +2,7 @@ enum SaveAsDraftStatus { initial, loading, success, failure }
 enum PublishStatus { initial, loading, success, failure }
 enum MarkFavStatus {initial, loading, success, failure}
 enum MarkUnFavStatus {initial, loading, success, failure}
+enum DeleteStatus { initial, loading, success, failure }
 
 class AudioPreviewEditState {
   final bool isPlaying;
@@ -29,6 +30,8 @@ class AudioPreviewEditState {
   final String? markFavMessage;
   final MarkUnFavStatus? markUnFavStatus;
   final String? markUnFavMessage;
+  final DeleteStatus deleteStatus;
+  final String? deleteMessage;
 
 
 
@@ -59,6 +62,8 @@ class AudioPreviewEditState {
     required this.markFavMessage,
     required this.markUnFavStatus,
     required this.markUnFavMessage,
+    this.deleteStatus = DeleteStatus.initial,
+    this.deleteMessage,
   });
 
   factory AudioPreviewEditState.initial() => AudioPreviewEditState(
@@ -87,6 +92,8 @@ class AudioPreviewEditState {
     markFavMessage: null,
     markUnFavStatus: MarkUnFavStatus.initial,
     markUnFavMessage: null,
+    deleteStatus: DeleteStatus.initial,
+    deleteMessage: null,
   );
 
   AudioPreviewEditState copyWith({
@@ -115,6 +122,8 @@ class AudioPreviewEditState {
     String? markFavMessage,
     MarkUnFavStatus? markUnFavStatus,
     String? markUnFavMessage,
+    DeleteStatus? deleteStatus,
+    String? deleteMessage,
 
   }) {
     return AudioPreviewEditState(
@@ -143,6 +152,8 @@ class AudioPreviewEditState {
       markFavMessage:markFavMessage ?? this.markFavMessage,
       markUnFavStatus:markUnFavStatus ?? this.markUnFavStatus,
       markUnFavMessage:markUnFavMessage ?? this.markUnFavMessage,
+      deleteStatus: deleteStatus ?? this.deleteStatus,
+      deleteMessage: deleteMessage ?? this.deleteMessage,
     );
   }
 }
