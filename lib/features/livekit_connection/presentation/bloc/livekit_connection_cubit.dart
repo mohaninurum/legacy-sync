@@ -1027,7 +1027,6 @@ class LiveKitConnectionCubit extends Cubit<LiveKitConnectionState> {
               "selectedTopicCategory": selectedTopicCategory.name.toString(),
               "filteredTopics": filteredTopics,
               "durationSeconds": recordedDurationSeconds,
-              "isFromDraftSection": false,
             },
           ),
         ),

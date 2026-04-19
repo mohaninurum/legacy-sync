@@ -26,7 +26,6 @@ class AudioPreviewEditScreen extends StatefulWidget {
   final String? roomId;
   final PodcastModel? podcastModel;
   final bool isDraft;
-  final bool isFromDraftSection;
   final bool isEditMode;
   final String participants;
   final String selectedTopicCategory;
@@ -39,7 +38,6 @@ class AudioPreviewEditScreen extends StatefulWidget {
     required this.roomId,
     this.podcastModel,
     required this.isDraft,
-    required this.isFromDraftSection,
     this.isEditMode = false,
     required this.participants,
     required this.selectedTopicCategory,
@@ -460,15 +458,10 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           buildBackButton(),
-          if ((widget.isDraft && widget.isFromDraftSection) || widget.isEditMode)
+          if (!widget.isDraft)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (widget.isEditMode)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 12),
-                    child: Icon(Icons.edit, color: Colors.white, size: 24),
-                  ),
                 InkWell(
                   onTap: () {
                     if (state.isBookmark) {
@@ -498,10 +491,8 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                     ),
                   ),
                 ),
-                if (widget.isDraft &&
-                    !widget.isEditMode &&
-                    widget.podcastModel != null &&
-                    widget.isFromDraftSection) ...[
+                if (!widget.isEditMode &&
+                    widget.podcastModel != null) ...[
                   const SizedBox(width: 20),
                   GestureDetector(
                     onTap: () async {

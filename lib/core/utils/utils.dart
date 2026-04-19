@@ -723,6 +723,16 @@ class Utils {
     return "$m:$s";
   }
 
+  static String formatListDuration(int totalSeconds) {
+    if (totalSeconds > 0 && totalSeconds % 60 == 0) {
+      return '${totalSeconds ~/ 60} hr';
+    } else {
+      final minutesStr = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+      final secondsStr = (totalSeconds % 60).toString().padLeft(2, '0');
+      return '$minutesStr.$secondsStr';
+    }
+  }
+
   static String formatDurationHours(Duration d) {
     final h = d.inHours.toString().padLeft(2, '0');
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');

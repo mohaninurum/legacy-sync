@@ -2,6 +2,7 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:legacy_sync/config/db/shared_preferences.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/features/play_podcast/presentation/pages/widget/audio_play_controller.dart';
 import 'package:legacy_sync/features/play_podcast/presentation/pages/widget/bg_album_widget.dart';
@@ -236,21 +237,25 @@ class _PlayPodcastState extends State<PlayPodcast> {
               ),
               const SizedBox(width: 8),
               InkWell(
-                onTap: () {
-                  Navigator.pushNamed(
-                    context,
-                    RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
-                    arguments: {
-                      "podcastModel": widget.podcast,
-                      "isDraft": false,
-                      "isEditMode": true,
-                      "selectedTopicCategory": widget.podcast.topicType ?? "",
-                      "participants": "",
-                      "durationSeconds": 0,
-                      "roomId": widget.podcast.roomId ?? "",
-                      "isFromDraftSection": false,
-                    },
-                  );
+                onTap: () async {
+                  final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+                  if(widget.podcast.author == userId.toString()){
+                    Navigator.pushNamed(
+                      context,
+                      RoutesName.AUDIO_PREVIEW_EDIT_SCREEN,
+                      arguments: {
+                        "podcastModel": widget.podcast,
+                        "isDraft": false,
+                        "isEditMode": true,
+                        "selectedTopicCategory": widget.podcast.topicType ?? "",
+                        "participants": widget.podcast.relationship,
+                        "durationSeconds": widget.podcast.totalDurationSec,
+                        "roomId": widget.podcast.roomId ?? "",
+                      },
+                    );
+                  } else {
+                    Utils.showInfoDialog(context: context, title: "Only Author Has Rights To Update This Podcast Details.");
+                  }
                 },
                 child: Container(
                   alignment: Alignment.center,

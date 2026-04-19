@@ -205,7 +205,6 @@ class Routes {
         final roomId = data?["roomId"] ?? '';
         final selectedTopicCategory = data?["selectedTopicCategory"] ?? "";
         final durationSeconds = data?["durationSeconds"] ?? 0;
-        final isFromDraftSection = data?["isFromDraftSection"] ?? false;
 
         return _animatedRouteDownToUp(
           BlocProvider(
@@ -218,7 +217,6 @@ class Routes {
               roomId: roomId,
               selectedTopicCategory: selectedTopicCategory,
               durationSeconds: durationSeconds,
-              isFromDraftSection: isFromDraftSection,
             ),
           ),
         );

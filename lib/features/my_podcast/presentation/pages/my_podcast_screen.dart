@@ -569,15 +569,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
     );
   }
 
-  String _formatListDuration(int totalSeconds) {
-    if (totalSeconds > 0 && totalSeconds % 60 == 0) {
-      return '${totalSeconds ~/ 60} hr';
-    } else {
-      final minutesStr = (totalSeconds ~/ 60).toString().padLeft(2, '0');
-      final secondsStr = (totalSeconds % 60).toString().padLeft(2, '0');
-      return '$minutesStr.$secondsStr';
-    }
-  }
+
 
   Widget myListPodcast(PodcastModel data, bool isContinueListening) {
     double progress = 0.0;
@@ -604,9 +596,8 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
               "podcastModel": data,
               "is_draft": data.audioPath != null ? false : true,
               "participants": data.relationship,
-              "roomId": '',
+              "roomId": data.roomId ?? '',
               "selectedTopicCategory": data.topicType,
-              "isFromDraftSection": true,
             },
           );
         } else {
@@ -752,7 +743,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
                   height: 80,
                   child: Center(
                     child: Text(
-                      _formatListDuration(data.totalDurationSec),
+                      Utils.formatListDuration(data.totalDurationSec),
                       style: Theme.of(
                         context,
                       ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
@@ -789,9 +780,8 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             "podcastModel": data,
             "is_draft": data.audioPath != null ? false : true,
             "participants": data.relationship,
-            "roomId": '',
+            "roomId": data.roomId ?? '',
             "selectedTopicCategory": data.topicType,
-            "isFromDraftSection": true,
           },
         );
       },
@@ -876,7 +866,7 @@ class _MyPodcastScreenState extends State<MyPodcastScreen> {
             ),
             Text(
               textAlign: TextAlign.start,
-              _formatListDuration(data.totalDurationSec),
+              Utils.formatListDuration(data.totalDurationSec),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
                 fontSize: 10,
