@@ -57,6 +57,7 @@ class AppPreference {
   // Cache keys for question data
   static String KEY_CACHED_QUESTION_DATA = "KEY_CACHED_QUESTION_DATA_";
   static String KEY_CACHE_TIMESTAMP = "KEY_CACHE_TIMESTAMP_";
+  static String KEY_PENDING_END_CALL = "KEY_PENDING_END_CALL";
   static const int CACHE_EXPIRY_HOURS = 720; // Cache expires after 720 hours
 
   static SharedPreferences? prefs;

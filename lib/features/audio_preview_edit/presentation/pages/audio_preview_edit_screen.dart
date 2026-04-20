@@ -221,41 +221,11 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
               },
             ),
           ),
-          bottomNavigationBar: _bottomControls(),
+          bottomNavigationBar: widget.isDraft ? _draftControls() : _publishControls(),
         ),
       ),
     );
   }
-
-  // void _safeExitAfterSuccess() {
-  //   if (!mounted || _hasNavigated) return;
-  //   _hasNavigated = true;
-  //
-  //   FocusManager.instance.primaryFocus?.unfocus(); // close keyboard
-  //
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     if (!mounted) return;
-  //
-  //     final nav = Navigator.of(context);
-  //
-  //     bool found = false;
-  //     nav.popUntil((route) {
-  //       if (route.settings.name == RoutesName.MY_PODCAST_SCREEN) {
-  //         found = true;
-  //         return true;
-  //       }
-  //       return false;
-  //     });
-  //
-  //     // ✅ If MY_PODCAST_SCREEN not in stack, go there explicitly
-  //     if (!found) {
-  //       nav.pushNamedAndRemoveUntil(
-  //         RoutesName.MY_PODCAST_SCREEN,
-  //             (r) => false,
-  //       );
-  //     }
-  //   });
-  // }
 
   Future<bool> _confirmExitIfNeeded() async {
     final state = context.read<AudioPreviewEditCubit>().state;
@@ -491,8 +461,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                     ),
                   ),
                 ),
-                if (!widget.isEditMode &&
-                    widget.podcastModel != null) ...[
+                if (!widget.isEditMode && widget.podcastModel != null) ...[
                   const SizedBox(width: 20),
                   GestureDetector(
                     onTap: () async {
@@ -533,7 +502,7 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
     );
   }
 
-  Widget _bottomControls() {
+  Widget _draftControls() {
     return BlocBuilder<AudioPreviewEditCubit, AudioPreviewEditState>(
       builder: (context, state) {
         final hasTitle = (state.title ?? '').trim().isNotEmpty;
@@ -611,6 +580,25 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
                   ),
                 ),
               ),
+              const SizedBox(width: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _publishControls() {
+    return BlocBuilder<AudioPreviewEditCubit, AudioPreviewEditState>(
+      builder: (context, state) {
+        final hasTitle = (state.title ?? '').trim().isNotEmpty;
+        final hasDesc = (state.description ?? '').trim().isNotEmpty;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const SizedBox(width: 12),
 
               Visibility(
                 visible: !widget.isDraft,

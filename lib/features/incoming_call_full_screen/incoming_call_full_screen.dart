@@ -271,6 +271,12 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
       // If you don’t have KEY_USER_NAME in prefs, keep fallback:
       final safeName = (userName.isNotEmpty) ? userName : "You";
 
+      // ✅ Call Accept Invitation API
+      await LiveKitConnectionUseCases().acceptInvitation(
+        userId: myUserId,
+        roomId: widget.roomId,
+      );
+
       if (!mounted) return;
 
       // ✅ If your flow should go to PodcastRecordingScreen:

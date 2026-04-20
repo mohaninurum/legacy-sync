@@ -145,7 +145,18 @@ class PlayPodcastCubit extends Cubit<PlayPodcastState> {
   /// continue listing post  //podcast/save-listened-podcast-time
 
   Future<void> markFavourite({required int podcastId}) async {
-    emit(state.copyWith(markFavStatus: MarkFavStatus.loading));
+    if (state.markFavStatus == MarkFavStatus.loading ||
+        state.markUnFavStatus == MarkUnFavStatus.loading) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        markFavStatus: MarkFavStatus.loading,
+        markUnFavStatus: MarkUnFavStatus.initial,
+        isBookmark: true, // Optimistically set to true
+      ),
+    );
     try {
       final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
       Map<String, dynamic> body = {
@@ -153,19 +164,51 @@ class PlayPodcastCubit extends Cubit<PlayPodcastState> {
         "podcast_id": podcastId,
       };
       final response = await useCasePlayPodcast.markFavouritePodcast(body);
-      response.fold((error) {
-        emit(state.copyWith(markFavMessage: error.message ?? "Failed to add favourites", markFavStatus: MarkFavStatus.failure));
-      }, (result) {
-        emit(state.copyWith(isBookmark: true, markFavStatus: MarkFavStatus.success, markFavMessage: result.message));
-      },);
+      response.fold(
+        (error) {
+          emit(
+            state.copyWith(
+              markFavMessage: error.message ?? "Failed to add favourites",
+              markFavStatus: MarkFavStatus.failure,
+              isBookmark: false, // Revert on failure
+            ),
+          );
+        },
+        (result) {
+          emit(
+            state.copyWith(
+              isBookmark: true,
+              markFavStatus: MarkFavStatus.success,
+              markFavMessage: result.message,
+            ),
+          );
+        },
+      );
     } catch (e) {
       debugPrint("Error :: ${e.toString()}");
-      emit(state.copyWith(markFavMessage: e.toString(), markFavStatus: MarkFavStatus.initial));
+      emit(
+        state.copyWith(
+          markFavMessage: e.toString(),
+          markFavStatus: MarkFavStatus.failure,
+          isBookmark: false, // Revert on error
+        ),
+      );
     }
   }
 
   Future<void> markUnFavourite({required int podcastId}) async {
-    emit(state.copyWith(markUnFavStatus: MarkUnFavStatus.loading));
+    if (state.markFavStatus == MarkFavStatus.loading ||
+        state.markUnFavStatus == MarkUnFavStatus.loading) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        markUnFavStatus: MarkUnFavStatus.loading,
+        markFavStatus: MarkFavStatus.initial,
+        isBookmark: false, // Optimistically set to false
+      ),
+    );
     try {
       final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
       Map<String, dynamic> body = {
@@ -173,14 +216,35 @@ class PlayPodcastCubit extends Cubit<PlayPodcastState> {
         "podcast_id": podcastId,
       };
       final response = await useCasePlayPodcast.markUnFavouritePodcast(body);
-      response.fold((error) {
-        emit(state.copyWith(markUnFavMessage: error.message, markUnFavStatus: MarkUnFavStatus.failure));
-      }, (result) {
-        emit(state.copyWith(markUnFavMessage: result.message, isBookmark: false, markUnFavStatus: MarkUnFavStatus.success));
-      },);
+      response.fold(
+        (error) {
+          emit(
+            state.copyWith(
+              markUnFavMessage: error.message,
+              markUnFavStatus: MarkUnFavStatus.failure,
+              isBookmark: true, // Revert on failure
+            ),
+          );
+        },
+        (result) {
+          emit(
+            state.copyWith(
+              markUnFavMessage: result.message,
+              isBookmark: false,
+              markUnFavStatus: MarkUnFavStatus.success,
+            ),
+          );
+        },
+      );
     } catch (e) {
       debugPrint("Error :: ${e.toString()}");
-      emit(state.copyWith(markUnFavMessage: e.toString(), markUnFavStatus: MarkUnFavStatus.initial));
+      emit(
+        state.copyWith(
+          markUnFavMessage: e.toString(),
+          markUnFavStatus: MarkUnFavStatus.failure,
+          isBookmark: true, // Revert on error
+        ),
+      );
     }
   }
 

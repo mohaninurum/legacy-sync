@@ -28,6 +28,9 @@ class LiveKitConnectionState extends Equatable {
 
   final bool showCallOverlay;
 
+  /// Identities of participants currently speaking (from ActiveSpeakersChangedEvent)
+  final Set<String> activeSpeakerIdentities;
+
   final List<ParticipantTrack> participantTracks;
   final bool isStartingRecording;
   final InviteStatus inviteStatus;
@@ -86,6 +89,7 @@ class LiveKitConnectionState extends Equatable {
     this.navEvent = LiveKitNavEvent.none,
     this.showCallOverlay = false,
 
+    this.activeSpeakerIdentities = const {},
     this.isStartingRecording = false,
     this.myUserId,
     this.myUserName,
@@ -140,6 +144,7 @@ class LiveKitConnectionState extends Equatable {
     LiveKitNavEvent? navEvent,
 
     bool? showCallOverlay,
+    Set<String>? activeSpeakerIdentities,
 
     bool? isStartingRecording,
     int? myUserId,
@@ -194,6 +199,7 @@ class LiveKitConnectionState extends Equatable {
       navEvent: navEvent ?? this.navEvent,
 
       showCallOverlay: showCallOverlay ?? this.showCallOverlay,
+      activeSpeakerIdentities: activeSpeakerIdentities ?? this.activeSpeakerIdentities,
       isStartingRecording: isStartingRecording ?? this.isStartingRecording,
       myUserId: myUserId ?? this.myUserId,
       myUserName: myUserName ?? this.myUserName,
@@ -236,6 +242,9 @@ class LiveKitConnectionState extends Equatable {
       consentGiven: consentGiven ?? this.consentGiven,
       isCallEnded: isCallEnded ?? this.isCallEnded,
       isCallEndMessage: isCallEndMessage ?? this.isCallEndMessage,
+      netStatus: netStatus ?? this.netStatus,
+      netMessage: netMessage ?? this.netMessage,
+      reconnectAttempt: reconnectAttempt ?? this.reconnectAttempt,
     );
   }
 
@@ -244,6 +253,8 @@ class LiveKitConnectionState extends Equatable {
     everRecorded,
     navEvent,
     showCallOverlay,
+    activeSpeakerIdentities,
+    participantTracks,
     isStartingRecording,
     myUserId,
     myUserName,
@@ -279,6 +290,9 @@ class LiveKitConnectionState extends Equatable {
     consentGiven,
     isCallEnded,
     isCallEndMessage,
+    netStatus,
+    netMessage,
+    reconnectAttempt,
   ];
 
   LiveKitConnectionState clearErrorAndUiEvents() {
@@ -290,6 +304,7 @@ class LiveKitConnectionState extends Equatable {
       myUserId: myUserId,
       myUserName: myUserName,
       hostUserId: hostUserId,
+      activeSpeakerIdentities: activeSpeakerIdentities,
       participantTracks: participantTracks,
       invitingFriendId: invitingFriendId,
       inviteStatus: inviteStatus,

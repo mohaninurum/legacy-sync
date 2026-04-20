@@ -10,6 +10,7 @@ class SignUpState extends Equatable {
   final bool showPasswordInfo;
   final bool isConfirmPasswordFocused;
   final bool showConfirmPasswordInfo;
+  final bool showEmailError;
 
   const SignUpState({
     this.isLoading = false,
@@ -21,6 +22,7 @@ class SignUpState extends Equatable {
     this.showPasswordInfo = false,
     this.isConfirmPasswordFocused = false,
     this.showConfirmPasswordInfo = false,
+    this.showEmailError = false,
   });
 
   SignUpState copyWith({
@@ -33,6 +35,7 @@ class SignUpState extends Equatable {
     bool? showPasswordInfo,
     bool? isConfirmPasswordFocused,
     bool? showConfirmPasswordInfo,
+    bool? showEmailError,
   }) {
     return SignUpState(
       isLoading: isLoading ?? this.isLoading,
@@ -46,6 +49,7 @@ class SignUpState extends Equatable {
           isConfirmPasswordFocused ?? this.isConfirmPasswordFocused,
       showConfirmPasswordInfo:
           showConfirmPasswordInfo ?? this.showConfirmPasswordInfo,
+      showEmailError: showEmailError ?? this.showEmailError,
     );
   }
 
@@ -60,6 +64,7 @@ class SignUpState extends Equatable {
     showPasswordInfo,
     isConfirmPasswordFocused,
     showConfirmPasswordInfo,
+    showEmailError,
   ];
 }
 

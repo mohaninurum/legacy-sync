@@ -375,18 +375,63 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
           ],
         ),
-        CustomTextField(
-          hintText: AppStrings.enterYourEmail,
-          controller: emailController,
-          keyboardType: TextInputType.emailAddress,
-          onChanged: (value) {
-            context.read<SignUpCubit>().checkFormValidation(
-              firstName: firstNameController.text,
-              lastName: lastNameController.text,
-              email: emailController.text,
-              dob: dobController.text,
-              password: passwordController.text,
-              confirmPassword: confirmPasswordController.text,
+        BlocBuilder<SignUpCubit, SignUpState>(
+          builder: (context, state) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CustomTextField(
+                  hintText: AppStrings.enterYourEmail,
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  bottomPadding: !state.showEmailError,
+                  onChanged: (value) {
+                    context.read<SignUpCubit>().checkFormValidation(
+                      firstName: firstNameController.text,
+                      lastName: lastNameController.text,
+                      email: emailController.text,
+                      dob: dobController.text,
+                      password: passwordController.text,
+                      confirmPassword: confirmPasswordController.text,
+                    );
+                  },
+                ),
+                if (state.showEmailError)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(top: 6, bottom: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          color: Colors.red,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Please enter a valid email address',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             );
           },
         ),

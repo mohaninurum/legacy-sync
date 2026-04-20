@@ -36,12 +36,27 @@ class LiveKitConnectionUseCases {
     );
   }
 
+  ResultFuture<Map<String, dynamic>> acceptInvitation({
+    required int userId,
+    required String roomId,
+  }) async {
+    return await repository.acceptInvitation(userId: userId, roomId: roomId);
+  }
+
   ResultFuture<EndPodcastCallResponse> endPodcastCall({
     required int userId,
     required Set<int> friendId,
     required String roomId,
+    required bool freeSpecificUser,
+    required int specificUserId,
   }) async {
-    return repository.endPodcastCall(userId: userId, friendId: friendId, roomId: roomId);
+    return repository.endPodcastCall(
+      userId: userId,
+      friendId: friendId,
+      roomId: roomId,
+      freeSpecificUser: freeSpecificUser,
+      specificUserId: specificUserId,
+    );
   }
 
   ResultFuture<String> fetchParticipantToken({

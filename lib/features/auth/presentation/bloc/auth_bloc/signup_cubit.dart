@@ -69,6 +69,7 @@ class SignUpCubit extends Cubit<SignUpState> {
       emit(
         state.copyWith(
           isFormValid: false,
+          showEmailError: email.isNotEmpty && !email.isEmail,
           showPasswordInfo: _shouldShowPasswordInfo(password),
           showConfirmPasswordInfo: _shouldShowConfirmPasswordInfo(
             password,
@@ -162,6 +163,7 @@ class SignUpCubit extends Cubit<SignUpState> {
     emit(
       state.copyWith(
         isFormValid: true,
+        showEmailError: false,
         showPasswordInfo: false, // Hide info when password is valid
         showConfirmPasswordInfo: false, // Hide info when passwords match
       ),

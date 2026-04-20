@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +29,6 @@ import 'package:legacy_sync/features/livekit_connection/presentation/widgets/rec
 import 'package:livekit_client/livekit_client.dart';
 
 import '../../../home/presentation/bloc/home_bloc/home_cubit.dart';
-import '../widgets/participant.dart';
 
 class RoomPage extends StatefulWidget {
   final String roomId;
@@ -229,98 +229,62 @@ class _RoomPageState extends State<RoomPage> {
             }
           },
           builder: (context, state) {
-            return PopScope(
-              canPop: true,
-              onPopInvoked: (didPop) {
-                if (didPop) _lkCubit.showOverlay();
-              },
-              child: Scaffold(
-                backgroundColor: Colors.transparent,
-                bottomNavigationBar: _bottomCallControls(state.isHost),
-                body: SafeArea(
-                  child: Column(
-                    children: [
-                      _topHeader(state),
-                      if (state.netStatus == NetStatus.reconnecting ||
-                          state.netStatus == NetStatus.offline)
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
+            final isReconnecting =
+                state.netStatus == NetStatus.reconnecting ||
+                state.netStatus == NetStatus.offline;
+
+            return Stack(
+              children: [
+                PopScope(
+                  canPop: true,
+                  onPopInvoked: (didPop) {
+                    if (didPop) _lkCubit.showOverlay();
+                  },
+                  child: Scaffold(
+                    backgroundColor: Colors.transparent,
+                    bottomNavigationBar: _bottomCallControls(state.isHost),
+                    body: SafeArea(
+                      child: Column(
+                        children: [
+                          _topHeader(state),
+                          SizedBox(height: 1.3.height),
+                          _topicCard(context, state),
+                          Column(
                             children: [
-                              const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CupertinoActivityIndicator(),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  state.netMessage ?? "Reconnecting...",
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () async {
-                                  // user chooses to leave
-                                  await context
-                                      .read<LiveKitConnectionCubit>()
-                                      .disconnect();
-                                  if (!context.mounted) return;
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    RoutesName.MY_PODCAST_SCREEN,
-                                  );
-                                },
-                                child: const Text("Leave"),
-                              ),
+                              _participantsGrid(state, context),
+                              SizedBox(height: 1.height),
+                              if (state.recordingStatus ==
+                                      LiveKitRecordingStatus.recording ||
+                                  state.recordingStatus == LiveKitRecordingStatus.paused)
+                                const AudioWaveDesign(),
                             ],
                           ),
-                        ),
-
-                      SizedBox(height: 1.3.height),
-                      _topicCard(context, state),
-
-                      Column(
-                        children: [
-                          _participantsGrid(state, context),
-                          SizedBox(height: 1.height),
-                          if (state.recordingStatus == LiveKitRecordingStatus.recording ||
-                              state.recordingStatus == LiveKitRecordingStatus.paused)
-                            const AudioWaveDesign(),
+                          if (!state.isHost && state.consentGiven != true) ...[
+                            const SizedBox.shrink(),
+                          ] else if (state.isHost) ...[
+                            _recordingSection(state, context), // host controls
+                          ] else ...[
+                            _inviteeRecordingView(state),
+                          ],
+                          // SizedBox(height: 5.height),
+                          // Expanded(
+                          //   child:
+                          //       state.participantTracks.isNotEmpty
+                          //           ? ParticipantWidget.widgetFor(
+                          //             state.participantTracks.first,
+                          //             showStatsLayer: true,
+                          //           )
+                          //           : const SizedBox.shrink(),
+                          // ),
                         ],
                       ),
-                      if (!state.isHost && state.consentGiven != true) ...[
-                        const SizedBox.shrink(),
-                      ] else if (state.isHost) ...[
-                        _recordingSection(state, context), // host controls
-                      ] else ...[
-                        _inviteeRecordingView(state),
-                      ],
-                      SizedBox(height: 5.height),
-                      Expanded(
-                        child:
-                            state.participantTracks.isNotEmpty
-                                ? ParticipantWidget.widgetFor(
-                                  state.participantTracks.first,
-                                  showStatsLayer: true,
-                                )
-                                : const SizedBox.shrink(),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+
+                // Global Reconnecting Overlay (Covers bottom controls too)
+                if (isReconnecting) Positioned.fill(child: _reconnectingOverlay(state)),
+              ],
             );
           },
         ),
@@ -481,7 +445,7 @@ class _RoomPageState extends State<RoomPage> {
     return BlocBuilder<LiveKitConnectionCubit, LiveKitConnectionState>(
       builder: (context, state) {
         return Padding(
-          padding: const EdgeInsets.only(bottom: 42),
+          padding: const EdgeInsets.only(bottom: 62),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -875,8 +839,6 @@ class _RoomPageState extends State<RoomPage> {
   }
 
   Widget _participantsGrid(LiveKitConnectionState state, BuildContext context) {
-    // Use the authoritative hostUserId (broadcasted by the original room creator)
-    // so HOST badge is ALWAYS shown on the correct user regardless of who is viewing.
     final hostId = state.hostUserId;
     bool _isHost(FriendsDataList user) {
       if (hostId != null) return user.userIdPK == hostId;
@@ -1029,9 +991,22 @@ class _RoomPageState extends State<RoomPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    YouAudioWave(
-                      useName: user.firstName?.trim().split(RegExp(r'[ _]+')).first,
-                    ),
+                    // Check if this user is currently speaking
+                    () {
+                      final uidStr = user.userIdPK?.toString() ?? '';
+
+                      // Check against activeSpeakerIdentities — value-type, safe for Equatable
+                      final isSpeaking = state.activeSpeakerIdentities.any((identity) {
+                        if (identity.split('__').last == uidStr) return true;
+                        final name = identity.split('__').first;
+                        return name == user.firstName;
+                      });
+
+                      return YouAudioWave(
+                        useName: user.firstName?.trim().split(RegExp(r'[ _]+')).first,
+                        isSpeaking: isSpeaking,
+                      );
+                    }(),
                   ],
                 ),
               ),
@@ -1098,7 +1073,7 @@ class _RoomPageState extends State<RoomPage> {
       barrierColor: Colors.transparent,
 
       // we handle dim ourselves
-      builder: (_) => ParticipantsSheet(participants: state.participants),
+      builder: (_) => ParticipantsSheet(participants: state.participants, state: state),
     );
   }
 
@@ -1409,6 +1384,60 @@ class _RoomPageState extends State<RoomPage> {
     );
   }
 
+  Widget _reconnectingOverlay(LiveKitConnectionState state) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+        child: Container(
+          color: Colors.black.withOpacity(0.5),
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CupertinoActivityIndicator(radius: 18, color: Colors.white),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  state.netMessage ?? "Reconnecting...",
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+              GestureDetector(
+                onTap: () async {
+                  await _lkCubit.disconnect();
+                  if (!mounted) return;
+                  Navigator.pushReplacementNamed(context, RoutesName.MY_PODCAST_SCREEN);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    "Leave Podcast",
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void showInviteDialog(BuildContext context) {
     // Fetch the latest friends list on every dialog open
     _homeCubit.getFriendsList();
@@ -1483,9 +1512,8 @@ class _RoomPageState extends State<RoomPage> {
                                 final id = user.userIdPK;
                                 final isInvited =
                                     id != null &&
-                                    (user.inPodcast?.toString() == '1' ||
-                                        user.inviteStatus?.toString().toLowerCase() ==
-                                            'invited' ||
+                                    ((user.inPodcast?.toString() == '1') ||
+                                        lkState.invitedFriendIds.contains(id) ||
                                         lkState.participants.any(
                                           (p) => p.userIdPK == id,
                                         ));

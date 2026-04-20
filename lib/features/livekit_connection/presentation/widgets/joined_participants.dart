@@ -179,11 +179,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:legacy_sync/features/home/data/model/friends_list_model.dart';
+import 'package:legacy_sync/features/livekit_connection/presentation/bloc/livekit_connection_state.dart';
+import 'package:legacy_sync/features/livekit_connection/presentation/widgets/audio_waves_widget.dart';
 
 class ParticipantsSheet extends StatelessWidget {
   final List<FriendsDataList> participants;
+  final LiveKitConnectionState state;
 
-  const ParticipantsSheet({super.key, required this.participants});
+  const ParticipantsSheet({super.key, required this.participants, required this.state});
 
   @override
   Widget build(BuildContext context) {
@@ -195,9 +198,7 @@ class ParticipantsSheet extends StatelessWidget {
           // Dim background
           GestureDetector(
             onTap: () => Navigator.pop(context),
-            child: Container(
-              color: Colors.black.withOpacity(0.35),
-            ),
+            child: Container(color: Colors.black.withOpacity(0.35)),
           ),
 
           // ✅ Center floating card
@@ -222,7 +223,7 @@ class ParticipantsSheet extends StatelessWidget {
                         color: Colors.black.withOpacity(0.35),
                         blurRadius: 18,
                         offset: const Offset(0, 10),
-                      )
+                      ),
                     ],
                   ),
                   child: Column(
@@ -232,10 +233,7 @@ class ParticipantsSheet extends StatelessWidget {
                       const SizedBox(height: 8),
 
                       // ✅ content-sized list
-                      Flexible(
-                        fit: FlexFit.loose,
-                        child: _list(context),
-                      ),
+                      Flexible(fit: FlexFit.loose, child: _list(context)),
                     ],
                   ),
                 ),
@@ -284,10 +282,9 @@ class ParticipantsSheet extends StatelessWidget {
       itemCount: participants.length,
       itemBuilder: (_, i) {
         final p = participants[i];
-        final sortedName = (p.firstName ?? "").trim().isEmpty ? "User" : p.firstName!.trim();
-        final name = sortedName.trim()
-            .split(RegExp(r'[ _]+'))
-            .first;
+        final sortedName =
+            (p.firstName ?? "").trim().isEmpty ? "User" : p.firstName!.trim();
+        final name = sortedName.trim().split(RegExp(r'[ _]+')).first;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
@@ -307,7 +304,19 @@ class ParticipantsSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              _voiceBars(),
+              () {
+                final uidStr = p.userIdPK?.toString() ?? '';
+                final isSpeaking = state.activeSpeakerIdentities.any((identity) {
+                  if (identity.split('__').last == uidStr) return true;
+                  final identityName = identity.split('__').first;
+                  return identityName == p.firstName;
+                });
+
+                return YouAudioWave(
+                  useName: "", // We already show name on the left
+                  isSpeaking: isSpeaking,
+                );
+              }(),
             ],
           ),
         );
@@ -323,28 +332,20 @@ class ParticipantsSheet extends StatelessWidget {
       radius: 18,
       backgroundColor: Colors.white.withOpacity(0.10),
       backgroundImage: hasImg ? NetworkImage(img) : null,
-      child: hasImg
-          ? null
-          : Text(
-        name.substring(0, 1).toUpperCase(),
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
+      child:
+          hasImg
+              ? null
+              : Text(
+                name.substring(0, 1).toUpperCase(),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+              ),
     );
   }
 
   Widget _voiceBars() {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        _bar(6),
-        _bar(10),
-        _bar(14),
-        _bar(10),
-        _bar(6),
-      ],
+      children: [_bar(6), _bar(10), _bar(14), _bar(10), _bar(6)],
     );
   }
 
@@ -359,6 +360,7 @@ class ParticipantsSheet extends StatelessWidget {
       ),
     );
   }
+
   // Widget _bar(double h) {
   //   return Container(
   //     width: 3,

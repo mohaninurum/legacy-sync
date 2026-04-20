@@ -6,6 +6,8 @@ import 'package:audio_waveforms/audio_waveforms.dart' as aw;
 import 'package:bot_toast/bot_toast.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -214,7 +216,18 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
   }
 
   Future<void> markFavourite({required int podcastId}) async {
-    emit(state.copyWith(markFavStatus: MarkFavStatus.loading));
+    if (state.markFavStatus == MarkFavStatus.loading ||
+        state.markUnFavStatus == MarkUnFavStatus.loading) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        markFavStatus: MarkFavStatus.loading,
+        markUnFavStatus: MarkUnFavStatus.initial,
+        isBookmark: true, // Optimistically set to true
+      ),
+    );
     try {
       final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
       Map<String, dynamic> body = {"user_id": userId, "podcast_id": podcastId};
@@ -225,6 +238,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
             state.copyWith(
               markFavMessage: error.message ?? "Failed to add favourites",
               markFavStatus: MarkFavStatus.failure,
+              isBookmark: false, // Revert on failure
             ),
           );
         },
@@ -243,14 +257,26 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       emit(
         state.copyWith(
           markFavMessage: e.toString(),
-          markFavStatus: MarkFavStatus.initial,
+          markFavStatus: MarkFavStatus.failure,
+          isBookmark: false, // Revert on error
         ),
       );
     }
   }
 
   Future<void> markUnFavourite({required int podcastId}) async {
-    emit(state.copyWith(markUnFavStatus: MarkUnFavStatus.loading));
+    if (state.markFavStatus == MarkFavStatus.loading ||
+        state.markUnFavStatus == MarkUnFavStatus.loading) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        markUnFavStatus: MarkUnFavStatus.loading,
+        markFavStatus: MarkFavStatus.initial,
+        isBookmark: false, // Optimistically set to false
+      ),
+    );
     try {
       final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
       Map<String, dynamic> body = {"user_id": userId, "podcast_id": podcastId};
@@ -261,6 +287,7 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
             state.copyWith(
               markUnFavMessage: error.message,
               markUnFavStatus: MarkUnFavStatus.failure,
+              isBookmark: true, // Revert on failure
             ),
           );
         },
@@ -279,7 +306,8 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       emit(
         state.copyWith(
           markUnFavMessage: e.toString(),
-          markUnFavStatus: MarkUnFavStatus.initial,
+          markUnFavStatus: MarkUnFavStatus.failure,
+          isBookmark: true, // Revert on error
         ),
       );
     }
@@ -492,7 +520,9 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       "description": description.text.trim(),
       "podcast_id": podcastId.toString(),
       "duration_seconds": durationSeconds.toString(),
-      // backend expects thumb_nail as file, so no need to send "" here
+      // Send trim timestamps so backend can crop the server-side recording
+      "trim_start": state.trimStart.toInt().toString(),
+      "trim_end": state.trimEnd.toInt().toString(),
     };
 
     try {
@@ -553,6 +583,9 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       "title": title.text.trim(),
       "description": description.text.trim(),
       "duration_seconds": durationSeconds.toString(),
+      // Send trim timestamps so backend can crop the server-side recording
+      "trim_start": state.trimStart.toInt().toString(),
+      "trim_end": state.trimEnd.toInt().toString(),
     };
 
     try {
@@ -658,7 +691,9 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
       "livekit_room_id": _roomId!,
       "topic_type": topicCovered,
       "duration": durationSeconds.toString(),
-      // backend expects thumb_nail as file, so no need to send "" here
+      // Send trim timestamps so backend can crop the server-side recording
+      "trim_start": state.trimStart.toInt().toString(),
+      "trim_end": state.trimEnd.toInt().toString(),
     };
 
     try {
@@ -751,25 +786,58 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
     return super.close();
   }
 
-  /// 🎯 REAL AUDIO TRIM (Second Screenshot)
-  Future<String> saveTrimmedAudio(String inputPath, BuildContext context) async {
-    final output =
-        '${Directory.systemTemp.path}/trimmed_${DateTime.now().millisecondsSinceEpoch}.mp3';
-    print(output);
-    print("trim:-${state.trimStart} -to ${state.trimEnd}");
-    // await FFmpegKit.execute(
-    //   '-i $inputPath -ss ${state.trimStart} -to ${state.trimEnd} -c copy $output',
-    // );
-    print("path...");
-    print(output);
-    print("meta data:-${title.text} -to ${description.text}");
+  /// 🎯 REAL AUDIO TRIM — downloads remote audio if needed, then runs FFmpeg
+  Future<String?> saveTrimmedAudio(String inputPath, BuildContext context) async {
+    // Resolve to a local file path (download if it's a network URL)
+    String localPath;
+    if (_isNetwork(inputPath)) {
+      BotToast.showText(text: "Downloading audio for trimming...");
+      try {
+        localPath = await _downloadToTemp(inputPath);
+        debugPrint("[Trim] Downloaded to: $localPath");
+      } catch (e) {
+        BotToast.showText(text: "Failed to download audio. Please try again.");
+        debugPrint("[Trim] Download error: $e");
+        return null;
+      }
+    } else {
+      localPath = inputPath;
+    }
 
-    emit(state.copyWith(isAudioEdit: false, trimAudioPath: output));
-    // loadAudio(output);
-    title.clear();
-    description.clear();
+    final tempDir = await getTemporaryDirectory();
+    final output = '${tempDir.path}/trimmed_${DateTime.now().millisecondsSinceEpoch}.mp3';
 
-    return output;
+    final start = state.trimStart.toInt();
+    final end = state.trimEnd.toInt();
+
+    debugPrint("[Trim] Input: $localPath");
+    debugPrint("[Trim] Start: ${state.trimStart}s, End: ${state.trimEnd}s");
+    debugPrint("[Trim] Output: $output");
+
+    BotToast.showText(text: "Trimming audio...");
+
+    final session = await FFmpegKit.execute(
+      '-i "$localPath" -ss $start -to $end -c copy "$output"',
+    );
+
+    final returnCode = await session.getReturnCode();
+
+    if (ReturnCode.isSuccess(returnCode)) {
+      debugPrint("[Trim] Success! Saved to: $output");
+      emit(state.copyWith(isAudioEdit: false, trimAudioPath: output));
+
+      // Reload the just_audio player with the trimmed file
+      await loadAudio(output);
+      await prepareWaveform(output);
+
+      BotToast.showText(text: "Audio trimmed successfully!");
+      return output;
+    } else {
+      final logs = await session.getAllLogsAsString();
+      debugPrint("[Trim] FFmpeg failed: $logs");
+      BotToast.showText(text: "Trim failed. Please try again.");
+      return null;
+    }
   }
 
   void onStartTrimSecond(double onStartSecond) {
@@ -789,11 +857,14 @@ class AudioPreviewEditCubit extends Cubit<AudioPreviewEditState> {
   }
 
   audioEditDiscard() {
-    if (state.isAudioEdit == true) {
-      emit(state.copyWith(isAudioEdit: false));
-    } else {
-      emit(state.copyWith(isAudioEdit: true));
-    }
+    // Reset trim points back to full duration and hide the trim slider
+    emit(
+      state.copyWith(
+        isAudioEdit: false,
+        trimStart: 0.0,
+        trimEnd: state.duration.inSeconds.toDouble(),
+      ),
+    );
   }
 
   audioEditSave() {

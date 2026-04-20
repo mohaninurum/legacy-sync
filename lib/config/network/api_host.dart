@@ -64,6 +64,7 @@ class ApiURL {
   static const String savePodcast_AsDraft = "$baseURL/podcast/save-draft-podcast";
   static const String postPodcast = "$baseURL/podcast/post-podcast";
   static const String rejectInvitation = "$baseURL/podcast/reject-invitation";
+  static const String acceptInvitation = "$baseURL/podcast/accept-invitation";
   static const String endPodcastCall = "$baseURL/podcast/end-podcast";
   static const String deletePodcastDraft = "$baseURL/podcast/remove-draft-podcast";
   static const String editPublishedPodcast = "$baseURL/podcast/edit-published-podcast";

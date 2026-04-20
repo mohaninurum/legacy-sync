@@ -96,10 +96,9 @@ class AudioPreviewControls extends StatelessWidget {
 
               if (state.isAudioEdit)
                 InkWell(
-                  onTap: () {
-                    final path =
-                        context.read<AudioPreviewEditCubit>()
-                          ..saveTrimmedAudio(audioPath, context);
+                  onTap: () async {
+                    final cubit = context.read<AudioPreviewEditCubit>();
+                    final path = await cubit.saveTrimmedAudio(audioPath, context);
                     debugPrint("Saved Audio => $path");
                   },
                   child: Text(

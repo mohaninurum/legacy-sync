@@ -51,18 +51,9 @@ class NotificationService {
         badge: true,
         sound: true,
       );
-
-      // ✅ Wait for APNS token on iOS (prevents apns-token-not-set later)
-      await _waitForApnsToken();
     }
 
     await _setupAndroidCallPermissions();
-
-    // final apns = await FirebaseMessaging.instance.getAPNSToken();
-    // final fcm = await FirebaseMessaging.instance.getToken();
-    //
-    // print('[APNS TOKEN] $apns');
-    // print('[FCM TOKEN] $fcm');
 
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpened);
@@ -72,19 +63,10 @@ class NotificationService {
       await _onMessageOpened(initialMessage);
     }
 
-    final token = await messaging.getToken();
-    debugPrint('[FCM TOKEN] $token');
+    // ✅ Safely fetch FCM token (handles APNS delay on iOS without crashing)
+    final token = await getFcmTokenSafely();
+    debugPrint('[FCM TOKEN] ${token ?? "Not available yet"}');
 
-    if (Platform.isIOS) {
-      // Retry a few times as VoIP token generation can be slightly delayed
-      String? voipToken;
-      for (int i = 0; i < 5; i++) {
-        voipToken = await FlutterCallkitIncoming.getDevicePushTokenVoIP();
-        if (voipToken != null && voipToken.isNotEmpty) break;
-        await Future.delayed(const Duration(seconds: 1));
-      }
-      debugPrint('[VOIP TOKEN] $voipToken');
-    }
   }
 
   static Future<void> _setupAndroidCallPermissions() async {
