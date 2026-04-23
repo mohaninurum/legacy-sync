@@ -432,31 +432,34 @@ class _AudioPreviewEditScreenState extends State<AudioPreviewEditScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                InkWell(
-                  onTap: () {
-                    if (state.isBookmark) {
-                      final id = widget.podcastModel?.podcastId ?? 0;
-                      if (id == 0) return; // safety
-                      audioPreviewEditCubit.markUnFavourite(podcastId: id);
-                    } else {
-                      final id = widget.podcastModel?.podcastId ?? 0;
-                      if (id == 0) return; // safety
-                      audioPreviewEditCubit.markFavourite(podcastId: id);
-                    }
-                  },
-                  child: Container(
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: state.isBookmark ? AppColors.yellow : Colors.transparent,
-                      borderRadius: BorderRadius.circular(50),
-                    ),
-                    width: 45,
-                    height: 45,
-                    child: ClipRect(
-                      child: Image.asset(
-                        state.isBookmark ? Images.bookmarked : Images.bookmark,
-                        width: 24,
-                        height: 24,
+                Visibility(
+                  visible: !widget.isEditMode,
+                  child: InkWell(
+                    onTap: () {
+                      if (state.isBookmark) {
+                        final id = widget.podcastModel?.podcastId ?? 0;
+                        if (id == 0) return; // safety
+                        audioPreviewEditCubit.markUnFavourite(podcastId: id);
+                      } else {
+                        final id = widget.podcastModel?.podcastId ?? 0;
+                        if (id == 0) return; // safety
+                        audioPreviewEditCubit.markFavourite(podcastId: id);
+                      }
+                    },
+                    child: Container(
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: state.isBookmark ? AppColors.yellow : Colors.transparent,
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      width: 45,
+                      height: 45,
+                      child: ClipRect(
+                        child: Image.asset(
+                          state.isBookmark ? Images.bookmarked : Images.bookmark,
+                          width: 24,
+                          height: 24,
+                        ),
                       ),
                     ),
                   ),

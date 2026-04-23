@@ -40,6 +40,7 @@ class IncomingCallFullScreen extends StatefulWidget {
 class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
   bool _processing = false;
   StreamSubscription<void>? _cancelSub;
+  Timer? _timeoutTimer;
 
   @override
   void initState() {
@@ -51,12 +52,24 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
 
     if (widget.isAlreadyAccepted) {
       _acceptCall();
+    } else {
+      _startTimeoutTimer();
     }
+  }
+
+  void _startTimeoutTimer() {
+    _timeoutTimer?.cancel();
+    _timeoutTimer = Timer(const Duration(seconds: 30), () {
+      if (mounted && !_processing) {
+        _declineCall();
+      }
+    });
   }
 
   @override
   void dispose() {
     _cancelSub?.cancel();
+    _timeoutTimer?.cancel();
     super.dispose();
   }
 
@@ -233,6 +246,7 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
 
   Future<void> _declineCall() async {
     if (_processing) return;
+    _timeoutTimer?.cancel();
 
     setState(() => _processing = true);
 
@@ -258,6 +272,7 @@ class _IncomingCallFullScreenState extends State<IncomingCallFullScreen> {
 
   Future<void> _acceptCall() async {
     if (_processing) return;
+    _timeoutTimer?.cancel();
 
     setState(() => _processing = true);
 

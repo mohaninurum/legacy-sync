@@ -66,8 +66,10 @@ class ApiURL {
   static const String rejectInvitation = "$baseURL/podcast/reject-invitation";
   static const String acceptInvitation = "$baseURL/podcast/accept-invitation";
   static const String endPodcastCall = "$baseURL/podcast/end-podcast";
+  static const String endCallByFriend = "$baseURL/podcast/end-call-by-friend";
   static const String deletePodcastDraft = "$baseURL/podcast/remove-draft-podcast";
   static const String editPublishedPodcast = "$baseURL/podcast/edit-published-podcast";
+  static const String initiateCall = "$baseURL/podcast/initiate-call";
 
   static const String livekitUrl = "wss://lagecy-87n09bcj.livekit.cloud";
 }

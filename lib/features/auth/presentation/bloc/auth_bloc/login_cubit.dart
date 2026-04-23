@@ -37,7 +37,7 @@ class LoginCubit extends Cubit<LoginState> {
       return;
     }
     // Password validation: 8+ chars, uppercase, lowercase, number, special char
-    final passwordRegex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#\$&*~._\-]).{8,}$');
+    final passwordRegex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$');
 
     if (!passwordRegex.hasMatch(password)) {
       _isFormValid = false;
@@ -57,19 +57,18 @@ class LoginCubit extends Cubit<LoginState> {
 
   bool _shouldShowPasswordInfo(String password) {
     // Show info message only when:
-    // 1. Password field is focused
-    // 2. Password is not empty
-    // 3. Password is invalid
-    if (!state.isPasswordFocused || password.isEmpty) {
+    // 1. Password is not empty (don't show for initial state)
+    // 2. Password is invalid
+    if (password.isEmpty) {
       return false;
     }
 
-    final passwordRegex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#\$&*~._\-]).{8,}$');
+    final passwordRegex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$');
     return !passwordRegex.hasMatch(password);
   }
 
   void login({required String email, required String password}) async {
-    Map<String, dynamic> body = {"email": email, "password": password};
+    Map<String, dynamic> body = {"email": email.trim(), "password": password};
     emit(state.copyWith(isLoading: true, error: null, loginSuccess: null));
     var login = await authUseCase.login(body: body);
     emit(state.copyWith(isLoading: false));

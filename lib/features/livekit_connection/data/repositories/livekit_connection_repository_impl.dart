@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dartz/dartz.dart';
+import 'package:flutter/material.dart';
 import 'package:legacy_sync/config/network/api_host.dart';
 import 'package:legacy_sync/config/network/app_exceptions.dart';
 import 'package:legacy_sync/config/network/base_api_service.dart';
@@ -41,25 +42,36 @@ class LiveKitConnectionRepositoryImpl extends LiveKitConnectionRepositories {
   }
 
   @override
+  ResultFuture<Map<String, dynamic>> initiateCallByHost({
+    required int userId,
+  }) async {
+    try {
+      final body = {"user_id": userId.toString()};
+      debugPrint("BodyOf initiateCallByHost Api :: ${jsonEncode(body)}");
+      final res = await _apiServices.getPostApiResponseNoAuth(ApiURL.initiateCall, body);
+      return res.fold((error) => Left(error), (data) {
+        if (data is Map<String, dynamic>) return Right(data);
+        return const Left(FetchDataException("Invalid initiate call response"));
+      });
+    } on AppException catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(FetchDataException(e.toString()));
+    }
+  }
+
+  @override
   ResultFuture<EndPodcastCallResponse> endPodcastCall({
     required int userId,
     required Set<int> friendId,
     required String roomId,
-    required bool freeSpecificUser,
-    required int specificUserId,
   }) async {
     try {
       final List<int> friendIdList = friendId.toList();
 
-      final body = {
-        "user_id": userId,
-        "friend_ids": friendIdList,
-        "room_id": roomId,
-        "freeSpecificUser": freeSpecificUser,
-        "specificUserId": specificUserId,
-      };
+      final body = {"user_id": userId, "friend_ids": friendIdList, "room_id": roomId};
 
-      print("BodyOf EndCall Api :: ${jsonEncode(body)}");
+      debugPrint("BodyOf EndCall Api :: ${jsonEncode(body)}");
 
       final res = await _apiServices.getPostApiResponseNoAuth(
         ApiURL.endPodcastCall,
@@ -93,30 +105,61 @@ class LiveKitConnectionRepositoryImpl extends LiveKitConnectionRepositories {
   }
 
   @override
+  ResultFuture<EndPodcastCallResponse> endCallByFriend({required int friendId}) async {
+    try {
+      final body = {"friend_id": friendId.toString()};
+
+      debugPrint("BodyOf endCallByFriend Api :: ${jsonEncode(body)}");
+
+      final res = await _apiServices.getPostApiResponseNoAuth(
+        ApiURL.endCallByFriend,
+        body,
+      );
+
+      return res.fold((error) => Left(error), (data) {
+        if (data is! Map<String, dynamic>) {
+          return const Left(FetchDataException("Invalid response"));
+        }
+
+        final parsed = EndPodcastCallResponse.fromJson(data);
+
+        if (parsed.status != true) {
+          return Left(
+            FetchDataException(
+              parsed.message.isNotEmpty
+                  ? parsed.message
+                  : "Failed to end the call by friend",
+            ),
+          );
+        }
+
+        return Right(parsed);
+      });
+    } on AppException catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(FetchDataException(e.toString()));
+    }
+  }
+
+  @override
   ResultFuture<Map<String, dynamic>> rejectInvitation({
     required int userId,
     required int hostId,
     required String roomId,
   }) async {
     try {
-      final body = {
-        "user_id": userId,
-        "host_id": hostId,
-        "room_id": roomId,
-      };
+      final body = {"user_id": userId, "host_id": hostId, "room_id": roomId};
 
       final res = await _apiServices.getPostApiResponseNoAuth(
         ApiURL.rejectInvitation,
         body,
       );
 
-      return res.fold(
-        (error) => Left(error),
-        (data) {
-          if (data is Map<String, dynamic>) return Right(data);
-          return const Left(FetchDataException("Invalid reject invitation response"));
-        },
-      );
+      return res.fold((error) => Left(error), (data) {
+        if (data is Map<String, dynamic>) return Right(data);
+        return const Left(FetchDataException("Invalid reject invitation response"));
+      });
     } on AppException catch (e) {
       return Left(e);
     } catch (e) {
@@ -137,13 +180,10 @@ class LiveKitConnectionRepositoryImpl extends LiveKitConnectionRepositories {
         body,
       );
 
-      return res.fold(
-        (error) => Left(error),
-        (data) {
-          if (data is Map<String, dynamic>) return Right(data);
-          return const Left(FetchDataException("Invalid accept invitation response"));
-        },
-      );
+      return res.fold((error) => Left(error), (data) {
+        if (data is Map<String, dynamic>) return Right(data);
+        return const Left(FetchDataException("Invalid accept invitation response"));
+      });
     } on AppException catch (e) {
       return Left(e);
     } catch (e) {

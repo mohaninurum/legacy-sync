@@ -12,7 +12,8 @@ class ListOfModuleModel {
     message = json["message"];
     data = json["data"] == null ? null : QuestionData.fromJson(json["data"]);
   }
-  factory ListOfModuleModel.empty() => ListOfModuleModel(status: false, message: '', data: QuestionData.empty());
+  factory ListOfModuleModel.empty() =>
+      ListOfModuleModel(status: false, message: '', data: QuestionData.empty());
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
@@ -22,11 +23,8 @@ class ListOfModuleModel {
 
     return data;
   }
-  ListOfModuleModel copyWith({
-    bool? status,
-    String? message,
-    QuestionData? data,
-  }) {
+
+  ListOfModuleModel copyWith({bool? status, String? message, QuestionData? data}) {
     return ListOfModuleModel(
       status: status ?? this.status,
       message: message ?? this.message,
@@ -43,8 +41,22 @@ class QuestionData {
   int? progress;
   List<QuestionItems>? questions;
 
-  QuestionData({this.screentitle, this.screendescription, this.moduleicon, this.modulecolor, this.progress, this.questions});
-  factory QuestionData.empty() => QuestionData(screentitle: '', screendescription: '', moduleicon: '', modulecolor: '', progress: 0, questions: const []);
+  QuestionData({
+    this.screentitle,
+    this.screendescription,
+    this.moduleicon,
+    this.modulecolor,
+    this.progress,
+    this.questions,
+  });
+  factory QuestionData.empty() => QuestionData(
+    screentitle: '',
+    screendescription: '',
+    moduleicon: '',
+    modulecolor: '',
+    progress: 0,
+    questions: const [],
+  );
 
   QuestionData.fromJson(Map<String, dynamic> json) {
     screentitle = json["screen_title"];
@@ -52,7 +64,10 @@ class QuestionData {
     moduleicon = json["module_icon"];
     modulecolor = json["module_color"];
     progress = json["progress"];
-    questions = json["questions"] == null ? null : (json["questions"] as List).map((e) => QuestionItems.fromJson(e)).toList();
+    questions =
+        json["questions"] == null
+            ? null
+            : (json["questions"] as List).map((e) => QuestionItems.fromJson(e)).toList();
   }
 
   Map<String, dynamic> toJson() {
@@ -101,6 +116,7 @@ class QuestionItems {
   dynamic updatedat;
   String? moduleicon;
   String? modulecolor;
+  int? isfavourite;
   List<ModuleAnswerData>? answers;
   QuestionItems({
     this.islocked,
@@ -116,46 +132,49 @@ class QuestionItems {
     this.updatedat,
     this.moduleicon,
     this.modulecolor,
+    this.isfavourite,
     this.answers = const [],
   });
 
-
   QuestionItems.empty()
-      : islocked = false,
-        isExpanded = false,
-        questionidpK = null,
-        questiontitle = '',
-        legacymoduleidfK = null,
-        questiondescription = '',
-        activecolorcode = '',
-        deactivecolorcode = '',
-        imagecode = '',
-        createdat = '',
-        updatedat = null,
-        moduleicon = '',
-        modulecolor = '',
-        answers = [];
+    : islocked = false,
+      isExpanded = false,
+      questionidpK = null,
+      isfavourite = 0,
+      questiontitle = '',
+      legacymoduleidfK = null,
+      questiondescription = '',
+      activecolorcode = '',
+      deactivecolorcode = '',
+      imagecode = '',
+      createdat = '',
+      updatedat = null,
+      moduleicon = '',
+      modulecolor = '',
+      answers = [];
 
   QuestionItems.fromJson(Map<String, dynamic> json)
-      : islocked = json["is_locked"] ?? false,
-        isExpanded = json["isExpanded"] ?? false,
-        questionidpK = json["question_id_PK"],
-        questiontitle = json["question_title"],
-        legacymoduleidfK = json["legacy_module_id_FK"],
-        questiondescription = json["question_description"],
-        activecolorcode = json["active_color_code"],
-        deactivecolorcode = json["deactive_color_code"],
-        imagecode = json["image_code"],
-        createdat = json["created_at"],
-        updatedat = json["updated_at"],
-        moduleicon = json["module_icon"],
-        modulecolor = json["module_color"];
+    : islocked = json["is_locked"] ?? false,
+      isExpanded = json["isExpanded"] ?? false,
+      questionidpK = json["question_id_PK"],
+      isfavourite = json["is_favourite"] ?? 0,
+      questiontitle = json["question_title"],
+      legacymoduleidfK = json["legacy_module_id_FK"],
+      questiondescription = json["question_description"],
+      activecolorcode = json["active_color_code"],
+      deactivecolorcode = json["deactive_color_code"],
+      imagecode = json["image_code"],
+      createdat = json["created_at"],
+      updatedat = json["updated_at"],
+      moduleicon = json["module_icon"],
+      modulecolor = json["module_color"];
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data["is_locked"] = islocked;
     data["isExpanded"] = isExpanded;
     data["question_id_PK"] = questionidpK;
+    data["is_favourite"] = isfavourite;
     data["question_title"] = questiontitle;
     data["legacy_module_id_FK"] = legacymoduleidfK;
     data["question_description"] = questiondescription;
@@ -174,6 +193,7 @@ class QuestionItems {
     bool? islocked,
     bool? isExpanded,
     int? questionidpK,
+    int? isfavourite,
     String? questiontitle,
     int? legacymoduleidfK,
     String? questiondescription,
@@ -190,6 +210,7 @@ class QuestionItems {
       islocked: islocked ?? this.islocked,
       isExpanded: isExpanded ?? this.isExpanded,
       questionidpK: questionidpK ?? this.questionidpK,
+      isfavourite: isfavourite ?? this.isfavourite,
       questiontitle: questiontitle ?? this.questiontitle,
       legacymoduleidfK: legacymoduleidfK ?? this.legacymoduleidfK,
       questiondescription: questiondescription ?? this.questiondescription,

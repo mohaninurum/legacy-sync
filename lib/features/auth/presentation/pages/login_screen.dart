@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:legacy_sync/config/db/shared_preferences.dart';
+import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/core/colors/colors.dart';
 import 'package:legacy_sync/core/components/comman_components/app_button.dart';
 import 'package:legacy_sync/core/components/comman_components/bg_image_stack.dart';
@@ -9,11 +11,9 @@ import 'package:legacy_sync/core/components/comman_components/gradient_divider_t
 import 'package:legacy_sync/core/components/comman_components/keyboard_dismiss_on_tap.dart';
 import 'package:legacy_sync/core/components/comman_components/social_button.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
-import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/core/images/images.dart';
 import 'package:legacy_sync/core/images/lottie.dart';
 import 'package:legacy_sync/core/strings/strings.dart';
-import 'package:legacy_sync/config/db/shared_preferences.dart';
 import 'package:legacy_sync/core/utils/utils.dart' show Utils;
 import 'package:legacy_sync/features/auth/presentation/bloc/auth_bloc/login_cubit.dart';
 import 'package:legacy_sync/features/auth/presentation/bloc/auth_bloc/social_login_cubit.dart';
@@ -27,21 +27,22 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-
   // final TextEditingController emailController = TextEditingController();
   // final TextEditingController passwordController = TextEditingController();
 
-  final TextEditingController emailController = TextEditingController(text: 'mohan.inurum@gmail.com');
-  final TextEditingController passwordController = TextEditingController(text:'Z&3quwje');
+  final TextEditingController emailController = TextEditingController(
+    text: 'mohan.inurum@gmail.com',
+  );
+  final TextEditingController passwordController = TextEditingController(
+    text: 'Z*8wwtac',
+  );
   final FocusNode passwordFocusNode = FocusNode();
 
   @override
   void initState() {
     context.read<LoginCubit>().resetState();
     passwordFocusNode.addListener(() {
-      context.read<LoginCubit>().onPasswordFocusChanged(
-        passwordFocusNode.hasFocus,
-      );
+      context.read<LoginCubit>().onPasswordFocusChanged(passwordFocusNode.hasFocus);
       // Trigger validation when focus changes to update info message visibility
       context.read<LoginCubit>().checkFormValidation(
         email: emailController.text,
@@ -84,10 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildLoginButton(context),
                     _buildSignupLink(context),
                     SizedBox(
-                      height:
-                          MediaQuery.of(context).viewInsets.bottom > 0
-                              ? 0
-                              : 5.height,
+                      height: MediaQuery.of(context).viewInsets.bottom > 0 ? 0 : 5.height,
                     ),
                   ],
                 ),
@@ -118,11 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
           },
         ),
         SocialButton(
-          icon: SizedBox(
-            height: 24,
-            width: 24,
-            child: Image.asset(Images.ic_google),
-          ),
+          icon: SizedBox(height: 24, width: 24, child: Image.asset(Images.ic_google)),
           ontap: () {
             context.read<SocialLoginCubit>().signInWithGoogle(context: context);
           },
@@ -194,10 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ? Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(top: 16, bottom: 16),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -248,9 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           }
         }
-        if (state.loginSuccess != null &&
-            !state.loginSuccess! &&
-            state.error != null) {
+        if (state.loginSuccess != null && !state.loginSuccess! && state.error != null) {
           Utils.showInfoDialog(context: context, title: state.error!);
         }
       },
@@ -298,10 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildLoginText() {
     return Center(
-      child: Text(
-        AppStrings.login,
-        style: Theme.of(context).textTheme.bodyLarge!,
-      ),
+      child: Text(AppStrings.login, style: Theme.of(context).textTheme.bodyLarge!),
     );
   }
 }

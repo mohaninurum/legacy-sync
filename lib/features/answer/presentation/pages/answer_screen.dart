@@ -1,5 +1,7 @@
 import 'dart:io';
-import 'dart:math' as math;
+
+import 'package:audio_waveforms/audio_waveforms.dart';
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -16,16 +18,11 @@ import 'package:legacy_sync/core/extension/extension.dart';
 import 'package:legacy_sync/core/images/images.dart';
 import 'package:legacy_sync/features/answer/presentation/bloc/answer_bloc/answer_cubit.dart';
 import 'package:legacy_sync/features/answer/presentation/bloc/answer_state/answer_state.dart';
-import 'package:camera/camera.dart';
-import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:video_player/video_player.dart';
 
-import '../../../../config/db/shared_preferences.dart';
 import '../../../../config/routes/routes_name.dart';
-import '../../../../core/components/comman_components/locked_question_dialog.dart';
 import '../../../home/domain/usecases/navigate_to_module_usecase.dart';
 import '../../../home/presentation/bloc/home_bloc/home_cubit.dart';
-import '../../../list_of_module/presentation/bloc/list_of_module_bloc/list_of_module_cubit.dart';
 import '../widget/focus_ring_widget.dart';
 import '../widget/full_screen_video_player.dart';
 import '../widget/leave_page_dialog.dart';
@@ -36,7 +33,13 @@ class AnswerScreen extends StatefulWidget {
   final String questionText;
   final int moduleIndex;
 
-  const AnswerScreen({super.key, required this.qId, required this.mIndex, this.questionText = "",required this.moduleIndex});
+  const AnswerScreen({
+    super.key,
+    required this.qId,
+    required this.mIndex,
+    this.questionText = "",
+    required this.moduleIndex,
+  });
 
   @override
   State<AnswerScreen> createState() => _AnswerScreenState();
@@ -68,8 +71,8 @@ class _AnswerScreenState extends State<AnswerScreen> {
       context.read<AnswerCubit>().updateWordCount(_answerController.text);
     });
     context.read<AnswerCubit>().initialState();
-
   }
+
   void _addVideoListener() {
     _videoListener ??= () {
       if (!mounted || _isDragging) return;
@@ -95,7 +98,6 @@ class _AnswerScreenState extends State<AnswerScreen> {
     return position.clamp(0, duration).toDouble();
   }
 
-
   @override
   void dispose() {
     if (_videoListener != null) {
@@ -111,7 +113,6 @@ class _AnswerScreenState extends State<AnswerScreen> {
     return '$minutes:$seconds';
   }
 
-
   void _onCardTapped(int index) async {
     print("mudule index...$index");
     final cubit = context.read<HomeCubit>();
@@ -123,7 +124,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
     print(card.id);
     print(card.title);
     final navigationArgs = NavigateToModuleUsecase.execute(card);
-    final result = await Navigator.pushReplacementNamed(context, RoutesName.LIST_OF_MODULE, arguments: navigationArgs);
+    final result = await Navigator.pushReplacementNamed(
+      context,
+      RoutesName.LIST_OF_MODULE,
+      arguments: navigationArgs,
+    );
     if (result == true) {
       await context.read<HomeCubit>().startJourneyAnimation(index);
     }
@@ -146,18 +151,13 @@ class _AnswerScreenState extends State<AnswerScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => FullScreenVideoPreview(
-          controller: _videoPreviewController!,
-        ),
+        builder: (_) => FullScreenVideoPreview(controller: _videoPreviewController!),
       ),
     );
 
     // Full screen se wapas aane ke baad UI refresh
     if (mounted) setState(() {});
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -175,7 +175,6 @@ class _AnswerScreenState extends State<AnswerScreen> {
             isPopping = true;
             context.read<AnswerCubit>().confirmLeave();
             Navigator.of(context).pop(false);
-
           }
         }
       },
@@ -185,25 +184,40 @@ class _AnswerScreenState extends State<AnswerScreen> {
           child: SafeArea(
             child: Scaffold(
               backgroundColor: Colors.transparent,
-              appBar: PreferredSize(preferredSize: const Size.fromHeight(60), child: _buildAppBar()),
+              appBar: PreferredSize(
+                preferredSize: const Size.fromHeight(60),
+                child: _buildAppBar(),
+              ),
               body: MultiBlocListener(
                 listeners: [
                   BlocListener<AnswerCubit, AnswerState>(
-                    listenWhen: (prev, curr) => prev.transcribedText != curr.transcribedText,
+                    listenWhen:
+                        (prev, curr) => prev.transcribedText != curr.transcribedText,
                     listener: (context, state) {
                       // Append recognized text into the answer text field
                       _answerController.text = state.transcribedText;
-                      _answerController.selection = TextSelection.fromPosition(TextPosition(offset: _answerController.text.length));
+                      _answerController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _answerController.text.length),
+                      );
                     },
                   ),
                   BlocListener<AnswerCubit, AnswerState>(
-                    listenWhen: (prev, curr) => prev.videoPath != curr.videoPath || prev.recordingState != curr.recordingState || prev.recordingType != curr.recordingType,
+                    listenWhen:
+                        (prev, curr) =>
+                            prev.videoPath != curr.videoPath ||
+                            prev.recordingState != curr.recordingState ||
+                            prev.recordingType != curr.recordingType,
                     listener: (context, state) async {
                       // Initialize video preview when recording completes
-                      if (state.recordingType == RecordingType.video && state.recordingState == RecordingState.completed && state.videoPath != null && state.videoPath!.isNotEmpty) {
+                      if (state.recordingType == RecordingType.video &&
+                          state.recordingState == RecordingState.completed &&
+                          state.videoPath != null &&
+                          state.videoPath!.isNotEmpty) {
                         try {
                           await _videoPreviewController?.dispose();
-                          _videoPreviewController = VideoPlayerController.file(File(state.videoPath!));
+                          _videoPreviewController = VideoPlayerController.file(
+                            File(state.videoPath!),
+                          );
                           await _videoPreviewController!.initialize();
                           await _videoPreviewController!.setLooping(true);
                           _addVideoListener();
@@ -220,8 +234,9 @@ class _AnswerScreenState extends State<AnswerScreen> {
                     },
                   ),
                   BlocListener<AnswerCubit, AnswerState>(
-                    listenWhen: (prev, curr) =>
-                    prev.showCongratsDialog != curr.showCongratsDialog,
+                    listenWhen:
+                        (prev, curr) =>
+                            prev.showCongratsDialog != curr.showCongratsDialog,
                     listener: (context, state) {
                       print("🎉 Congrats Listener fired = ${state.showCongratsDialog}");
 
@@ -231,24 +246,21 @@ class _AnswerScreenState extends State<AnswerScreen> {
                         //   RoutesName.HOME_SCREEN,
                         //       (route) => false,
                         // );
-
-
-                      }
-                      else if (state.showCongratsDialog == false) {
+                      } else if (state.showCongratsDialog == false) {
                         Navigator.pop(context);
                         // int index=widget.moduleIndex;
                         // _onCardTapped(index);
                       }
                     },
                   ),
-
                 ],
                 child: _buildBody(),
               ),
               bottomNavigationBar: BlocBuilder<AnswerCubit, AnswerState>(
                 builder: (context, state) {
                   return Visibility(
-                    visible: state.recordingType == RecordingType.video && state.isCompleted,
+                    visible:
+                        state.recordingType == RecordingType.video && state.isCompleted,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Row(
@@ -268,7 +280,13 @@ class _AnswerScreenState extends State<AnswerScreen> {
                             child: CustomButton(
                               onPressed: () {
                                 context.read<AnswerCubit>().stopSpeakingOnInteraction();
-                                context.read<AnswerCubit>().submitFinalAnswer(widget.qId, _answerController.text, context, widget.mIndex,widget.moduleIndex);
+                                context.read<AnswerCubit>().submitFinalAnswer(
+                                  widget.qId,
+                                  _answerController.text,
+                                  context,
+                                  widget.mIndex,
+                                  widget.moduleIndex,
+                                );
                               },
                               btnText: "Continue",
                               enable: true,
@@ -309,19 +327,23 @@ class _AnswerScreenState extends State<AnswerScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        child: Column(children: [
-
-        //   ElevatedButton(onPressed: () {
-        // print(widget.mIndex);
-        // print(widget.qId);
-        // print(widget.questionText);
-        // print(widget.moduleIndex);
-        // int index=widget.moduleIndex;
-        // _onCardTapped(index);
-        //   }, child:Text("module check..")),
-
-
-          _buildQuestionCard(), const SizedBox(height: 30), _buildAnswareOptions(), const SizedBox(height: 30), _buildActionButtons()]),
+        child: Column(
+          children: [
+            //   ElevatedButton(onPressed: () {
+            // print(widget.mIndex);
+            // print(widget.qId);
+            // print(widget.questionText);
+            // print(widget.moduleIndex);
+            // int index=widget.moduleIndex;
+            // _onCardTapped(index);
+            //   }, child:Text("module check..")),
+            _buildQuestionCard(),
+            const SizedBox(height: 30),
+            _buildAnswareOptions(),
+            const SizedBox(height: 30),
+            _buildActionButtons(),
+          ],
+        ),
       ),
     );
   }
@@ -334,7 +356,14 @@ class _AnswerScreenState extends State<AnswerScreen> {
           child: Text.rich(
             TextSpan(
               children: [
-                TextSpan(text: widget.questionText, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
+                TextSpan(
+                  text: widget.questionText,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
                 WidgetSpan(
                   alignment: PlaceholderAlignment.middle,
                   child: Container(
@@ -350,7 +379,19 @@ class _AnswerScreenState extends State<AnswerScreen> {
                           context.read<AnswerCubit>().startSpeaking(questionText);
                         }
                       },
-                      child: SizedBox(height: 24, width: 24, child: Center(child: SvgPicture.asset(state.isSpeaking ? Images.ic_stop_speaker_svg : Images.ic_speker_svg, height: 24, width: 24))),
+                      child: SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: Center(
+                          child: SvgPicture.asset(
+                            state.isSpeaking
+                                ? Images.ic_stop_speaker_svg
+                                : Images.ic_speker_svg,
+                            height: 24,
+                            width: 24,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -383,12 +424,19 @@ class _AnswerScreenState extends State<AnswerScreen> {
       children: [
         Container(
           height: 20.height,
-          decoration: BoxDecoration(color: AppColors.bg_text_filed, borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+            color: AppColors.bg_text_filed,
+            borderRadius: BorderRadius.circular(10),
+          ),
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: TextField(
             controller: _answerController,
             maxLines: null,
-            style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: AppColors.whiteColor, fontSize: 16, fontWeight: FontWeight.w400),
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+              color: AppColors.whiteColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+            ),
             textInputAction: TextInputAction.done,
             onChanged: (value) {
               context.read<AnswerCubit>().updateWordCount(_answerController.text);
@@ -398,7 +446,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
                   state.recordingType == RecordingType.none
                       ? "Type Your Answer Here min 15 words..."
                       : "Add optional text to your ${state.recordingType == RecordingType.voice ? 'voice' : 'video'} answer...",
-              hintStyle: TextTheme.of(context).bodyMedium!.copyWith(color: AppColors.whiteColor.withValues(alpha: 0.8), fontSize: 16, fontWeight: FontWeight.w400),
+              hintStyle: TextTheme.of(context).bodyMedium!.copyWith(
+                color: AppColors.whiteColor.withValues(alpha: 0.8),
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+              ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(20),
             ),
@@ -417,7 +469,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       : _answerController.text.isEmpty
                       ? ""
                       : "Minimum: 15 words",
-                  style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w400),
+                  style: const TextStyle(
+                    color: Colors.redAccent,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ],
             ),
@@ -448,17 +504,22 @@ class _AnswerScreenState extends State<AnswerScreen> {
             margin: const EdgeInsets.only(bottom: 20),
             width: double.infinity,
             height: 40.height,
-            decoration: BoxDecoration(color: AppColors.primaryColorDull, borderRadius: BorderRadius.circular(30)),
+            decoration: BoxDecoration(
+              color: AppColors.primaryColorDull,
+              borderRadius: BorderRadius.circular(30),
+            ),
             child: Stack(
               children: [
                 // Video preview (live camera or recorded video)
                 BlocBuilder<AnswerCubit, AnswerState>(
                   builder: (context, s) {
-                   if (s.cameraInitialized==true) {
-                     return Container(color: Colors.black,);
-                   }
+                    if (s.cameraInitialized == true) {
+                      return Container(color: Colors.black);
+                    }
                     // Show recorded video preview when completed
-                    if (s.recordingState == RecordingState.completed && _videoPreviewController != null && _videoPreviewController!.value.isInitialized) {
+                    if (s.recordingState == RecordingState.completed &&
+                        _videoPreviewController != null &&
+                        _videoPreviewController!.value.isInitialized) {
                       return ClipRRect(
                         borderRadius: BorderRadius.circular(30),
                         child: SizedBox(
@@ -466,7 +527,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
                           height: 40.height,
                           child: FittedBox(
                             fit: BoxFit.cover,
-                            child: SizedBox(width: _videoPreviewController!.value.size.width, height: _videoPreviewController!.value.size.height, child: VideoPlayer(_videoPreviewController!)),
+                            child: SizedBox(
+                              width: _videoPreviewController!.value.size.width,
+                              height: _videoPreviewController!.value.size.height,
+                              child: VideoPlayer(_videoPreviewController!),
+                            ),
                           ),
                         ),
                       );
@@ -475,11 +540,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
                     // Show live camera preview when recording or not completed
                     final controller = context.read<AnswerCubit>().cameraController;
                     if (controller != null && controller.value.isInitialized) {
-                       bool isFront =state.isFrontCamera;
-                       //   if(state.recordingState == RecordingState.completed){
-                       //     isFront=true;
-                       //   }
-                       //   print("isFront: $isFront");
+                      bool isFront = state.isFrontCamera;
+                      //   if(state.recordingState == RecordingState.completed){
+                      //     isFront=true;
+                      //   }
+                      //   print("isFront: $isFront");
                       return ClipRRect(
                         borderRadius: BorderRadius.circular(30),
                         child: SizedBox(
@@ -488,48 +553,62 @@ class _AnswerScreenState extends State<AnswerScreen> {
                           child: OverflowBox(
                             alignment: Alignment.center,
                             child: FittedBox(
-                                fit: BoxFit.cover,
-                                child: SizedBox(
-                                    width: MediaQuery.of(context).size.width,
-                                    child:isFront  ?   Transform(
-                                                alignment: Alignment.center,
-                                               transform: Matrix4.rotationY(0),
-                                               child:  GestureDetector(
-                                                 behavior: HitTestBehavior.opaque,
-                                                 onTapDown: (details) {
-                                                   print("tab focus...1");
-                                                   final box = context.findRenderObject() as RenderBox;
+                              fit: BoxFit.cover,
+                              child: SizedBox(
+                                width: MediaQuery.of(context).size.width,
+                                child:
+                                    isFront
+                                        ? Transform(
+                                          alignment: Alignment.center,
+                                          transform: Matrix4.rotationY(0),
+                                          child: GestureDetector(
+                                            behavior: HitTestBehavior.opaque,
+                                            onTapDown: (details) {
+                                              print("tab focus...1");
+                                              final box =
+                                                  context.findRenderObject() as RenderBox;
 
-                                                   context.read<AnswerCubit>().autoFocus(
-                                                     tapPosition: details.localPosition,
-                                                     previewSize: box.size,
-                                                   );
-                                                 },child: CameraPreview(controller)),
-                                               ):GestureDetector(
-                                        behavior: HitTestBehavior.opaque,
-                                        onTapDown: (details) {
-                                          print("tab focus...");
-                                          final box = context.findRenderObject() as RenderBox;
+                                              context.read<AnswerCubit>().autoFocus(
+                                                tapPosition: details.localPosition,
+                                                previewSize: box.size,
+                                              );
+                                            },
+                                            child: CameraPreview(controller),
+                                          ),
+                                        )
+                                        : GestureDetector(
+                                          behavior: HitTestBehavior.opaque,
+                                          onTapDown: (details) {
+                                            print("tab focus...");
+                                            final box =
+                                                context.findRenderObject() as RenderBox;
 
-                                          context.read<AnswerCubit>().autoFocus(
-                                            tapPosition: details.localPosition,
-                                            previewSize: box.size,
-                                          );
-                                        },child: CameraPreview(controller))
-
-                                   )),
+                                            context.read<AnswerCubit>().autoFocus(
+                                              tapPosition: details.localPosition,
+                                              previewSize: box.size,
+                                            );
+                                          },
+                                          child: CameraPreview(controller),
+                                        ),
+                              ),
+                            ),
                           ),
                         ),
                       );
                     }
 
-                    return Center(child: Icon(Icons.videocam, size: 64, color: AppColors.whiteColor.withValues(alpha: 0.5)));
+                    return Center(
+                      child: Icon(
+                        Icons.videocam,
+                        size: 64,
+                        color: AppColors.whiteColor.withValues(alpha: 0.5),
+                      ),
+                    );
                   },
                 ),
 
-
-
-                if (state.recordingType== RecordingType.video && state.recordingState == RecordingState.idle)
+                if (state.recordingType == RecordingType.video &&
+                    state.recordingState == RecordingState.idle)
                   Positioned(
                     bottom: 20,
                     left: AppSizes.screenWidth / 3,
@@ -548,9 +627,21 @@ class _AnswerScreenState extends State<AnswerScreen> {
                           crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Image.asset(Images.ic_flip_camera, height: 16, width: 16, color: AppColors.whiteColor),
+                            Image.asset(
+                              Images.ic_flip_camera,
+                              height: 16,
+                              width: 16,
+                              color: AppColors.whiteColor,
+                            ),
                             const SizedBox(width: 10),
-                            Text("Flip", style: TextTheme.of(context).bodyMedium!.copyWith(color: AppColors.whiteColor, fontSize: 14, fontWeight: FontWeight.normal)),
+                            Text(
+                              "Flip",
+                              style: TextTheme.of(context).bodyMedium!.copyWith(
+                                color: AppColors.whiteColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -581,7 +672,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Icon(state.isFlashOn ? Icons.flash_on : Icons.flash_off, color: state.isFlashOn ? Colors.yellow : AppColors.whiteColor, size: 20),
+                        child: Icon(
+                          state.isFlashOn ? Icons.flash_on : Icons.flash_off,
+                          color: state.isFlashOn ? Colors.yellow : AppColors.whiteColor,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
@@ -596,36 +691,44 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       onPressed: () {
                         context.read<AnswerCubit>().cyclePlaybackSpeed();
                       },
-                      child: Padding(padding: const EdgeInsets.all(10), child: Text(state.speedLabel, style: const TextStyle(color: AppColors.whiteColor, fontSize: 14, fontWeight: FontWeight.bold))),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Text(
+                          state.speedLabel,
+                          style: const TextStyle(
+                            color: AppColors.whiteColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
 
                 // full screen
                 // if (state.isCompleted)
-
                 if (state.isCompleted)
-                Positioned(
-                  right: 12,
-                  bottom: 55,
-                  child: GestureDetector(
-                    onTap: () {
-                       _openFullScreen(context);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(
-                        Icons.fullscreen,
-                        color: Colors.white,
-                        size: 22,
+                  Positioned(
+                    right: 12,
+                    bottom: 55,
+                    child: GestureDetector(
+                      onTap: () {
+                        _openFullScreen(context);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.fullscreen,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                       ),
                     ),
                   ),
-                ),
-
 
                 BlocBuilder<AnswerCubit, AnswerState>(
                   builder: (context, state) {
@@ -633,7 +736,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
 
                     return Positioned(
                       bottom: 70,
-                      right:16,
+                      right: 16,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
                         child: Container(
@@ -690,27 +793,31 @@ class _AnswerScreenState extends State<AnswerScreen> {
                   },
                 ),
 
-
-
                 // Play/pause controls for completed video preview
                 if (_videoPreviewController != null &&
                     _videoPreviewController!.value.isInitialized) ...[
                   Positioned(
                     bottom: 10,
                     left: 20,
-                    right:20,
+                    right: 20,
                     child: Column(
                       children: [
                         SliderTheme(
                           data: SliderTheme.of(context).copyWith(
                             trackHeight: 3,
-                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                            overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 6,
+                            ),
+                            overlayShape: const RoundSliderOverlayShape(
+                              overlayRadius: 12,
+                            ),
                           ),
                           child: Slider(
                             activeColor: AppColors.etbg,
                             min: 0,
-                            max: _videoPreviewController!.value.duration.inMilliseconds.toDouble(),
+                            max:
+                                _videoPreviewController!.value.duration.inMilliseconds
+                                    .toDouble(),
                             value: _sliderValue,
                             onChangeStart: (_) {
                               _isDragging = true;
@@ -725,8 +832,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                               _isDragging = false;
                               _videoPreviewController?.play();
                             },
-                          )
-
+                          ),
                         ),
 
                         // 🔹 Time Row
@@ -752,7 +858,8 @@ class _AnswerScreenState extends State<AnswerScreen> {
                   Center(
                     child: GestureDetector(
                       onTap: () {
-                        if (_videoPreviewController != null && _videoPreviewController!.value.isInitialized) {
+                        if (_videoPreviewController != null &&
+                            _videoPreviewController!.value.isInitialized) {
                           if (_videoPreviewController!.value.isPlaying) {
                             _videoPreviewController!.pause();
                             context.read<AnswerCubit>().pauseVideoPreview();
@@ -773,33 +880,66 @@ class _AnswerScreenState extends State<AnswerScreen> {
                           AppButton(
                             onPressed: () {
                               // Skip backward 5 seconds
-                              if (_videoPreviewController != null && _videoPreviewController!.value.isInitialized) {
-                                final currentPosition = _videoPreviewController!.value.position;
-                                final newPosition = currentPosition - const Duration(seconds: 5);
-                                _videoPreviewController!.seekTo(newPosition >= Duration.zero ? newPosition : Duration.zero);
+                              if (_videoPreviewController != null &&
+                                  _videoPreviewController!.value.isInitialized) {
+                                final currentPosition =
+                                    _videoPreviewController!.value.position;
+                                final newPosition =
+                                    currentPosition - const Duration(seconds: 5);
+                                _videoPreviewController!.seekTo(
+                                  newPosition >= Duration.zero
+                                      ? newPosition
+                                      : Duration.zero,
+                                );
                               }
                             },
-                            child: SvgPicture.asset(Images.second_reverse_svg, height: 28, width: 28),
+                            child: SvgPicture.asset(
+                              Images.second_reverse_svg,
+                              height: 28,
+                              width: 28,
+                            ),
                           ),
                           const SizedBox(width: 40),
                           Container(
                             padding: const EdgeInsets.all(15),
-                            decoration: BoxDecoration(color: (_videoPreviewController?.value.isPlaying ?? false) ? Colors.transparent : const Color(0xFF6F6F70), shape: BoxShape.circle),
-                            child: SvgPicture.asset((_videoPreviewController?.value.isPlaying ?? false) ? Images.ic_pause_svg : Images.ic_play_svg, height: 25, width: 25),
+                            decoration: BoxDecoration(
+                              color:
+                                  (_videoPreviewController?.value.isPlaying ?? false)
+                                      ? Colors.transparent
+                                      : const Color(0xFF6F6F70),
+                              shape: BoxShape.circle,
+                            ),
+                            child: SvgPicture.asset(
+                              (_videoPreviewController?.value.isPlaying ?? false)
+                                  ? Images.ic_pause_svg
+                                  : Images.ic_play_svg,
+                              height: 25,
+                              width: 25,
+                            ),
                             // child: Icon((_videoPreviewController?.value.isPlaying ?? false) ? Icons.pause : Icons.play_arrow, color: AppColors.whiteColor, size: 40),
                           ),
                           const SizedBox(width: 40),
                           AppButton(
                             onPressed: () {
                               // Skip forward 5 seconds
-                              if (_videoPreviewController != null && _videoPreviewController!.value.isInitialized) {
-                                final currentPosition = _videoPreviewController!.value.position;
-                                final maxPosition = _videoPreviewController!.value.duration;
-                                final newPosition = currentPosition + const Duration(seconds: 5);
-                                _videoPreviewController!.seekTo(newPosition <= maxPosition ? newPosition : maxPosition);
+                              if (_videoPreviewController != null &&
+                                  _videoPreviewController!.value.isInitialized) {
+                                final currentPosition =
+                                    _videoPreviewController!.value.position;
+                                final maxPosition =
+                                    _videoPreviewController!.value.duration;
+                                final newPosition =
+                                    currentPosition + const Duration(seconds: 5);
+                                _videoPreviewController!.seekTo(
+                                  newPosition <= maxPosition ? newPosition : maxPosition,
+                                );
                               }
                             },
-                            child: SvgPicture.asset(Images.second_forward_svg, height: 28, width: 28),
+                            child: SvgPicture.asset(
+                              Images.second_forward_svg,
+                              height: 28,
+                              width: 28,
+                            ),
                           ),
                         ],
                       ),
@@ -815,7 +955,9 @@ class _AnswerScreenState extends State<AnswerScreen> {
             ),
           ),
         ),
-        if (state.recordingType == RecordingType.video && state.recordingState == RecordingState.completed) _buildTextInputArea(state),
+        if (state.recordingType == RecordingType.video &&
+            state.recordingState == RecordingState.completed)
+          _buildTextInputArea(state),
       ],
     );
   }
@@ -830,7 +972,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
         final cubit = context.read<AnswerCubit>();
         state.isAudioPlaying ? cubit.stopAudioPlayback() : cubit.playRecordedAudio();
       },
-      child: SvgPicture.asset(state.isAudioPlaying ? Images.ic_pause_svg : Images.ic_play_svg, height: 20, width: 20),
+      child: SvgPicture.asset(
+        state.isAudioPlaying ? Images.ic_pause_svg : Images.ic_play_svg,
+        height: 20,
+        width: 20,
+      ),
     );
   }
 
@@ -839,43 +985,68 @@ class _AnswerScreenState extends State<AnswerScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildTextInputArea(state),
-        if(state.isAudioExist)
-        Container(
-          height: 60,
-          margin: const EdgeInsets.only(top: 20),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          decoration: BoxDecoration(color: AppColors.bg_text_filed, borderRadius: BorderRadius.circular(10)),
-          child: Row(
-            children: [
-              // Play button for completed recordings
-              buildAudioControl(context, state),
-              const SizedBox(width: 16),
-              // Audio waveform using audio_waveforms package
+        if (state.isAudioExist)
+          Container(
+            height: 60,
+            margin: const EdgeInsets.only(top: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.bg_text_filed,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                // Play button for completed recordings
+                buildAudioControl(context, state),
+                const SizedBox(width: 16),
 
-              Expanded(
-                child:
-                    state.recordingState == RecordingState.recording
-                        ? AudioWaveforms(
-                          size: Size(MediaQuery.of(context).size.width - 120, 40),
-                          recorderController: context.read<AnswerCubit>().recorderController,
-                          waveStyle: WaveStyle(waveColor: AppColors.whiteColor.withValues(alpha: 0.9), extendWaveform: true, showMiddleLine: false, waveCap: StrokeCap.round),
-                          enableGesture: false,
-                          shouldCalculateScrolledPosition: false,
-                        )
-                        : state.isAudioPlaying
-                        ? AudioFileWaveforms(
-                          size: Size(MediaQuery.of(context).size.width - 120, 40),
-                          playerController: context.read<AnswerCubit>().playerController,
-                          playerWaveStyle: const PlayerWaveStyle(seekLineColor: AppColors.primaryColorBlue, showSeekLine: false, waveCap: StrokeCap.round),
-                        )
-                        : const AudioWaveformWidget(isPlaying: false, activeColor: Colors.white, inactiveColor: Colors.white),
-              ),
-              const SizedBox(width: 16),
-              // Duration
-              Text(state.formattedDuration, style: const TextStyle(color: AppColors.whiteColor, fontSize: 16, fontWeight: FontWeight.w600)),
-            ],
+                // Audio waveform using audio_waveforms package
+                Expanded(
+                  child:
+                      state.recordingState == RecordingState.recording
+                          ? AudioWaveforms(
+                            size: Size(MediaQuery.of(context).size.width - 120, 40),
+                            recorderController:
+                                context.read<AnswerCubit>().recorderController,
+                            waveStyle: WaveStyle(
+                              waveColor: AppColors.whiteColor.withValues(alpha: 0.9),
+                              extendWaveform: true,
+                              showMiddleLine: false,
+                              waveCap: StrokeCap.round,
+                            ),
+                            enableGesture: false,
+                            shouldCalculateScrolledPosition: false,
+                          )
+                          : state.isAudioPlaying
+                          ? AudioFileWaveforms(
+                            size: Size(MediaQuery.of(context).size.width - 120, 40),
+                            playerController:
+                                context.read<AnswerCubit>().playerController,
+                            playerWaveStyle: const PlayerWaveStyle(
+                              seekLineColor: AppColors.primaryColorBlue,
+                              showSeekLine: false,
+                              waveCap: StrokeCap.round,
+                            ),
+                          )
+                          : const AudioWaveformWidget(
+                            isPlaying: false,
+                            activeColor: Colors.white,
+                            inactiveColor: Colors.white,
+                          ),
+                ),
+                const SizedBox(width: 16),
+                // Duration
+                Text(
+                  state.formattedDuration,
+                  style: const TextStyle(
+                    color: AppColors.whiteColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
@@ -888,7 +1059,6 @@ class _AnswerScreenState extends State<AnswerScreen> {
         } else if (state.recordingType == RecordingType.voice) {
           return _buildVoiceActionButtons(state);
         } else if (state.recordingType == RecordingType.video) {
-
           return _buildVideoActionButtons(state);
         }
         return _buildInitialActionButtons();
@@ -898,21 +1068,27 @@ class _AnswerScreenState extends State<AnswerScreen> {
 
   Widget _buildInitialActionButtons() {
     return BlocConsumer<AnswerCubit, AnswerState>(
-      listener: (context, state) {
-
-
-      },
+      listener: (context, state) {},
       builder: (context, state) {
         return Column(
           children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_buildVoiceButton(), _buildVideoButton()]),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [_buildVoiceButton(), _buildVideoButton()],
+            ),
             if (state.shouldShowSubmitButton && state.recordingType == RecordingType.none)
               Padding(
                 padding: const EdgeInsets.only(top: 20),
                 child: CustomButton(
                   onPressed: () async {
                     context.read<AnswerCubit>().stopSpeakingOnInteraction();
-                    context.read<AnswerCubit>().submitFinalAnswer(widget.qId, _answerController.text, context, widget.mIndex,widget.moduleIndex);
+                    context.read<AnswerCubit>().submitFinalAnswer(
+                      widget.qId,
+                      _answerController.text,
+                      context,
+                      widget.mIndex,
+                      widget.moduleIndex,
+                    );
                   },
                   btnText: "Submit Answer",
                   enable: true,
@@ -939,12 +1115,29 @@ class _AnswerScreenState extends State<AnswerScreen> {
                   context.read<AnswerCubit>().startVoiceRecording();
                 }
               },
-              child: Padding(padding: const EdgeInsets.all(26), child: SvgPicture.asset(Images.ic_white_mic_svg, height: 24, width: 24)),
+              child: Padding(
+                padding: const EdgeInsets.all(26),
+                child: SvgPicture.asset(Images.ic_white_mic_svg, height: 24, width: 24),
+              ),
             ),
             const SizedBox(height: 12),
-            Text(state.isVoiceRecording ? "Tap To Stop" : "Tap To Record", style: TextStyle(color: AppColors.whiteColor.withValues(alpha: 0.8), fontSize: 12, fontWeight: FontWeight.w400)),
+            Text(
+              state.isVoiceRecording ? "Tap To Stop" : "Tap To Record",
+              style: TextStyle(
+                color: AppColors.whiteColor.withValues(alpha: 0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
             const SizedBox(height: 4),
-            const Text("Voice Answer", style: const TextStyle(color: AppColors.whiteColor, fontSize: 14, fontWeight: FontWeight.w600)),
+            const Text(
+              "Voice Answer",
+              style: const TextStyle(
+                color: AppColors.whiteColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         );
       },
@@ -968,15 +1161,32 @@ class _AnswerScreenState extends State<AnswerScreen> {
                   print("Starting video recording...");
 
                   context.read<AnswerCubit>().videoButtonIdle();
-             //   context.read<AnswerCubit>().showVideoView();
+                  //   context.read<AnswerCubit>().showVideoView();
                 }
               },
-              child: Padding(padding: const EdgeInsets.all(26), child: SvgPicture.asset(Images.ic_video_svg, height: 24, width: 24)),
+              child: Padding(
+                padding: const EdgeInsets.all(26),
+                child: SvgPicture.asset(Images.ic_video_svg, height: 24, width: 24),
+              ),
             ),
             const SizedBox(height: 12),
-            Text(state.isVideoRecording ? "Tap To Stop" : "Tap To Record", style: TextStyle(color: AppColors.whiteColor.withValues(alpha: 0.8), fontSize: 12, fontWeight: FontWeight.w400)),
+            Text(
+              state.isVideoRecording ? "Tap To Stop" : "Tap To Record",
+              style: TextStyle(
+                color: AppColors.whiteColor.withValues(alpha: 0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
             const SizedBox(height: 4),
-            const Text("Video Answer", style: const TextStyle(color: AppColors.whiteColor, fontSize: 14, fontWeight: FontWeight.w600)),
+            const Text(
+              "Video Answer",
+              style: const TextStyle(
+                color: AppColors.whiteColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         );
       },
@@ -1036,7 +1246,13 @@ class _AnswerScreenState extends State<AnswerScreen> {
       return CustomButton(
         onPressed: () {
           context.read<AnswerCubit>().stopSpeakingOnInteraction();
-          context.read<AnswerCubit>().submitFinalAnswer(widget.qId, _answerController.text, context, widget.mIndex,widget.moduleIndex);
+          context.read<AnswerCubit>().submitFinalAnswer(
+            widget.qId,
+            _answerController.text,
+            context,
+            widget.mIndex,
+            widget.moduleIndex,
+          );
         },
         btnText: "Continue",
         enable: true,
@@ -1047,28 +1263,33 @@ class _AnswerScreenState extends State<AnswerScreen> {
 
   Widget _buildVideoActionButtons(AnswerState state) {
     print("recordingType: ${state.recordingState}");
-    if (state.recordingType== RecordingType.video && state.recordingState == RecordingState.idle){
-      return   InkWell(
+    if (state.recordingType == RecordingType.video &&
+        state.recordingState == RecordingState.idle) {
+      return InkWell(
         onTap: () {
           // context.read<AnswerCubit>().videoButtonActive();
           print("Video button tapped! Current state 1: ${state.recordingState}");
           print("Video button tapped! Current state is paused: ${state.isPaused}");
-           context.read<AnswerCubit>().stopSpeakingOnInteraction();
-          if(state.isFrontCamera){
-        print("front camera status: ${state.isFrontCamera}");
+          context.read<AnswerCubit>().stopSpeakingOnInteraction();
+          if (state.isFrontCamera) {
+            print("front camera status: ${state.isFrontCamera}");
             context.read<AnswerCubit>().flipCameraAndStartNew(isFront: true);
-          }else{
+          } else {
             print("rear camera status: ${state.isFrontCamera}");
             context.read<AnswerCubit>().videoButtonActive();
             context.read<AnswerCubit>().resumeVideoRecording();
           }
-
         },
         child: Container(
-          padding: const EdgeInsets.symmetric( vertical: 8),
-               width: 100,
-          decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(30)),
-          child: Center(child: SvgPicture.asset(Images.ic_video_svg, height: 30, width: 30)),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          width: 100,
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Center(
+            child: SvgPicture.asset(Images.ic_video_svg, height: 30, width: 30),
+          ),
         ),
       );
     }
@@ -1078,8 +1299,15 @@ class _AnswerScreenState extends State<AnswerScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildActionButton(
-            icon: SvgPicture.asset(state.isPaused ? Images.ic_video_svg : Images.ic_pause_svg, height: 24, width: 24),
-            label: state.isPaused ? "Continue Your\nTrain Of Thought" : "Pause To Gather\nYour Thoughts",
+            icon: SvgPicture.asset(
+              state.isPaused ? Images.ic_video_svg : Images.ic_pause_svg,
+              height: 24,
+              width: 24,
+            ),
+            label:
+                state.isPaused
+                    ? "Continue Your\nTrain Of Thought"
+                    : "Pause To Gather\nYour Thoughts",
             onTap: () {
               print("start video....${state.isPaused}");
               context.read<AnswerCubit>().stopSpeakingOnInteraction();
@@ -1093,22 +1321,26 @@ class _AnswerScreenState extends State<AnswerScreen> {
           ),
 
           _buildVideoSecondAndPauseWidget(state),
-         state.isVideoProcess? _buildActionButton(
-            icon: SvgPicture.asset(Images.video_process_loading, height: 24, width: 24),
-            label: "Loading..",
-            onTap: () {
-
-            },
-            color: AppColors.primaryColorBlue.withValues(alpha: 0.7),
-          ):_buildActionButton(
-           icon: SvgPicture.asset(Images.ic_check_svg, height: 24, width: 24),
-           label: "Done\nRecording?",
-           onTap: () {
-             context.read<AnswerCubit>().stopSpeakingOnInteraction();
-             context.read<AnswerCubit>().stopVideoRecording();
-           },
-           color: AppColors.primaryColorBlue.withValues(alpha: 0.7),
-         ),
+          state.isVideoProcess
+              ? _buildActionButton(
+                icon: SvgPicture.asset(
+                  Images.video_process_loading,
+                  height: 24,
+                  width: 24,
+                ),
+                label: "Loading..",
+                onTap: () {},
+                color: AppColors.primaryColorBlue.withValues(alpha: 0.7),
+              )
+              : _buildActionButton(
+                icon: SvgPicture.asset(Images.ic_check_svg, height: 24, width: 24),
+                label: "Done\nRecording?",
+                onTap: () {
+                  context.read<AnswerCubit>().stopSpeakingOnInteraction();
+                  context.read<AnswerCubit>().stopVideoRecording();
+                },
+                color: AppColors.primaryColorBlue.withValues(alpha: 0.7),
+              ),
         ],
       );
     }
@@ -1128,17 +1360,34 @@ class _AnswerScreenState extends State<AnswerScreen> {
         onPressed: () => {},
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          child: Center(child: Text(state.formattedDuration, style: const TextStyle(color: AppColors.whiteColor, fontSize: 20, fontWeight: FontWeight.normal))),
+          child: Center(
+            child: Text(
+              state.formattedDuration,
+              style: const TextStyle(
+                color: AppColors.whiteColor,
+                fontSize: 20,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ),
         ),
       );
     } else if (state.isVideoRecording) {
-      return
-        CustomButtonRound(
+      return CustomButtonRound(
         enable: false,
         onPressed: () => {},
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          child: Center(child: Text(state.formattedDuration, style: const TextStyle(color: AppColors.whiteColor, fontSize: 20, fontWeight: FontWeight.normal))),
+          child: Center(
+            child: Text(
+              state.formattedDuration,
+              style: const TextStyle(
+                color: AppColors.whiteColor,
+                fontSize: 20,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ),
         ),
       );
       //   Container(
@@ -1148,32 +1397,48 @@ class _AnswerScreenState extends State<AnswerScreen> {
       //     alignment: Alignment.center,
       //     child: Text(state.formattedDuration, style: const TextStyle(color: AppColors.whiteColor, fontSize: 20, fontWeight: FontWeight.normal)),
 
-          // Column(
-          // crossAxisAlignment: CrossAxisAlignment.center,
-          // mainAxisAlignment: MainAxisAlignment.center,
-          // children: [
-          //   // Container(
-          //   //   padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 8),
-          //   //   decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(30)),
-          //   //   child: Center(child: SvgPicture.asset(Images.ic_video_svg, height: 30, width: 30)),
-          //   // ),
-          //   // const SizedBox(height: 15),
-          //
-          // ],
-          //       ),
-        // );
+      // Column(
+      // crossAxisAlignment: CrossAxisAlignment.center,
+      // mainAxisAlignment: MainAxisAlignment.center,
+      // children: [
+      //   // Container(
+      //   //   padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 8),
+      //   //   decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(30)),
+      //   //   child: Center(child: SvgPicture.asset(Images.ic_video_svg, height: 30, width: 30)),
+      //   // ),
+      //   // const SizedBox(height: 15),
+      //
+      // ],
+      //       ),
+      // );
     }
     return const SizedBox.shrink();
   }
 
-  Widget _buildActionButton({required Widget icon, required String label, required VoidCallback onTap, required Color color}) {
+  Widget _buildActionButton({
+    required Widget icon,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
-          CustomButtonRound(onPressed: onTap, child: Padding(padding: const EdgeInsets.all(26), child: icon)),
+          CustomButtonRound(
+            onPressed: onTap,
+            child: Padding(padding: const EdgeInsets.all(26), child: icon),
+          ),
           const SizedBox(height: 8),
-          Text(label, textAlign: TextAlign.center, style: TextStyle(color: AppColors.whiteColor.withValues(alpha: 0.8), fontSize: 10, fontWeight: FontWeight.w400)),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.whiteColor.withValues(alpha: 0.8),
+              fontSize: 10,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
         ],
       ),
     );

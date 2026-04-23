@@ -358,19 +358,21 @@ class HomeCubit extends Cubit<HomeState> {
     Navigator.pushNamed(context, RoutesName.LIST_OF_MODULE, arguments: navigationArgs);
   }
 
-  void getFriendsList() async {
+  void getFriendsList({bool isRefresh = false}) async {
     final userID = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
 
     // Check cache first
-    final cachedFriendsList = await appPreference.getCachedModelList<FriendsDataList>(
-      cacheKey: CACHE_KEY_FRIENDS_LIST,
-      fromJson: (json) => FriendsDataList.fromJson(json),
-    );
+    if (!isRefresh) {
+      final cachedFriendsList = await appPreference.getCachedModelList<FriendsDataList>(
+        cacheKey: CACHE_KEY_FRIENDS_LIST,
+        fromJson: (json) => FriendsDataList.fromJson(json),
+      );
 
-    if (cachedFriendsList != null) {
-      print('Using cached friends list');
-      emit(state.copyWith(friendsList: cachedFriendsList));
-      return;
+      if (cachedFriendsList != null) {
+        print('Using cached friends list');
+        emit(state.copyWith(friendsList: cachedFriendsList));
+        return;
+      }
     }
 
     // No cache, fetch from API

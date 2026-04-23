@@ -1,9 +1,10 @@
- import '../../../my_podcast/data/podcast_model.dart';
+import '../../../my_podcast/data/podcast_model.dart';
 
-enum MarkFavStatus {initial, loading, success, failure}
-enum MarkUnFavStatus {initial, loading, success, failure}
+enum MarkFavStatus { initial, loading, success, failure }
 
-class  PlayPodcastState {
+enum MarkUnFavStatus { initial, loading, success, failure }
+
+class PlayPodcastState {
   final Duration position;
   final Duration duration;
   final bool isPlaying;
@@ -16,7 +17,6 @@ class  PlayPodcastState {
   final String? markFavMessage;
   final MarkUnFavStatus? markUnFavStatus;
   final String? markUnFavMessage;
-
 
   const PlayPodcastState({
     required this.position,
@@ -71,12 +71,12 @@ class  PlayPodcastState {
       isBookmark: isBookmark ?? this.isBookmark,
       isScroll: isScroll ?? this.isScroll,
       isOverlayManager: isOverlayManager ?? this.isOverlayManager,
-      speed:speed?? this.speed,
-      podcast:podcast ?? this.podcast,
-      markFavStatus:markFavStatus ?? this.markFavStatus,
-      markFavMessage:markFavMessage ?? this.markFavMessage,
-      markUnFavStatus:markUnFavStatus ?? this.markUnFavStatus,
-      markUnFavMessage:markUnFavMessage ?? this.markUnFavMessage,
+      speed: speed ?? this.speed,
+      podcast: podcast ?? this.podcast,
+      markFavStatus: markFavStatus ?? this.markFavStatus,
+      markFavMessage: markFavMessage ?? this.markFavMessage,
+      markUnFavStatus: markUnFavStatus ?? this.markUnFavStatus,
+      markUnFavMessage: markUnFavMessage ?? this.markUnFavMessage,
     );
   }
 }

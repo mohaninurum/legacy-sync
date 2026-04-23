@@ -23,12 +23,17 @@ abstract class LiveKitConnectionRepositories {
     required int userId,
     required String roomId,
   });
+  ResultFuture<Map<String, dynamic>> initiateCallByHost({
+    required int userId,
+  });
+
   ResultFuture<EndPodcastCallResponse> endPodcastCall({
     required int userId,
     required Set<int> friendId,
     required String roomId,
-    required bool freeSpecificUser,
-    required int specificUserId,
+  });
+  ResultFuture<EndPodcastCallResponse> endCallByFriend({
+    required int friendId,
   });
 
   ResultFuture<Map<String, dynamic>> startRecording({

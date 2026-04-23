@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -25,12 +26,11 @@ import 'package:legacy_sync/features/list_of_module/presentation/bloc/list_of_mo
 import 'package:legacy_sync/features/list_of_module/presentation/widget/image_preview.dart';
 import 'package:lottie/lottie.dart';
 import 'package:pull_down_button/pull_down_button.dart';
+
 import '../../../../config/db/shared_preferences.dart';
-import '../../../../core/components/comman_components/congratulations_module_dialog.dart';
 import '../../../../core/components/comman_components/locked_question_dialog.dart';
 import '../../../answer/presentation/bloc/answer_bloc/answer_cubit.dart';
 import '../../../answer/presentation/bloc/answer_state/answer_state.dart';
-import '../../../answer/presentation/widget/leave_page_dialog.dart';
 import '../../data/repositories/list_of_module_repository_impl.dart';
 
 class ListOfModuleScreen extends StatefulWidget {
@@ -41,44 +41,63 @@ class ListOfModuleScreen extends StatefulWidget {
   final String moduleTitle;
   final String moduleImage;
 
-  const ListOfModuleScreen({super.key, required this.friendId, required this.moduleId, required this.moduleTitle, required this.moduleImage, required this.fromFriends, this.preExpanded = false});
+  const ListOfModuleScreen({
+    super.key,
+    required this.friendId,
+    required this.moduleId,
+    required this.moduleTitle,
+    required this.moduleImage,
+    required this.fromFriends,
+    this.preExpanded = false,
+  });
 
   @override
   State<ListOfModuleScreen> createState() => _ListOfModuleScreenState();
 }
 
 class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
-  var isSubmitted='false';
+  var isSubmitted = 'false';
   @override
   void initState() {
     context.read<ListOfModuleCubit>().isQuestionContinue(false);
     super.initState();
     _initializeData();
-     print("moduleIndex: ${widget.moduleId}");
+    print("moduleIndex: ${widget.moduleId}");
     AppPreference().set(key: "ModuleIndex", value: "${widget.moduleId}");
-
   }
 
   Future<void> _initializeData() async {
-     isSubmitted=  await AppPreference().get(key: "SUBMITTED");
-     print("isSubmitted: $isSubmitted");
-    context.read<ListOfModuleCubit>().loadQuestion(context: context, moduleId: widget.moduleId, friendId: widget.friendId, fromFriends: widget.fromFriends, preExpanded: widget.preExpanded);
+    isSubmitted = await AppPreference().get(key: "SUBMITTED");
+    print("isSubmitted: $isSubmitted");
+    context.read<ListOfModuleCubit>().loadQuestion(
+      context: context,
+      moduleId: widget.moduleId,
+      friendId: widget.friendId,
+      fromFriends: widget.fromFriends,
+      preExpanded: widget.preExpanded,
+    );
   }
-  Future<void> initializeData() async {
-     isSubmitted=  await AppPreference().get(key: "SUBMITTED");
-     print("isSubmitted: $isSubmitted");
-    context.read<ListOfModuleCubit>().loadQuestion(context: context, moduleId: widget.moduleId, friendId: widget.friendId, fromFriends: widget.fromFriends, preExpanded: widget.preExpanded);
 
-     Navigator.pop(context, true);
+  Future<void> initializeData() async {
+    isSubmitted = await AppPreference().get(key: "SUBMITTED");
+    print("isSubmitted: $isSubmitted");
+    context.read<ListOfModuleCubit>().loadQuestion(
+      context: context,
+      moduleId: widget.moduleId,
+      friendId: widget.friendId,
+      fromFriends: widget.fromFriends,
+      preExpanded: widget.preExpanded,
+    );
+
+    Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
-
     return AppWillPopScope(
       showDialog: false,
       onExit: (value) {
-        if(isSubmitted=="true"){
+        if (isSubmitted == "true") {
           _initializeData();
         }
         final cubit = context.read<ListOfModuleCubit>();
@@ -86,7 +105,8 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
         List<QuestionItems> questions = state.data.questions ?? [];
         bool allUnlocked = questions.every((q) => q.islocked == false);
         if (allUnlocked) {
-          if (questions[questions.length - 1].answers != null && questions[questions.length - 1].answers!.isNotEmpty) {
+          if (questions[questions.length - 1].answers != null &&
+              questions[questions.length - 1].answers!.isNotEmpty) {
             Navigator.pop(context, true);
           } else {
             Navigator.pop(context);
@@ -99,7 +119,14 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
         imagePath: Images.bg_question,
         child: SafeArea(
           bottom: Platform.isIOS ? false : true,
-          child: Scaffold(backgroundColor: Colors.transparent, body: _buildBody(widget.moduleId), bottomNavigationBar: Visibility(visible: !widget.fromFriends, child: _buildBottomButton(widget.moduleId))),
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            body: _buildBody(widget.moduleId),
+            bottomNavigationBar: Visibility(
+              visible: !widget.fromFriends,
+              child: _buildBottomButton(widget.moduleId),
+            ),
+          ),
         ),
       ),
     );
@@ -107,39 +134,36 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
 
   Widget _buildBody(int moduleIndex) {
     return MultiBlocListener(
-
-  listeners: [
-    BlocListener<AnswerCubit, AnswerState>(
-      listener: (context, state) {
-        if (state.showCongratsDialog == true) {
-          initializeData();
-
-        }
-      },
-    ),
-
-  ],
-  child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-        const SizedBox(height: 20),
-            _buildImage(),
-            const SizedBox(height: 20),
-            _buildTitleAndDescription(),
-            const SizedBox(height: 24),
-            _buildProgressBar(),
-            const SizedBox(height: 24),
-            _buildTotalQuestionWidget(),
-            const SizedBox(height: 20),
-            _buildQuestionList(moduleIndex),
-          ],
+      listeners: [
+        BlocListener<AnswerCubit, AnswerState>(
+          listener: (context, state) {
+            if (state.showCongratsDialog == true) {
+              initializeData();
+            }
+          },
+        ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              _buildImage(),
+              const SizedBox(height: 20),
+              _buildTitleAndDescription(),
+              const SizedBox(height: 24),
+              _buildProgressBar(),
+              const SizedBox(height: 24),
+              _buildTotalQuestionWidget(),
+              const SizedBox(height: 20),
+              _buildQuestionList(moduleIndex),
+            ],
+          ),
         ),
       ),
-    ),
-);
+    );
   }
 
   Widget _buildBottomButton(moduleIndex) {
@@ -149,10 +173,16 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
         // if (state.totalAnswered == totalQuestions) {
         //   return const SizedBox();
         // }
-        int questionsNumber = (state.totalAnswered < totalQuestions) ? state.totalAnswered : totalQuestions;
+        int questionsNumber =
+            (state.totalAnswered < totalQuestions) ? state.totalAnswered : totalQuestions;
 
         return Container(
-          padding: EdgeInsets.only(right: 16, left: 16, top: 10, bottom: Platform.isIOS ? 4.height : 10),
+          padding: EdgeInsets.only(
+            right: 16,
+            left: 16,
+            top: 10,
+            bottom: Platform.isIOS ? 4.height : 10,
+          ),
           decoration: const BoxDecoration(color: AppColors.grilBlue),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -163,10 +193,19 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text("Start Question $questionsNumber", style: TextTheme.of(context).bodyMedium!.copyWith(fontSize: 12, color: AppColors.yellowfad)),
+                    Text(
+                      "Start Question $questionsNumber",
+                      style: TextTheme.of(
+                        context,
+                      ).bodyMedium!.copyWith(fontSize: 12, color: AppColors.yellowfad),
+                    ),
                     Text(
                       state.currentQuestionItems.questiontitle ?? "",
-                      style: TextTheme.of(context).bodyMedium!.copyWith(fontSize: 15, fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis),
+                      style: TextTheme.of(context).bodyMedium!.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -178,14 +217,25 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
                   child: CustomButton(
                     isMoudel: true,
                     onPressed: () async {
-                      final result = await Navigator.pushNamed(context, RoutesName.ANSWER_SCREEN, arguments: {"qId": state.currentQuestionItems.questionidpK, "mIndex": questionsNumber - 1,"moduleIndex":moduleIndex});
+                      final result = await Navigator.pushNamed(
+                        context,
+                        RoutesName.ANSWER_SCREEN,
+                        arguments: {
+                          "qId": state.currentQuestionItems.questionidpK,
+                          "mIndex": questionsNumber - 1,
+                          "moduleIndex": moduleIndex,
+                        },
+                      );
                       if (result == true) {
-                       context.read<ListOfModuleCubit>().isQuestionContinue(true);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Insight added successfully")));
+                        context.read<ListOfModuleCubit>().isQuestionContinue(true);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Insight added successfully")),
+                        );
                         // cubit.getExpandedCardData(questionId: qId, index: mIndex);
                       }
                     },
-                    btnText: state.isQuestionContinue? "Continue Module":"Start Module",
+                    btnText:
+                        state.isQuestionContinue ? "Continue Module" : "Start Module",
                     rightWidget: const Icon(Icons.arrow_forward, color: Colors.white),
                   ),
                 ),
@@ -204,7 +254,15 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
           tag: widget.moduleTitle,
           child: SizedBox(
             height: 30.height,
-            child: ClipRRect(borderRadius: BorderRadius.circular(10), child: Lottie.asset(widget.moduleImage, fit: BoxFit.fill, height: 30.height, width: double.infinity)),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Lottie.asset(
+                widget.moduleImage,
+                fit: BoxFit.fill,
+                height: 30.height,
+                width: double.infinity,
+              ),
+            ),
           ),
         ),
         Positioned(
@@ -212,12 +270,12 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
           left: 10,
           child: AppButton(
             onPressed: () async {
+              if (isSubmitted == "true") {
+                _initializeData();
+              }
 
-            if(isSubmitted=="true"){
-              _initializeData();
-            }
-
-              ListOfModuleRepositoryImpl listOfModuleRepositoryImpl =ListOfModuleRepositoryImpl();
+              ListOfModuleRepositoryImpl listOfModuleRepositoryImpl =
+                  ListOfModuleRepositoryImpl();
               //ListOfModuleRepositoryImpl
               // listOfModuleRepositoryImpl.getListOfModule(moduleID, userID);
               final cubit = context.read<ListOfModuleCubit>();
@@ -225,7 +283,8 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
               List<QuestionItems> questions = state.data.questions ?? [];
               bool allUnlocked = questions.every((q) => q.islocked == false);
               if (allUnlocked) {
-                if (questions[questions.length - 1].answers != null && questions[questions.length - 1].answers!.isNotEmpty) {
+                if (questions[questions.length - 1].answers != null &&
+                    questions[questions.length - 1].answers!.isNotEmpty) {
                   Navigator.pop(context, true);
                 } else {
                   Navigator.pop(context);
@@ -248,7 +307,9 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
       builder: (context, state) {
         // Get title from API first, then fallback to passed title, then to a default
         String displayTitle = '';
-        if (state.data.screentitle != null && state.data.screentitle!.isNotEmpty && state.data.screentitle != '') {
+        if (state.data.screentitle != null &&
+            state.data.screentitle!.isNotEmpty &&
+            state.data.screentitle != '') {
           displayTitle = state.data.screentitle!;
         } else if (widget.moduleTitle.isNotEmpty) {
           displayTitle = widget.moduleTitle;
@@ -267,9 +328,18 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(displayTitle, style: TextTheme.of(context).bodyLarge!, textAlign: TextAlign.start),
+            Text(
+              displayTitle,
+              style: TextTheme.of(context).bodyLarge!,
+              textAlign: TextAlign.start,
+            ),
             const SizedBox(height: 14),
-            Text(state.data.screendescription ?? "", style: TextTheme.of(context).bodyMedium!.copyWith(fontSize: 14, fontWeight: FontWeight.w500)),
+            Text(
+              state.data.screendescription ?? "",
+              style: TextTheme.of(
+                context,
+              ).bodyMedium!.copyWith(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
           ],
         );
       },
@@ -283,13 +353,24 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
         final answered = state.totalAnswered;
         print("answered $answered");
 
-        final percent = (answered == 0 || total == 0) ? 0 : ((answered / total) * 100).toInt();
+        final percent =
+            (answered == 0 || total == 0) ? 0 : ((answered / total) * 100).toInt();
 
         return Row(
           children: [
-            Expanded(child: GradientProgressBar(currentStep: state.totalAnswered, totalSteps: state.data.questions?.length ?? 0)),
+            Expanded(
+              child: GradientProgressBar(
+                currentStep: state.totalAnswered,
+                totalSteps: state.data.questions?.length ?? 0,
+              ),
+            ),
             const SizedBox(width: 10),
-            Text("$percent%", style: TextTheme.of(context).bodyMedium!.copyWith(fontSize: 14, fontWeight: FontWeight.normal)),
+            Text(
+              "$percent%",
+              style: TextTheme.of(
+                context,
+              ).bodyMedium!.copyWith(fontSize: 14, fontWeight: FontWeight.normal),
+            ),
           ],
         );
       },
@@ -301,11 +382,21 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text("Question", style: TextTheme.of(context).bodyMedium!.copyWith(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          "Question",
+          style: TextTheme.of(
+            context,
+          ).bodyMedium!.copyWith(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         BlocBuilder<ListOfModuleCubit, ListOfModuleState>(
           builder: (context, state) {
             if (state.data.questions != null && state.data.questions!.isNotEmpty) {
-              return Text("${state.totalAnswered}/${state.data.questions?.length ?? 0} answered", style: TextTheme.of(context).bodyMedium!.copyWith(fontSize: 14, fontWeight: FontWeight.normal));
+              return Text(
+                "${state.totalAnswered}/${state.data.questions?.length ?? 0} answered",
+                style: TextTheme.of(
+                  context,
+                ).bodyMedium!.copyWith(fontSize: 14, fontWeight: FontWeight.normal),
+              );
             }
             return const SizedBox();
           },
@@ -330,7 +421,9 @@ class _ListOfModuleScreenState extends State<ListOfModuleScreen> {
             print("question data: ${data.islocked}");
 
             return Padding(
-              padding: EdgeInsets.only(bottom: index == ((state.data.questions?.length ?? 0) - 1) ? 20 : 0),
+              padding: EdgeInsets.only(
+                bottom: index == ((state.data.questions?.length ?? 0) - 1) ? 20 : 0,
+              ),
               child: _QuestionCard(
                 fromFriends: widget.fromFriends,
                 data: data,
@@ -361,30 +454,55 @@ class _QuestionCard extends StatelessWidget {
   final int moduleIndex;
   final bool fromFriends;
 
-  const _QuestionCard({required this.data, required this.onTap, required this.index, required this.moduleIndex, required this.fromFriends, super.key});
+  const _QuestionCard({
+    required this.data,
+    required this.onTap,
+    required this.index,
+    required this.moduleIndex,
+    required this.fromFriends,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
-
-    final backgroundColor = (data.islocked ?? false) ? Utils.hexToColor(data.activecolorcode!) : Utils.hexToColor(data.deactivecolorcode!);
+    final backgroundColor =
+        (data.islocked ?? false)
+            ? Utils.hexToColor(data.activecolorcode!)
+            : Utils.hexToColor(data.deactivecolorcode!);
 
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Stack(
         children: [
           Positioned(
             top: 0,
             right: 0,
             child: ClipRRect(
-              borderRadius: BorderRadius.only(bottomRight: Radius.circular(data.isExpanded ? 0 : 16), topRight: const Radius.circular(16)),
-              child: Lottie.asset(Utils.getModuleLottie(data.imagecode), height: 60, fit: BoxFit.cover),
+              borderRadius: BorderRadius.only(
+                bottomRight: Radius.circular(data.isExpanded ? 0 : 16),
+                topRight: const Radius.circular(16),
+              ),
+              child: Lottie.asset(
+                Utils.getModuleLottie(data.imagecode),
+                height: 60,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
 
           /// Animated expand/collapse
           Container(
-            decoration: BoxDecoration(color: (data.islocked ?? false) ? AppColors.blackColor.withValues(alpha: 0.6) : Colors.transparent, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(
+              color:
+                  (data.islocked ?? false)
+                      ? AppColors.blackColor.withValues(alpha: 0.6)
+                      : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -396,7 +514,10 @@ class _QuestionCard extends StatelessWidget {
                     onTap();
                     if (data.isExpanded == false) {
                       if ((data.answers ?? []).isEmpty) {
-                        context.read<ListOfModuleCubit>().getExpandedCardData(questionId: data.questionidpK!, index: index);
+                        context.read<ListOfModuleCubit>().getExpandedCardData(
+                          questionId: data.questionidpK!,
+                          index: index,
+                        );
                       }
                     }
                   },
@@ -412,7 +533,15 @@ class _QuestionCard extends StatelessWidget {
                           child:
                               (data.islocked ?? false)
                                   ? Image.asset(Images.ic_lock, height: 30, width: 30)
-                                  : AnimatedRotation(turns: data.isExpanded ? 0.5 : 0, duration: const Duration(milliseconds: 300), child: Image.asset(Images.ic_drop, height: 30, width: 30)),
+                                  : AnimatedRotation(
+                                    turns: data.isExpanded ? 0.5 : 0,
+                                    duration: const Duration(milliseconds: 300),
+                                    child: Image.asset(
+                                      Images.ic_drop,
+                                      height: 30,
+                                      width: 30,
+                                    ),
+                                  ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -420,7 +549,12 @@ class _QuestionCard extends StatelessWidget {
                             padding: EdgeInsets.only(right: 12.width),
                             child: Text(
                               data.questiontitle ?? "",
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: AppColors.whiteColor, fontSize: 15, fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis),
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                color: AppColors.whiteColor,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               maxLines: data.isExpanded ? 5 : 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -446,7 +580,10 @@ class _QuestionCard extends StatelessWidget {
                       questionText: data.questiondescription ?? "",
                     ),
                   ),
-                  crossFadeState: data.isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                  crossFadeState:
+                      data.isExpanded
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
                   duration: const Duration(milliseconds: 200),
                   sizeCurve: Curves.fastEaseInToSlowEaseOut,
                 ),
@@ -459,10 +596,16 @@ class _QuestionCard extends StatelessWidget {
   }
 
   /// Static list items (dynamic later)
-  Widget _buildStaticListContent({required int moduleIndex, required int mIndex, required BuildContext mContext, required int qId, required bool fromFriends, required String questionText}) {
+  Widget _buildStaticListContent({
+    required int moduleIndex,
+    required int mIndex,
+    required BuildContext mContext,
+    required int qId,
+    required bool fromFriends,
+    required String questionText,
+  }) {
     return BlocBuilder<ListOfModuleCubit, ListOfModuleState>(
       builder: (context, state) {
-
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -472,13 +615,36 @@ class _QuestionCard extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemBuilder: (context, index) {
                 print("question data index: $mIndex-$index");
-              print("question data: ${state.data.questions![mIndex].answers![index].answerMedia}");
-              print("question data: ${state.data.questions![mIndex].answers![index].answerType}");
-                return _buildListItem(qId: qId, moduleIndex: moduleIndex, parentIndex: mIndex, index: index, data: data.answers![index], icon: Icons.star, context: context, fromFriends: fromFriends);
+                print(
+                  "question data: ${state.data.questions![mIndex].answers![index].answerMedia}",
+                );
+                print(
+                  "question data: ${state.data.questions![mIndex].answers![index].answerType}",
+                );
+                return _buildListItem(
+                  qId: qId,
+                  moduleIndex: moduleIndex,
+                  parentIndex: mIndex,
+                  index: index,
+                  data: data.answers![index],
+                  icon: Icons.star,
+                  context: context,
+                  fromFriends: fromFriends,
+                  shouldStopVideo: state.shouldStopVideo,
+                );
               },
             ),
             const SizedBox(height: 20),
-            Visibility(visible: !fromFriends, child: _buildAddMoreButtons(mContext, qId, mIndex, moduleIndex, questionText)),
+            Visibility(
+              visible: !fromFriends,
+              child: _buildAddMoreButtons(
+                mContext,
+                qId,
+                mIndex,
+                moduleIndex,
+                questionText,
+              ),
+            ),
             const SizedBox(height: 10),
           ],
         );
@@ -495,8 +661,8 @@ class _QuestionCard extends StatelessWidget {
     required IconData icon,
     required BuildContext context,
     required bool fromFriends,
+    required bool shouldStopVideo,
   }) {
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,15 +674,27 @@ class _QuestionCard extends StatelessWidget {
           children: [
             Image.asset(Images.star_yellow, height: 16, width: 16),
             const SizedBox(width: 10),
-            Text("Insight ${index + 1}", style: TextTheme.of(context).bodyMedium!.copyWith(color: Colors.black, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(
+              "Insight ${index + 1}",
+              style: TextTheme.of(context).bodyMedium!.copyWith(
+                color: Colors.black,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const Spacer(),
-            Visibility(visible: !fromFriends, child: _buildMenuPopUp(parentIndex, index, qId)),
+            Visibility(
+              visible: !fromFriends,
+              child: _buildMenuPopUp(parentIndex, index, qId),
+            ),
           ],
         ),
         Container(
           margin: const EdgeInsets.only(left: 6),
           padding: const EdgeInsets.only(left: 10),
-          decoration: const BoxDecoration(border: Border(left: BorderSide(color: Color(0xFF5176ba), width: 2))),
+          decoration: const BoxDecoration(
+            border: Border(left: BorderSide(color: Color(0xFF5176ba), width: 2)),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,13 +707,37 @@ class _QuestionCard extends StatelessWidget {
                   : data.answerType == 4
                   ? GestureDetector(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => ImagePreview(url: data.answerMedia ?? "")));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ImagePreview(url: data.answerMedia ?? ""),
+                        ),
+                      );
                     },
-                    child: Hero(tag: data.answerMedia ?? "01010", child: AppNetworkImage(url: data.answerMedia ?? "")),
+                    child: Hero(
+                      tag: data.answerMedia ?? "01010",
+                      child: AppNetworkImage(url: data.answerMedia ?? ""),
+                    ),
                   )
-                  : CustomVideoPlayer(borderRadius: BorderRadius.circular(10), height: 200, width: double.infinity, url: data.answerMedia ?? "", autoPlay: false, showControls: true),
-              if (data.answerText != null && data.answerText!.isNotEmpty) const SizedBox(height: 10),
-              Text(data.answerText ?? "", style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold)),
+                  : CustomVideoPlayer(
+                    borderRadius: BorderRadius.circular(10),
+                    height: 200,
+                    width: double.infinity,
+                    url: data.answerMedia ?? "",
+                    autoPlay: false,
+                    showControls: true,
+                    shouldStop: shouldStopVideo,
+                  ),
+              if (data.answerText != null && data.answerText!.isNotEmpty)
+                const SizedBox(height: 10),
+              Text(
+                data.answerText ?? "",
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  color: Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         ),
@@ -543,18 +745,38 @@ class _QuestionCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAddMoreButtons(BuildContext context, dynamic qId, int mIndex, int moduleIndex, String questionText) {
+  Widget _buildAddMoreButtons(
+    BuildContext context,
+    dynamic qId,
+    int mIndex,
+    int moduleIndex,
+    String questionText,
+  ) {
+    bool isFav = (data.isfavourite == 1);
     return Row(
       children: [
         const SizedBox(width: 6),
         Expanded(
           child: CustomButton(
             onPressed: () async {
-              final cubit = context.read<ListOfModuleCubit>();
-              final result = await Navigator.pushNamed(context, RoutesName.ANSWER_SCREEN, arguments: {"qId": qId, "mIndex": mIndex, "questionText": questionText});
+              context.read<ListOfModuleCubit>().updateStopVideo(true);
+              final result = await Navigator.pushNamed(
+                context,
+                RoutesName.ANSWER_SCREEN,
+                arguments: {
+                  "qId": qId,
+                  "mIndex": mIndex,
+                  "questionText": questionText,
+                  "moduleIndex": moduleIndex,
+                },
+              );
               if (result == true) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Insight added successfully")));
-                // cubit.getExpandedCardData(questionId: qId, index: mIndex);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Insight added successfully")),
+                );
+              }
+              if (context.mounted) {
+                context.read<ListOfModuleCubit>().updateStopVideo(false);
               }
             },
             btnText: "Add new insight",
@@ -563,9 +785,29 @@ class _QuestionCard extends StatelessWidget {
         const SizedBox(width: 10),
         CustomButtonRound(
           onPressed: () {
-            context.read<FavoriteMemoriesCubit>().addFavQuestion(questionId: data.questionidpK, context: context);
+            if (isFav) {
+              context.read<FavoriteMemoriesCubit>().removeFavQuestion(
+                questionId: data.questionidpK,
+                context: context,
+              );
+            } else {
+              context.read<FavoriteMemoriesCubit>().addFavQuestion(
+                questionId: data.questionidpK,
+                context: context,
+              );
+            }
+            // Locally toggle the state to update the UI immediately
+            context.read<ListOfModuleCubit>().toggleFavorite(index: mIndex);
           },
-          child: Padding(padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 18), child: Image.asset(Images.save_ic, height: 20, width: 20)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
+            child: Image.asset(
+              isFav ? Images.bookmarked : Images.bookmark,
+              height: 28,
+              width: 28,
+              color: AppColors.whiteColor,
+            ),
+          ),
         ),
       ],
     );
@@ -586,7 +828,11 @@ class _QuestionCard extends StatelessWidget {
             ),
             PullDownMenuItem(
               onTap: () {
-                context.read<ListOfModuleCubit>().deleteAnswerOfModule(answerId: data.answers![index].answerIdPK!, parentIndex: parentIndex, index: index);
+                context.read<ListOfModuleCubit>().deleteAnswerOfModule(
+                  answerId: data.answers![index].answerIdPK!,
+                  parentIndex: parentIndex,
+                  index: index,
+                );
               },
               title: "Delete",
               icon: CupertinoIcons.delete,
@@ -594,7 +840,12 @@ class _QuestionCard extends StatelessWidget {
               isDestructive: true,
             ),
           ],
-      buttonBuilder: (context, showMenu) => CupertinoButton(onPressed: showMenu, padding: EdgeInsets.zero, child: Image.asset(Images.menu_black, height: 16, width: 16)),
+      buttonBuilder:
+          (context, showMenu) => CupertinoButton(
+            onPressed: showMenu,
+            padding: EdgeInsets.zero,
+            child: Image.asset(Images.menu_black, height: 16, width: 16),
+          ),
     );
   }
 

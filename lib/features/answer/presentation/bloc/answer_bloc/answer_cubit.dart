@@ -1,31 +1,28 @@
-import 'dart:developer';
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
+
+import 'package:audio_waveforms/audio_waveforms.dart';
+import 'package:camera/camera.dart';
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:camera/camera.dart';
 import 'package:legacy_sync/config/db/shared_preferences.dart';
 import 'package:legacy_sync/core/utils/utils.dart';
 import 'package:legacy_sync/features/answer/domain/usecases/answare_usecase.dart';
-import 'package:legacy_sync/features/list_of_module/presentation/bloc/list_of_module_bloc/list_of_module_cubit.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:audio_waveforms/audio_waveforms.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 import 'package:legacy_sync/features/answer/presentation/bloc/answer_state/answer_state.dart';
+import 'package:legacy_sync/features/list_of_module/presentation/bloc/list_of_module_bloc/list_of_module_cubit.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:tip_dialog/tip_dialog.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import '../../../../../config/routes/routes_name.dart';
+
 import '../../../../../core/components/comman_components/congratulations_module_dialog.dart';
 import '../../../../list_of_module/data/model/list_of_module_model.dart';
 import '../../../../list_of_module/data/model/module_answer_model.dart';
 
-
 class AnswerCubit extends Cubit<AnswerState> {
-
   AnswerCubit() : super(AnswerState.initial());
   List<CameraDescription> _cameras = [];
   AnswerUseCase answerUseCase = AnswerUseCase();
@@ -53,9 +50,9 @@ class AnswerCubit extends Cubit<AnswerState> {
 
   // Timer for recording duration
   Timer? _recordingTimer;
-/// cheche
-  final appPreference = AppPreference();
 
+  /// cheche
+  final appPreference = AppPreference();
 
   @override
   Future<void> close() async {
@@ -66,25 +63,27 @@ class AnswerCubit extends Cubit<AnswerState> {
     _recordingTimer?.cancel();
     return super.close();
   }
+
   void initialState() {
     emit(AnswerState.initial());
   }
 
-
   Future<void> initializeCamera() async {
     try {
-
       final cameras = await availableCameras();
       if (cameras.isNotEmpty) {
-        _cameraController = CameraController(cameras.first, ResolutionPreset.high, enableAudio: true);
+        _cameraController = CameraController(
+          cameras.first,
+          ResolutionPreset.high,
+          enableAudio: true,
+        );
         await _cameraController!.initialize();
         await cameraController?.setFocusMode(FocusMode.auto);
-        if(state.zoom==1.0){
+        if (state.zoom == 1.0) {
           loadZoomLimits();
-        }else{
-          setZoom( state.zoom);
+        } else {
+          setZoom(state.zoom);
         }
-
       }
     } catch (e) {
       print("Camera initialization error: $e");
@@ -145,7 +144,8 @@ class AnswerCubit extends Cubit<AnswerState> {
 
       // Get recording path
       final directory = await getTemporaryDirectory();
-      _currentRecordingPath = '${directory.path}/voice_recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      _currentRecordingPath =
+          '${directory.path}/voice_recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
       // Start recording
       await _recorderController.record(path: _currentRecordingPath);
@@ -158,7 +158,10 @@ class AnswerCubit extends Cubit<AnswerState> {
             onResult: (result) {
               print("Speech recognition result: ${result.recognizedWords}");
               if (result.recognizedWords.isNotEmpty) {
-                final newText = state.transcribedText.isEmpty ? result.recognizedWords : '${state.transcribedText} ${result.recognizedWords}';
+                final newText =
+                    state.transcribedText.isEmpty
+                        ? result.recognizedWords
+                        : '${state.transcribedText} ${result.recognizedWords}';
                 print("Updated transcribed text: $newText");
                 emit(state.copyWith(transcribedText: newText));
               }
@@ -176,7 +179,10 @@ class AnswerCubit extends Cubit<AnswerState> {
                 onResult: (result) {
                   print("Speech recognition result (retry): ${result.recognizedWords}");
                   if (result.recognizedWords.isNotEmpty) {
-                    final newText = state.transcribedText.isEmpty ? result.recognizedWords : '${state.transcribedText} ${result.recognizedWords}';
+                    final newText =
+                        state.transcribedText.isEmpty
+                            ? result.recognizedWords
+                            : '${state.transcribedText} ${result.recognizedWords}';
                     print("Updated transcribed text (retry): $newText");
                     emit(state.copyWith(transcribedText: newText));
                   }
@@ -201,7 +207,14 @@ class AnswerCubit extends Cubit<AnswerState> {
         emit(state.copyWith(recordingDuration: duration));
       });
 
-      emit(state.copyWith(recordingType: RecordingType.voice, recordingState: RecordingState.recording, startTime: DateTime.now(),isAudioExist: true));
+      emit(
+        state.copyWith(
+          recordingType: RecordingType.voice,
+          recordingState: RecordingState.recording,
+          startTime: DateTime.now(),
+          isAudioExist: true,
+        ),
+      );
 
       print("Voice recording started");
     } catch (e) {
@@ -214,7 +227,11 @@ class AnswerCubit extends Cubit<AnswerState> {
     _recordingTimer?.cancel();
     _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (state.recordingState == RecordingState.recording) {
-        emit(state.copyWith(recordingDuration: state.recordingDuration + const Duration(seconds: 1)));
+        emit(
+          state.copyWith(
+            recordingDuration: state.recordingDuration + const Duration(seconds: 1),
+          ),
+        );
       } else {
         timer.cancel();
       }
@@ -247,7 +264,10 @@ class AnswerCubit extends Cubit<AnswerState> {
             onResult: (result) {
               print("Speech recognition result (resume): ${result.recognizedWords}");
               if (result.recognizedWords.isNotEmpty) {
-                final newText = state.transcribedText.isEmpty ? result.recognizedWords : '${state.transcribedText} ${result.recognizedWords}';
+                final newText =
+                    state.transcribedText.isEmpty
+                        ? result.recognizedWords
+                        : '${state.transcribedText} ${result.recognizedWords}';
                 print("Updated transcribed text (resume): $newText");
                 emit(state.copyWith(transcribedText: newText));
               }
@@ -262,7 +282,7 @@ class AnswerCubit extends Cubit<AnswerState> {
       // Resume the timer
       _startRecordingTimer();
 
-      emit(state.copyWith(recordingState: RecordingState.recording,isAudioExist: true));
+      emit(state.copyWith(recordingState: RecordingState.recording, isAudioExist: true));
 
       print("Voice recording resumed");
     } catch (e) {
@@ -282,7 +302,9 @@ class AnswerCubit extends Cubit<AnswerState> {
         _currentRecordingPath = recordedPath;
       }
 
-      emit(state.copyWith(recordingState: RecordingState.completed, endTime: DateTime.now()));
+      emit(
+        state.copyWith(recordingState: RecordingState.completed, endTime: DateTime.now()),
+      );
 
       print("Voice recording stopped");
     } catch (e) {
@@ -317,7 +339,10 @@ class AnswerCubit extends Cubit<AnswerState> {
         }
 
         // Prepare the player controller for waveform visualization
-        await _playerController.preparePlayer(path: _currentRecordingPath!, shouldExtractWaveform: true);
+        await _playerController.preparePlayer(
+          path: _currentRecordingPath!,
+          shouldExtractWaveform: true,
+        );
         print("Player prepared successfully");
 
         // Start playing
@@ -355,11 +380,12 @@ class AnswerCubit extends Cubit<AnswerState> {
     }
   }
 
-  void showVideoView() async{
+  void showVideoView() async {
     await initializeCamera();
 
     final directory = await getTemporaryDirectory();
-    final videoPath = '${directory.path}/video_recording_${DateTime.now().millisecondsSinceEpoch}.mp4';
+    final videoPath =
+        '${directory.path}/video_recording_${DateTime.now().millisecondsSinceEpoch}.mp4';
     emit(
       state.copyWith(
         recordingType: RecordingType.video,
@@ -380,12 +406,22 @@ class AnswerCubit extends Cubit<AnswerState> {
     try {
       if (_cameraController != null && _cameraController!.value.isInitialized) {
         final directory = await getTemporaryDirectory();
-        final videoPath = '${directory.path}/video_recording_${DateTime.now().millisecondsSinceEpoch}.mp4';
+        final videoPath =
+            '${directory.path}/video_recording_${DateTime.now().millisecondsSinceEpoch}.mp4';
         await _cameraController!.startVideoRecording();
         // Start recording timer for video
         _startRecordingTimer();
 
-        emit(state.copyWith(recordingType: RecordingType.video, recordingState: RecordingState.recording, startTime: DateTime.now(), videoPath: videoPath,isVideoExist: true,  hasStartedRecording: false, ));
+        emit(
+          state.copyWith(
+            recordingType: RecordingType.video,
+            recordingState: RecordingState.recording,
+            startTime: DateTime.now(),
+            videoPath: videoPath,
+            isVideoExist: true,
+            hasStartedRecording: false,
+          ),
+        );
         // pauseVideoRecording();
       }
     } catch (e) {
@@ -396,7 +432,6 @@ class AnswerCubit extends Cubit<AnswerState> {
   Future<void> pauseVideoRecording() async {
     try {
       if (_cameraController != null && _cameraController!.value.isRecordingVideo) {
-
         await _cameraController!.pauseVideoRecording();
         _recordingTimer?.cancel();
         emit(state.copyWith(recordingState: RecordingState.paused));
@@ -408,14 +443,14 @@ class AnswerCubit extends Cubit<AnswerState> {
   }
 
   Future<void> resumeVideoRecording() async {
-
     try {
-
       if (_cameraController != null && state.recordingState == RecordingState.paused) {
         await cameraController?.setFocusMode(FocusMode.auto);
         await _cameraController!.resumeVideoRecording();
         _startRecordingTimer();
-        emit(state.copyWith(recordingState: RecordingState.recording,isVideoExist: true));
+        emit(
+          state.copyWith(recordingState: RecordingState.recording, isVideoExist: true),
+        );
         print("Video recording resumed");
       }
     } catch (e) {
@@ -429,13 +464,21 @@ class AnswerCubit extends Cubit<AnswerState> {
         final videoFile = await _cameraController!.stopVideoRecording();
         _recordingTimer?.cancel();
         String? finalSegmentPath;
-        if(state.isFrontCamera){
-          emit(state.copyWith(isVideoProcess:true));
+        if (state.isFrontCamera) {
+          emit(state.copyWith(isVideoProcess: true));
           finalSegmentPath = await removeMirrorInBackground(videoFile.path);
         }
         // Stop the timer
 
-        emit(state.copyWith(isFrontCamera:false,isVideoProcess:false,recordingState: RecordingState.completed, endTime: DateTime.now(), videoPath: state.isFrontCamera? finalSegmentPath:videoFile.path));
+        emit(
+          state.copyWith(
+            isFrontCamera: false,
+            isVideoProcess: false,
+            recordingState: RecordingState.completed,
+            endTime: DateTime.now(),
+            videoPath: state.isFrontCamera ? finalSegmentPath : videoFile.path,
+          ),
+        );
       }
     } catch (e) {
       print("Video recording stop error: $e");
@@ -443,14 +486,16 @@ class AnswerCubit extends Cubit<AnswerState> {
   }
 
   void playVideoPreview() {
-    if (state.recordingType == RecordingType.video && state.recordingState == RecordingState.completed) {
+    if (state.recordingType == RecordingType.video &&
+        state.recordingState == RecordingState.completed) {
       emit(state.copyWith(isVideoPlaying: true));
       print("Video preview playing");
     }
   }
 
   void pauseVideoPreview() {
-    if (state.recordingType == RecordingType.video && state.recordingState == RecordingState.completed) {
+    if (state.recordingType == RecordingType.video &&
+        state.recordingState == RecordingState.completed) {
       emit(state.copyWith(isVideoPlaying: false));
       print("Video preview paused");
     }
@@ -516,8 +561,13 @@ class AnswerCubit extends Cubit<AnswerState> {
     }
   }
 
-  submitFinalAnswer(int qId, String answerText, BuildContext context, int mIndex,moduleIndex) async {
-
+  submitFinalAnswer(
+    int qId,
+    String answerText,
+    BuildContext context,
+    int mIndex,
+    moduleIndex,
+  ) async {
     try {
       TipDialogHelper.loading("Submitting..");
       File? file;
@@ -547,7 +597,7 @@ class AnswerCubit extends Cubit<AnswerState> {
       if (file != null && !file.existsSync()) {
         TipDialogHelper.dismiss();
         print("Error: Recorded file does not exist at path: ${file.path}");
-        return ;
+        return;
       }
 
       if (state.recordingType == RecordingType.video) {
@@ -555,11 +605,22 @@ class AnswerCubit extends Cubit<AnswerState> {
         result.fold(
           (l) {
             TipDialogHelper.dismiss();
-            Utils.showInfoDialog(context: context, title: "Submission Failed", content: l.message ?? "Failed to submit answer. Please try again.");
+            Utils.showInfoDialog(
+              context: context,
+              title: "Submission Failed",
+              content: l.message ?? "Failed to submit answer. Please try again.",
+            );
           },
           (r) async {
-
-            uploadVideoAnswer(r.uploadUrl ?? "", r.uploadId ?? "", file!.path, context, qId, mIndex,moduleIndex);
+            uploadVideoAnswer(
+              r.uploadUrl ?? "",
+              r.uploadId ?? "",
+              file!.path,
+              context,
+              qId,
+              mIndex,
+              moduleIndex,
+            );
           },
         );
         return;
@@ -569,15 +630,28 @@ class AnswerCubit extends Cubit<AnswerState> {
       // For text-only answers, create a dummy file since the API signature requires it
       // but the repository implementation will handle text-only submissions differently
       final fileToSubmit = file ?? File('');
-      final result = await answerUseCase.submitAnswer(qId: qId, userId: userId, answerType: answerType, answerText: answerText, file: fileToSubmit);
+      final result = await answerUseCase.submitAnswer(
+        qId: qId,
+        userId: userId,
+        answerType: answerType,
+        answerText: answerText,
+        file: fileToSubmit,
+      );
       TipDialogHelper.dismiss();
       result.fold(
         (l) {
           TipDialogHelper.dismiss();
-          Utils.showInfoDialog(context: context, title: "Submission Failed", content: l.message ?? "Failed to submit answer. Please try again.");
+          Utils.showInfoDialog(
+            context: context,
+            title: "Submission Failed",
+            content: l.message ?? "Failed to submit answer. Please try again.",
+          );
         },
         (r) async {
-          context.read<ListOfModuleCubit>().getExpandedCardData(questionId: qId, index: mIndex);
+          context.read<ListOfModuleCubit>().getExpandedCardData(
+            questionId: qId,
+            index: mIndex,
+          );
           context.read<ListOfModuleCubit>().isQuestionContinue(true);
           TipDialogHelper.success("Submitted");
           await Future.delayed(const Duration(milliseconds: 1200));
@@ -585,32 +659,43 @@ class AnswerCubit extends Cubit<AnswerState> {
           retakeRecording();
           AppPreference().set(key: "SUBMITTED", value: "true");
 
-          if(r.data?.showCongratulation==true){
-          String? userName=  await AppPreference().get (key: AppPreference.KEY_USER_FIRST_NAME);
-         bool? isSuccess =    await showCongratulationsDialog(context: context,userName: userName,content: r.data?.congratulationText,moduleName: r.data?.nextModuleTitle);
-        if(isSuccess==true){
-          Navigator.pop(context, true);
-          AppPreference().set(key: "congratulation", value: "true");
-        }else{
-          AppPreference().set(key: "congratulation", value: "false");
-        }
-         emit(state.copyWith(showCongratsDialog: isSuccess));
-          }else{
+          if (r.data?.showCongratulation == true) {
+            String? userName = await AppPreference().get(
+              key: AppPreference.KEY_USER_FIRST_NAME,
+            );
+            bool? isSuccess = await showCongratulationsDialog(
+              context: context,
+              userName: userName,
+              content: r.data?.congratulationText,
+              moduleName: r.data?.nextModuleTitle,
+            );
+            if (isSuccess == true) {
+              Navigator.pop(context, true);
+              AppPreference().set(key: "congratulation", value: "true");
+            } else {
+              AppPreference().set(key: "congratulation", value: "false");
+            }
+            emit(state.copyWith(showCongratsDialog: isSuccess));
+          } else {
             Navigator.pop(context, true);
           }
-
         },
       );
-
-
     } catch (e) {
-
       TipDialogHelper.dismiss();
       print("Error submission: $e");
     }
   }
 
-  void uploadVideoAnswer(String url, String uploadID, String filePath, BuildContext context, int qId, int mIndex, int moduleIndex) async {
+  void uploadVideoAnswer(
+    String url,
+    String uploadID,
+    String filePath,
+    BuildContext context,
+    int qId,
+    int mIndex,
+    int moduleIndex,
+  ) async {
     bool isUploading = true;
     // final result = await answerUseCase.uploadToMux(url, filePath);
     // uploadToMuxForeground(url, filePath);
@@ -648,44 +733,61 @@ class AnswerCubit extends Cubit<AnswerState> {
     final result = await answerUseCase.uploadToMux(url, filePath);
 
     if (result) {
-      final body = {"question_id": qId, "user_id": userId, "upload_id": uploadID, "answer_type": 3};
+      final body = {
+        "question_id": qId,
+        "user_id": userId,
+        "upload_id": uploadID,
+        "answer_type": 3,
+      };
       final result = await answerUseCase.uploadMuxVideoAssets(body);
       print("Upload result: $result");
       result.fold(
-            (l) async {
+        (l) async {
           TipDialogHelper.dismiss();
-          Utils.showInfoDialog(context: context, title: "Submission Failed", content: l.message ?? "Failed to submit answer. Please try again.");
+          Utils.showInfoDialog(
+            context: context,
+            title: "Submission Failed",
+            content: l.message ?? "Failed to submit answer. Please try again.",
+          );
           TipDialogHelper.success("Submission Failed");
           await Future.delayed(const Duration(milliseconds: 1200));
           TipDialogHelper.dismiss();
           retakeRecording();
           Navigator.pop(context, true);
         },
-            (r) async {
-              context.read<ListOfModuleCubit>().getExpandedCardData(questionId: qId, index: mIndex);
-              TipDialogHelper.success("Submitted");
-              await Future.delayed(const Duration(milliseconds: 1200));
-              TipDialogHelper.dismiss();
-              retakeRecording();
-              AppPreference().set(key: "SUBMITTED", value: "true");
-              if(r.data?.showCongratulation==true){
-                String? userName=  await AppPreference().get (key: AppPreference.KEY_USER_FIRST_NAME);
-                bool? isSuccess =    await showCongratulationsDialog(context: context,userName: userName,content: r.data?.congratulationText,moduleName: r.data?.nextModuleTitle);
-                if(isSuccess==true){
-                  Navigator.pop(context, true);
-                  AppPreference().set(key: "congratulation", value: "true");
-                }else{
-                  AppPreference().set(key: "congratulation", value: "false");
-                }
-                emit(state.copyWith(showCongratsDialog: isSuccess));
-              }else{
-                Navigator.pop(context, true);
-              }
+        (r) async {
+          context.read<ListOfModuleCubit>().getExpandedCardData(
+            questionId: qId,
+            index: mIndex,
+          );
+          TipDialogHelper.success("Submitted");
+          await Future.delayed(const Duration(milliseconds: 1200));
+          TipDialogHelper.dismiss();
+          retakeRecording();
+          AppPreference().set(key: "SUBMITTED", value: "true");
+          if (r.data?.showCongratulation == true) {
+            String? userName = await AppPreference().get(
+              key: AppPreference.KEY_USER_FIRST_NAME,
+            );
+            bool? isSuccess = await showCongratulationsDialog(
+              context: context,
+              userName: userName,
+              content: r.data?.congratulationText,
+              moduleName: r.data?.nextModuleTitle,
+            );
+            if (isSuccess == true) {
+              Navigator.pop(context, true);
+              AppPreference().set(key: "congratulation", value: "true");
+            } else {
+              AppPreference().set(key: "congratulation", value: "false");
+            }
+            emit(state.copyWith(showCongratsDialog: isSuccess));
+          } else {
+            Navigator.pop(context, true);
+          }
         },
       );
-
-    }
-    else {
+    } else {
       TipDialogHelper.success("Submitted");
       await Future.delayed(const Duration(milliseconds: 1200));
       TipDialogHelper.dismiss();
@@ -693,22 +795,18 @@ class AnswerCubit extends Cubit<AnswerState> {
       Navigator.pop(context, true);
     }
     AppPreference().set(key: "SUBMITTED", value: "true");
-
   }
-
-
 
   QuestionData updateAnswerInQuestionData({
     required QuestionData questionData,
     required int questionId,
     required ModuleAnswerData newAnswer,
   }) {
-    final List<QuestionItems> updatedQuestions =
-    List<QuestionItems>.from(questionData.questions ?? []);
-
-    final qIndex = updatedQuestions.indexWhere(
-          (q) => q.questionidpK == questionId,
+    final List<QuestionItems> updatedQuestions = List<QuestionItems>.from(
+      questionData.questions ?? [],
     );
+
+    final qIndex = updatedQuestions.indexWhere((q) => q.questionidpK == questionId);
 
     if (qIndex == -1) {
       // question not found → return original
@@ -717,12 +815,11 @@ class AnswerCubit extends Cubit<AnswerState> {
 
     final QuestionItems question = updatedQuestions[qIndex];
 
-    final List<ModuleAnswerData> updatedAnswers =
-    List<ModuleAnswerData>.from(question.answers ?? []);
-   print("get anser to update and add $updatedAnswers");
-    final aIndex = updatedAnswers.indexWhere(
-          (a) => a.answerIdPK == newAnswer.answerIdPK,
+    final List<ModuleAnswerData> updatedAnswers = List<ModuleAnswerData>.from(
+      question.answers ?? [],
     );
+    print("get anser to update and add $updatedAnswers");
+    final aIndex = updatedAnswers.indexWhere((a) => a.answerIdPK == newAnswer.answerIdPK);
 
     if (aIndex != -1) {
       // update existing answer
@@ -732,17 +829,10 @@ class AnswerCubit extends Cubit<AnswerState> {
       updatedAnswers.add(newAnswer);
     }
 
-    updatedQuestions[qIndex] = question.copyWith(
-      answers: updatedAnswers,
-    );
+    updatedQuestions[qIndex] = question.copyWith(answers: updatedAnswers);
 
-    return questionData.copyWith(
-      questions: updatedQuestions,
-    );
+    return questionData.copyWith(questions: updatedQuestions);
   }
-
-
-
 
   Future<bool> uploadToMuxForeground(String url, String filePath) async {
     bool uploadResult = false;
@@ -757,15 +847,13 @@ class AnswerCubit extends Cubit<AnswerState> {
 
     // Run the upload
     final result = await answerUseCase.uploadToMux(url, filePath);
-        if (result) {
-    }
+    if (result) {}
 
     // Stop foreground service after upload
     // await FlutterForegroundTask.stopService();
 
     return uploadResult;
   }
-
 
   void toggleFlash() {
     try {
@@ -805,7 +893,11 @@ class AnswerCubit extends Cubit<AnswerState> {
 
   Future<void> initCamera() async {
     _cameras = await availableCameras();
-    _cameraController = CameraController(_cameras.first, ResolutionPreset.high, enableAudio: true);
+    _cameraController = CameraController(
+      _cameras.first,
+      ResolutionPreset.high,
+      enableAudio: true,
+    );
     await _cameraController!.initialize();
   }
 
@@ -829,7 +921,9 @@ class AnswerCubit extends Cubit<AnswerState> {
       final wasRecording = _cameraController!.value.isRecordingVideo;
       final wasRecordingPaused = state.recordingState == RecordingState.paused;
 
-      print("📹 Current state - wasRecording: $wasRecording, wasRecordingPaused: $wasRecordingPaused");
+      print(
+        "📹 Current state - wasRecording: $wasRecording, wasRecordingPaused: $wasRecordingPaused",
+      );
 
       final lensDirection = _cameraController!.description.lensDirection;
       print("🔄 Current camera: $lensDirection");
@@ -837,9 +931,13 @@ class AnswerCubit extends Cubit<AnswerState> {
       // find the opposite camera
       CameraDescription newCamera;
       if (lensDirection == CameraLensDirection.front) {
-        newCamera = _cameras.firstWhere((camera) => camera.lensDirection == CameraLensDirection.back);
+        newCamera = _cameras.firstWhere(
+          (camera) => camera.lensDirection == CameraLensDirection.back,
+        );
       } else {
-        newCamera = _cameras.firstWhere((camera) => camera.lensDirection == CameraLensDirection.front);
+        newCamera = _cameras.firstWhere(
+          (camera) => camera.lensDirection == CameraLensDirection.front,
+        );
       }
 
       print("🔄 Switching to: ${newCamera.lensDirection}");
@@ -858,7 +956,11 @@ class AnswerCubit extends Cubit<AnswerState> {
 
       // create new controller
       print("🆕 Creating new camera controller...");
-      _cameraController = CameraController(newCamera, ResolutionPreset.low, enableAudio: true);
+      _cameraController = CameraController(
+        newCamera,
+        ResolutionPreset.low,
+        enableAudio: true,
+      );
 
       print("🔧 Initializing new camera controller...");
       await _cameraController!.initialize();
@@ -900,7 +1002,6 @@ class AnswerCubit extends Cubit<AnswerState> {
     }
   }
 
-
   // New method: Flip camera and start completely new recording
   Future<void> flipCameraAndStartNew({isFront}) async {
     print("🔄 Flipping camera while recording continues...${state.isFrontCamera}");
@@ -921,7 +1022,6 @@ class AnswerCubit extends Cubit<AnswerState> {
         _recordingTimer?.cancel();
       }
 
-
       // 2️⃣ Load cameras
       if (_cameras.isEmpty) {
         _cameras = await availableCameras();
@@ -931,21 +1031,21 @@ class AnswerCubit extends Cubit<AnswerState> {
 
       // Find opposite camera
       CameraDescription newCamera;
-      if (current == CameraLensDirection.back&&isFront==false) {
-
+      if (current == CameraLensDirection.back && isFront == false) {
         newCamera = _cameras.firstWhere(
-              (c) => c.lensDirection == CameraLensDirection.front,
+          (c) => c.lensDirection == CameraLensDirection.front,
         );
         emit(state.copyWith(isFrontCamera: true));
       } else {
-        if(isFront==true&&state.isFrontCamera){
+        if (isFront == true && state.isFrontCamera) {
           newCamera = _cameras.firstWhere(
-                (c) => c.lensDirection == CameraLensDirection.front,
+            (c) => c.lensDirection == CameraLensDirection.front,
           );
-        }else{
-        newCamera = _cameras.firstWhere(
-              (c) => c.lensDirection == CameraLensDirection.back,
-        );}
+        } else {
+          newCamera = _cameras.firstWhere(
+            (c) => c.lensDirection == CameraLensDirection.back,
+          );
+        }
         emit(state.copyWith(isFrontCamera: false));
       }
 
@@ -957,15 +1057,19 @@ class AnswerCubit extends Cubit<AnswerState> {
 
       // 4️⃣ Initialize new controller
       print("🔧 Initializing new camera...");
-      _cameraController = CameraController(newCamera, ResolutionPreset.high, enableAudio: true);
+      _cameraController = CameraController(
+        newCamera,
+        ResolutionPreset.high,
+        enableAudio: true,
+      );
       await _cameraController!.initialize();
       await cameraController?.setFocusMode(FocusMode.auto);
-      if(state.zoom==1.0){
+      if (state.zoom == 1.0) {
         loadZoomLimits();
-      }else{
-        setZoom( state.zoom);
+      } else {
+        setZoom(state.zoom);
       }
-       emit(state.copyWith(cameraInitialized: false));
+      emit(state.copyWith(cameraInitialized: false));
       // Flash restore
       if (state.isFlashOn) {
         await _cameraController!.setFlashMode(FlashMode.torch);
@@ -973,24 +1077,27 @@ class AnswerCubit extends Cubit<AnswerState> {
 
       // 5️⃣ Start new recording file (continue recording illusion)
       print("🎥 Starting new segment after flip...${state.isFrontCamera}");
-       if(isFront){
-         final directory = await getTemporaryDirectory();
-         final videoPath = '${directory.path}/video_recording_${DateTime.now().millisecondsSinceEpoch}.mp4';
-       await _cameraController!.startVideoRecording();
-      // Start timer again
-          _startRecordingTimer();
-       emit(state.copyWith(
-         recordingState: RecordingState.recording,
-         isVideoExist: true,
-         videoPath: videoPath,
-         isFrontCamera: true,
-       ));
-    }
-       // if(state.recordingState== RecordingState.recording){
-       //   emit(state.copyWith(isFrontCamera: false));
-       // }else{
-       //   emit(state.copyWith(isFrontCamera: true));
-       // }
+      if (isFront) {
+        final directory = await getTemporaryDirectory();
+        final videoPath =
+            '${directory.path}/video_recording_${DateTime.now().millisecondsSinceEpoch}.mp4';
+        await _cameraController!.startVideoRecording();
+        // Start timer again
+        _startRecordingTimer();
+        emit(
+          state.copyWith(
+            recordingState: RecordingState.recording,
+            isVideoExist: true,
+            videoPath: videoPath,
+            isFrontCamera: true,
+          ),
+        );
+      }
+      // if(state.recordingState== RecordingState.recording){
+      //   emit(state.copyWith(isFrontCamera: false));
+      // }else{
+      //   emit(state.copyWith(isFrontCamera: true));
+      // }
 
       print("🎥 Starting new segment after flip...2");
     } catch (e) {
@@ -1033,11 +1140,9 @@ class AnswerCubit extends Cubit<AnswerState> {
   //   return outPath;
   // }
 
-
   Future<String> removeMirrorInBackground(String inputPath) async {
     final dir = await getTemporaryDirectory();
-    final outPath =
-        '${dir.path}/fixed_${DateTime.now().millisecondsSinceEpoch}.mp4';
+    final outPath = '${dir.path}/fixed_${DateTime.now().millisecondsSinceEpoch}.mp4';
 
     final cmd =
         "-i '$inputPath' -vf hflip -c:v libx264 -preset veryfast -crf 23 -c:a copy '$outPath'";
@@ -1186,7 +1291,8 @@ class AnswerCubit extends Cubit<AnswerState> {
     if (text.trim().isEmpty) return 0;
 
     // Split by whitespace and filter out empty strings
-    final words = text.trim().split(RegExp(r'\s+')).where((word) => word.isNotEmpty).toList();
+    final words =
+        text.trim().split(RegExp(r'\s+')).where((word) => word.isNotEmpty).toList();
 
     return words.length;
   }
@@ -1198,54 +1304,71 @@ class AnswerCubit extends Cubit<AnswerState> {
     emit(state.copyWith(wordCount: wordCount));
   }
 
-
   // video button active
   Future<void> videoButtonIdle() async {
     await initializeCamera();
-    if(state.recordingState == RecordingState.idle){
-      emit(state.copyWith(recordingType: RecordingType.video, recordingState: RecordingState.idle));
-
+    if (state.recordingState == RecordingState.idle) {
+      emit(
+        state.copyWith(
+          recordingType: RecordingType.video,
+          recordingState: RecordingState.idle,
+        ),
+      );
     }
-
   }
+
   void videoButtonActive() {
-    if(state.recordingState == RecordingState.idle){
-      emit(state.copyWith(recordingType: RecordingType.video, recordingState: RecordingState.paused));
+    if (state.recordingState == RecordingState.idle) {
+      emit(
+        state.copyWith(
+          recordingType: RecordingType.video,
+          recordingState: RecordingState.paused,
+        ),
+      );
       startVideoRecording();
     }
-
   }
-
 
   // page leave  dialog
 
-  void confirmLeave() async{
-    try{
+  void confirmLeave() async {
+    try {
       final videoFile = await _cameraController!.stopVideoRecording();
-      if(File(videoFile.path).existsSync()){
+      if (File(videoFile.path).existsSync()) {
         retakeRecording();
-        emit(state.copyWith(leavePageDialogState: LeavePageDialogState.confirmed,isVideoExist: false,recordingType: RecordingType.none,recordingState: RecordingState.idle));
-      }else{
+        emit(
+          state.copyWith(
+            leavePageDialogState: LeavePageDialogState.confirmed,
+            isVideoExist: false,
+            recordingType: RecordingType.none,
+            recordingState: RecordingState.idle,
+          ),
+        );
+      } else {
         print("File deleted: Not Exist ${videoFile.path}");
       }
-    }catch(e){
+    } catch (e) {
       print("Error deleting file: $e");
     }
-    if(state.recordingType == RecordingType.video){
-      try{
+    if (state.recordingType == RecordingType.video) {
+      try {
         final videoFile = await _cameraController!.stopVideoRecording();
-        if(File(videoFile.path).existsSync()){
+        if (File(videoFile.path).existsSync()) {
           File(videoFile.path).deleteSync();
           print("File deleted: ${videoFile.path}");
-          emit(state.copyWith(
-              leavePageDialogState: LeavePageDialogState.confirmed,isVideoExist: false,recordingType: RecordingType.none,recordingState: RecordingState.idle
-          ));
+          emit(
+            state.copyWith(
+              leavePageDialogState: LeavePageDialogState.confirmed,
+              isVideoExist: false,
+              recordingType: RecordingType.none,
+              recordingState: RecordingState.idle,
+            ),
+          );
         }
-      }catch(e){
+      } catch (e) {
         print("Error deleting file: $e");
-
       }
-    }else{
+    } else {
       final path = _currentRecordingPath;
       if (path != null) {
         final file = File(path);
@@ -1260,12 +1383,16 @@ class AnswerCubit extends Cubit<AnswerState> {
           print("No file found at path: $path");
         }
       }
-      emit(state.copyWith(
-          leavePageDialogState: LeavePageDialogState.confirmed,isAudioExist: false,recordingType: RecordingType.none,recordingState: RecordingState.idle
-      ));
+      emit(
+        state.copyWith(
+          leavePageDialogState: LeavePageDialogState.confirmed,
+          isAudioExist: false,
+          recordingType: RecordingType.none,
+          recordingState: RecordingState.idle,
+        ),
+      );
     }
   }
-
 
   void cancelLeave() {
     emit(state.copyWith(leavePageDialogState: LeavePageDialogState.cancelled));
@@ -1275,18 +1402,12 @@ class AnswerCubit extends Cubit<AnswerState> {
     emit(state.copyWith(leavePageDialogState: LeavePageDialogState.initial));
   }
 
-
-
   //camera zoom
   Future<void> loadZoomLimits() async {
     final min = await cameraController?.getMinZoomLevel();
     final max = await cameraController?.getMaxZoomLevel();
 
-    emit(state.copyWith(
-      minZoom: min,
-      maxZoom: max,
-      zoom: min,
-    ));
+    emit(state.copyWith(minZoom: min, maxZoom: max, zoom: min));
   }
 
   Future<void> setZoom(double value) async {
@@ -1299,14 +1420,10 @@ class AnswerCubit extends Cubit<AnswerState> {
   }
 
   // auto fucus
-  Future<void> autoFocus({
-    required Offset tapPosition,
-    required Size previewSize,
-  }) async {
+  Future<void> autoFocus({required Offset tapPosition, required Size previewSize}) async {
     if (!cameraController!.value.isInitialized) return;
 
-    if (cameraController?.description.lensDirection ==
-        CameraLensDirection.front) {
+    if (cameraController?.description.lensDirection == CameraLensDirection.front) {
       await cameraController?.setFocusMode(FocusMode.auto);
       return;
     }
@@ -1318,10 +1435,4 @@ class AnswerCubit extends Cubit<AnswerState> {
     await cameraController?.setFocusPoint(Offset(dx, dy));
     await cameraController?.setExposurePoint(Offset(dx, dy));
   }
-
-
-
 }
-
-
-

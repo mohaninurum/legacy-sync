@@ -204,6 +204,14 @@ class ListOfModuleCubit extends Cubit<ListOfModuleState> {
     emit(state.copyWith(data: state.data.copyWith(questions: questions)));
   }
 
+  void toggleFavorite({required int index}) {
+    final questions = List<QuestionItems>.from(state.data.questions!);
+    final currentStatus = questions[index].isfavourite ?? 0;
+    questions[index] = questions[index].copyWith(isfavourite: currentStatus == 1 ? 0 : 1);
+    emit(state.copyWith(data: state.data.copyWith(questions: questions)));
+    _updateCacheWithCurrentData();
+  }
+
   void getExpandedCardData({required int questionId, required int index}) async {
     final userId = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
     try {
@@ -336,6 +344,7 @@ class ListOfModuleCubit extends Cubit<ListOfModuleState> {
       emit(state.copyWith(isQuestionContinue: moduleValue));
   }
 
-
-
+  void updateStopVideo(bool value) async {
+    emit(state.copyWith(shouldStopVideo: value));
+  }
 }

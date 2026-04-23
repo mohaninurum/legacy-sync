@@ -348,6 +348,7 @@ class CustomVideoPlayer extends StatefulWidget {
   final bool autoPlay;
   final bool showControls;
   final Duration? startPosition;
+  final bool shouldStop;
 
   const CustomVideoPlayer({
     Key? key,
@@ -358,6 +359,7 @@ class CustomVideoPlayer extends StatefulWidget {
     this.autoPlay = false,
     this.showControls = true,
     this.startPosition,
+    this.shouldStop = false,
   }) : super(key: key);
 
   @override
@@ -376,6 +378,19 @@ class _CustomVideoPlayerState extends State<CustomVideoPlayer> {
     super.initState();
     _initializeVideo();
 
+  }
+
+  @override
+  void didUpdateWidget(CustomVideoPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.shouldStop && !oldWidget.shouldStop) {
+      if (_controller.value.isPlaying) {
+        _controller.pause();
+        setState(() {
+          _isPlaying = false;
+        });
+      }
+    }
   }
 
   void _initializeVideo() {

@@ -85,6 +85,10 @@ class _RoomPageState extends State<RoomPage> {
     _lkCubit.fetchPodcastTopics();
     _homeCubit.getFriendsList();
 
+    if (!widget.incomingCall) {
+      _lkCubit.initiateCallByHost(userId: widget.userId);
+    }
+
     if (widget.incomingCall) {
       Future.delayed(const Duration(seconds: 1), () {
         if (!mounted) return;
@@ -266,16 +270,6 @@ class _RoomPageState extends State<RoomPage> {
                           ] else ...[
                             _inviteeRecordingView(state),
                           ],
-                          // SizedBox(height: 5.height),
-                          // Expanded(
-                          //   child:
-                          //       state.participantTracks.isNotEmpty
-                          //           ? ParticipantWidget.widgetFor(
-                          //             state.participantTracks.first,
-                          //             showStatsLayer: true,
-                          //           )
-                          //           : const SizedBox.shrink(),
-                          // ),
                         ],
                       ),
                     ),
@@ -1440,7 +1434,7 @@ class _RoomPageState extends State<RoomPage> {
 
   void showInviteDialog(BuildContext context) {
     // Fetch the latest friends list on every dialog open
-    _homeCubit.getFriendsList();
+    _homeCubit.getFriendsList(isRefresh: true);
 
     showDialog(
       context: context,

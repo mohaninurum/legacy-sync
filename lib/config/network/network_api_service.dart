@@ -461,6 +461,20 @@ class NetworkApiService implements BaseApiServices {
         return MediaType('video', 'webm');
       case 'avi':
         return MediaType('video', 'avi');
+      case 'mov':
+        return MediaType('video', 'quicktime');
+      case 'flv':
+        return MediaType('video', 'x-flv');
+      case 'm4a':
+        return MediaType('audio', 'mp4');
+      case 'mp3':
+        return MediaType('audio', 'mpeg');
+      case 'wav':
+        return MediaType('audio', 'wav');
+      case 'heic':
+        return MediaType('image', 'heic');
+      case 'heif':
+        return MediaType('image', 'heif');
       default:
         throw Exception('Unsupported file type: $extension');
     }

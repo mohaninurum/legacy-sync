@@ -43,20 +43,24 @@ class LiveKitConnectionUseCases {
     return await repository.acceptInvitation(userId: userId, roomId: roomId);
   }
 
+  ResultFuture<Map<String, dynamic>> initiateCallByHost({
+    required int userId,
+  }) async {
+    return await repository.initiateCallByHost(userId: userId);
+  }
+
   ResultFuture<EndPodcastCallResponse> endPodcastCall({
     required int userId,
     required Set<int> friendId,
     required String roomId,
-    required bool freeSpecificUser,
-    required int specificUserId,
   }) async {
-    return repository.endPodcastCall(
-      userId: userId,
-      friendId: friendId,
-      roomId: roomId,
-      freeSpecificUser: freeSpecificUser,
-      specificUserId: specificUserId,
-    );
+    return repository.endPodcastCall(userId: userId, friendId: friendId, roomId: roomId);
+  }
+
+  ResultFuture<EndPodcastCallResponse> endCallByFriend({
+    required int friendId,
+  }) async {
+    return repository.endCallByFriend(friendId: friendId);
   }
 
   ResultFuture<String> fetchParticipantToken({

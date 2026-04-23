@@ -30,7 +30,7 @@ class ResetPasswordCubit extends Cubit<ResetPasswordState> {
 
   void sendOtpOnEmail({required String email}) async{
     try{
-      Map<String, dynamic> body = {"email": email};
+      Map<String, dynamic> body = {"email": email.trim()};
       emit(state.copyWith(isLoading: true, error: null,otpSendSuccess: false));
       var sendOtpOnEmail = await authUseCase.sendOtpOnEmail(body: body);
       emit(state.copyWith(isLoading: false));

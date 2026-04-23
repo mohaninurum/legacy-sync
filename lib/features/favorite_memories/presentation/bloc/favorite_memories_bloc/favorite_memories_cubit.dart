@@ -46,13 +46,10 @@ class FavoriteMemoriesCubit extends Cubit<FavoriteMemoriesState> {
     }
   }
 
-  void addFavQuestion({required questionId , required BuildContext context}) async {
+  void addFavQuestion({required int? questionId , required BuildContext context}) async {
     try{
       Utils.showLoader(message: "Adding as a favorite question...");
       final userID = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
-
-      print("UserId ::: ${userID}");
-      print("questionId ::: ${questionId}");
 
       final body = {
         "user_id":userID,
@@ -67,6 +64,32 @@ class FavoriteMemoriesCubit extends Cubit<FavoriteMemoriesState> {
         AddToWishlistDialog.show(context);
       });
     } catch (e){
+      Utils.closeLoader();
+      emit(state.copyWith(errorMessage: e.toString()));
+    }
+  }
+
+  void removeFavQuestion({required int? questionId, required BuildContext context}) async {
+    try {
+      Utils.showLoader(message: "Removing from favorite questions...");
+      final userID = await AppPreference().getInt(key: AppPreference.KEY_USER_ID);
+
+      final body = {
+        "user_id": userID,
+        "question_id": questionId
+      };
+      final result = await favMemoriesUseCases.removeFavQuestion(body: body);
+      Utils.closeLoader();
+      result.fold(
+        (failure) {
+          emit(state.copyWith(errorMessage: failure.message.toString()));
+          Utils.showInfoDialog(context: context, content: failure.message.toString(), title: "Information");
+        },
+        (data) {
+          Utils.showInfoDialog(context: context, content: "Question removed from favorites successfully", title: "Success");
+        },
+      );
+    } catch (e) {
       Utils.closeLoader();
       emit(state.copyWith(errorMessage: e.toString()));
     }

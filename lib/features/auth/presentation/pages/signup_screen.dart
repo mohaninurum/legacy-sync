@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/core/colors/colors.dart';
 import 'package:legacy_sync/core/components/comman_components/bg_image_stack.dart';
 import 'package:legacy_sync/core/components/comman_components/custom_button.dart';
@@ -9,7 +10,6 @@ import 'package:legacy_sync/core/components/comman_components/gradient_divider_t
 import 'package:legacy_sync/core/components/comman_components/keyboard_dismiss_on_tap.dart';
 import 'package:legacy_sync/core/components/comman_components/social_button.dart';
 import 'package:legacy_sync/core/extension/extension.dart';
-import 'package:legacy_sync/config/routes/routes_name.dart';
 import 'package:legacy_sync/core/images/images.dart';
 import 'package:legacy_sync/core/images/lottie.dart';
 import 'package:legacy_sync/core/strings/strings.dart';
@@ -31,8 +31,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController dobController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
   final FocusNode passwordFocusNode = FocusNode();
   final FocusNode confirmPasswordFocusNode = FocusNode();
 
@@ -45,32 +44,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void initState() {
     context.read<SignUpCubit>().resetState();
     passwordFocusNode.addListener(() {
-      context.read<SignUpCubit>().onPasswordFocusChanged(
-        passwordFocusNode.hasFocus,
-      );
-      // Trigger validation when focus changes to update info message visibility
-      context.read<SignUpCubit>().checkFormValidation(
-        firstName: firstNameController.text,
-        lastName: lastNameController.text,
-        email: emailController.text,
-        dob: dobController.text,
-        password: passwordController.text,
-        confirmPassword: confirmPasswordController.text,
-      );
+      context.read<SignUpCubit>().onPasswordFocusChanged(passwordFocusNode.hasFocus);
+      // // Trigger validation when focus changes to update info message visibility
+      // context.read<SignUpCubit>().checkFormValidation(
+      //   firstName: firstNameController.text,
+      //   lastName: lastNameController.text,
+      //   email: emailController.text,
+      //   dob: dobController.text,
+      //   password: passwordController.text,
+      //   confirmPassword: confirmPasswordController.text,
+      // );
     });
     confirmPasswordFocusNode.addListener(() {
       context.read<SignUpCubit>().onConfirmPasswordFocusChanged(
         confirmPasswordFocusNode.hasFocus,
       );
-      // Trigger validation when focus changes to update info message visibility
-      context.read<SignUpCubit>().checkFormValidation(
-        firstName: firstNameController.text,
-        lastName: lastNameController.text,
-        email: emailController.text,
-        dob: dobController.text,
-        password: passwordController.text,
-        confirmPassword: confirmPasswordController.text,
-      );
+      // // Trigger validation when focus changes to update info message visibility
+      // context.read<SignUpCubit>().checkFormValidation(
+      //   firstName: firstNameController.text,
+      //   lastName: lastNameController.text,
+      //   email: emailController.text,
+      //   dob: dobController.text,
+      //   password: passwordController.text,
+      //   confirmPassword: confirmPasswordController.text,
+      // );
     });
     context.read<SignUpCubit>().checkFormValidation(
       firstName: firstNameController.text,
@@ -123,9 +120,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             child: Container(
               height: 350,
               padding: const EdgeInsets.only(top: 6.0),
-              margin: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
+              margin: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
               color: CupertinoColors.systemBackground.resolveFrom(context),
               child: SafeArea(
                 top: false,
@@ -133,10 +128,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   children: [
                     // Header with title and done button
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: const BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
@@ -161,10 +153,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                           const Text(
                             'Select Date of Birth',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                           CupertinoButton(
                             padding: EdgeInsets.zero,
@@ -177,8 +166,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   email: emailController.text,
                                   dob: dobController.text,
                                   password: passwordController.text,
-                                  confirmPassword:
-                                      confirmPasswordController.text,
+                                  confirmPassword: confirmPasswordController.text,
                                 );
                               }
                               Navigator.of(context).pop();
@@ -197,16 +185,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     // Age requirement info
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: const Text(
                         'Must be at least 18 years old',
-                        style: TextStyle(
-                          color: CupertinoColors.systemGrey,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: CupertinoColors.systemGrey, fontSize: 14),
                       ),
                     ),
                     // Date picker
@@ -283,10 +265,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     _buildSignUpButton(context),
                     _buildSignupLink(context),
                     SizedBox(
-                      height:
-                          MediaQuery.of(context).viewInsets.bottom > 0
-                              ? 0
-                              : 5.height,
+                      height: MediaQuery.of(context).viewInsets.bottom > 0 ? 0 : 5.height,
                     ),
                   ],
                 ),
@@ -317,11 +296,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           },
         ),
         SocialButton(
-          icon: SizedBox(
-            height: 24,
-            width: 24,
-            child: Image.asset(Images.ic_google),
-          ),
+          icon: SizedBox(height: 24, width: 24, child: Image.asset(Images.ic_google)),
           ontap: () {
             context.read<SocialLoginCubit>().signInWithGoogle(context: context);
           },
@@ -400,25 +375,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(top: 6, bottom: 16),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.red.withOpacity(0.3)),
                     ),
-                    child: Row(
+                    child: const Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.info_outline,
-                          color: Colors.red,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        const Expanded(
+                        Icon(Icons.info_outline, color: Colors.red, size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
                           child: Text(
                             'Please enter a valid email address',
                             style: TextStyle(
@@ -525,24 +493,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ? Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(top: 16, bottom: 16),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.red.withOpacity(0.3)),
                     ),
-                    child:  Row(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(Icons.info_outline, color: Colors.red, size: 16),
-                        const  SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            state.showPasswordInfo? 'Password must be at least 8 characters with uppercase, lowercase, number and special character':"Passwords do not match",
-                            style:const TextStyle(
+                            state.showPasswordInfo
+                                ? 'Password must be at least 8 characters with uppercase, lowercase, number and special character'
+                                : "Passwords do not match",
+                            style: const TextStyle(
                               color: Colors.red,
                               fontSize: 12,
                               fontWeight: FontWeight.w400,
@@ -558,15 +525,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-
   Widget _buildSignUpButton(BuildContext context) {
     return BlocConsumer<SignUpCubit, SignUpState>(
       listener: (context, state) {
-        if(state is SignUpSuccessState ){
+        if (state is SignUpSuccessState) {
           Navigator.pushNamed(
             context,
             RoutesName.email_verification_screen,
-            arguments: emailController.text
+            arguments: emailController.text,
           );
         }
         // if (state is SignUpSuccessState) {
@@ -576,14 +542,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         //     (Route<dynamic> route) => false,
         //   );
         // }
-        if (state.signUpSuccess != null &&
-            !state.signUpSuccess! &&
-            state.error != null) {
-          Utils.showInfoDialog(
-            context: context,
-            content: state.error!,
-            title: "",
-          );
+        if (state.signUpSuccess != null && !state.signUpSuccess! && state.error != null) {
+          Utils.showInfoDialog(context: context, content: state.error!, title: "");
         }
       },
       builder: (context, state) {
@@ -637,10 +597,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Widget _buildSignUpText() {
     return Center(
-      child: Text(
-        AppStrings.signUp,
-        style: Theme.of(context).textTheme.bodyLarge!,
-      ),
+      child: Text(AppStrings.signUp, style: Theme.of(context).textTheme.bodyLarge!),
     );
   }
 }

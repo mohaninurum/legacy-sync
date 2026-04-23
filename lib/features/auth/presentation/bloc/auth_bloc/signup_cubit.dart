@@ -25,20 +25,25 @@ class SignUpCubit extends Cubit<SignUpState> {
     emit(state.copyWith(isConfirmPasswordFocused: isFocused));
   }
 
-  Future<void> checkFormValidation({
+  void checkFormValidation({
     required String firstName,
     required String lastName,
     required String email,
     required String dob,
     required String password,
     required String confirmPassword,
-  }) async {
+  }) {
+    final trimmedEmail = email.trim();
+    final bool isEmailValid = trimmedEmail.isEmail;
+    final bool showEmailError = trimmedEmail.isNotEmpty && !isEmailValid;
+
     // Check all fields
-    if (firstName.isEmpty) {
+    if (firstName.trim().isEmpty) {
       _isFormValid = false;
       emit(
         state.copyWith(
           isFormValid: false,
+          showEmailError: showEmailError,
           showPasswordInfo: _shouldShowPasswordInfo(password),
           showConfirmPasswordInfo: _shouldShowConfirmPasswordInfo(
             password,
@@ -49,11 +54,12 @@ class SignUpCubit extends Cubit<SignUpState> {
       return;
     }
 
-    if (lastName.isEmpty) {
+    if (lastName.trim().isEmpty) {
       _isFormValid = false;
       emit(
         state.copyWith(
           isFormValid: false,
+          showEmailError: showEmailError,
           showPasswordInfo: _shouldShowPasswordInfo(password),
           showConfirmPasswordInfo: _shouldShowConfirmPasswordInfo(
             password,
@@ -64,12 +70,12 @@ class SignUpCubit extends Cubit<SignUpState> {
       return;
     }
 
-    if (email.isEmpty || !email.isEmail) {
+    if (!isEmailValid) {
       _isFormValid = false;
       emit(
         state.copyWith(
           isFormValid: false,
-          showEmailError: email.isNotEmpty && !email.isEmail,
+          showEmailError: showEmailError,
           showPasswordInfo: _shouldShowPasswordInfo(password),
           showConfirmPasswordInfo: _shouldShowConfirmPasswordInfo(
             password,
@@ -85,6 +91,7 @@ class SignUpCubit extends Cubit<SignUpState> {
       emit(
         state.copyWith(
           isFormValid: false,
+          showEmailError: false,
           showPasswordInfo: _shouldShowPasswordInfo(password),
           showConfirmPasswordInfo: _shouldShowConfirmPasswordInfo(
             password,
@@ -101,6 +108,7 @@ class SignUpCubit extends Cubit<SignUpState> {
       emit(
         state.copyWith(
           isFormValid: false,
+          showEmailError: false,
           showPasswordInfo: false,
           showConfirmPasswordInfo: _shouldShowConfirmPasswordInfo(
             password,
@@ -112,8 +120,9 @@ class SignUpCubit extends Cubit<SignUpState> {
     }
 
     // Password validation: 8+ chars, uppercase, lowercase, number, special char
+    // Using a more inclusive regex for special characters
     final passwordRegex = RegExp(
-      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#\$&*~._\-]).{8,}$',
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$',
     );
 
     if (!passwordRegex.hasMatch(password)) {
@@ -121,6 +130,7 @@ class SignUpCubit extends Cubit<SignUpState> {
       emit(
         state.copyWith(
           isFormValid: false,
+          showEmailError: false,
           showPasswordInfo: _shouldShowPasswordInfo(password),
           showConfirmPasswordInfo: _shouldShowConfirmPasswordInfo(
             password,
@@ -136,6 +146,7 @@ class SignUpCubit extends Cubit<SignUpState> {
       emit(
         state.copyWith(
           isFormValid: false,
+          showEmailError: false,
           showPasswordInfo: false, // Hide info when password is valid
           showConfirmPasswordInfo: false,
         ),
@@ -148,6 +159,7 @@ class SignUpCubit extends Cubit<SignUpState> {
       emit(
         state.copyWith(
           isFormValid: false,
+          showEmailError: false,
           showPasswordInfo: false, // Hide info when password is valid
           showConfirmPasswordInfo: _shouldShowConfirmPasswordInfo(
             password,
@@ -172,25 +184,23 @@ class SignUpCubit extends Cubit<SignUpState> {
 
   bool _shouldShowPasswordInfo(String password) {
     // Show info message only when:
-    // 1. Password field is focused
-    // 2. Password is not empty
-    // 3. Password is invalid
-    if (!state.isPasswordFocused || password.isEmpty) {
+    // 1. Password is not empty (don't show for initial state)
+    // 2. Password is invalid
+    if (password.isEmpty) {
       return false;
     }
 
     final passwordRegex = RegExp(
-      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#\$&*~._\-]).{8,}$',
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$',
     );
     return !passwordRegex.hasMatch(password);
   }
 
   bool _shouldShowConfirmPasswordInfo(String password, String confirmPassword) {
     // Show info message only when:
-    // 1. Confirm password field is focused
-    // 2. Confirm password is not empty
-    // 3. Passwords don't match
-    if (!state.isConfirmPasswordFocused || confirmPassword.isEmpty) {
+    // 1. Confirm password is not empty
+    // 2. Passwords don't match
+    if (confirmPassword.isEmpty) {
       return false;
     }
 
@@ -208,7 +218,7 @@ class SignUpCubit extends Cubit<SignUpState> {
     Map<String, dynamic> body = {
       "first_name": firstName,
       "last_name": lastName,
-      "email": email,
+      "email": email.trim(),
       "date_of_birth": dob,
       "password": password,
     };

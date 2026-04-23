@@ -18,14 +18,14 @@ extension SizeExtension on num {
 
 extension EmailExtensions on String {
   bool get isEmail {
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    return emailRegex.hasMatch(this);
+    final emailRegex = RegExp(r"^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$");
+    return emailRegex.hasMatch(trim());
   }
 }
 
 extension MobileExtensions on String {
   bool get isMobile {
     final mobileRegex = RegExp(r'^[6-9]\d{9}$');
-    return mobileRegex.hasMatch(this);
+    return mobileRegex.hasMatch(trim());
   }
 }
